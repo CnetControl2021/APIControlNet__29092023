@@ -18,7 +18,9 @@ namespace APIControlNet.DTOs
         public decimal? AmountIeps { get; set; }
         public decimal? AmountIsr { get; set; }
         public decimal? Amount { get; set; }
-        public string Uuid { get; set; }
+        [Required]
+        [ValidateGuid]
+        public Guid Uuid { get; set; }
         public string InvoiceApplicationTypeId { get; set; }
         public bool? IsCancelled { get; set; }
         public bool? IsStamped { get; set; }
@@ -41,6 +43,6 @@ namespace APIControlNet.DTOs
         public bool? Deleted { get; set; }=false;
         public int? IsIssued { get; set; }
 
-        public virtual Store Store { get; set; }
+        public virtual StoreDTO Store { get; set; }
     }
 }
