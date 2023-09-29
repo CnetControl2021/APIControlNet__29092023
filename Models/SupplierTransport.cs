@@ -1,0 +1,30 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace APIControlNet.Models
+{
+    public partial class SupplierTransport
+    {
+        public SupplierTransport()
+        {
+            InventoryInDocuments = new HashSet<InventoryInDocument>();
+        }
+
+        public int SupplierTransportIdx { get; set; }
+        public Guid SupplierId { get; set; }
+        public Guid StoreId { get; set; }
+        public int SupplierTransportIdi { get; set; }
+        public string Name { get; set; }
+        public string BrandName { get; set; }
+        public string Rfc { get; set; }
+        public string TransportPermission { get; set; }
+        public DateTime? Date { get; set; }
+        public DateTime? Updated { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
+
+        public virtual Supplier Supplier { get; set; }
+        public virtual ICollection<InventoryInDocument> InventoryInDocuments { get; set; }
+    }
+}
