@@ -51,6 +51,7 @@
         /// Tipo de Distribucion. (Ductos, AutoTanques)
         /// </summary>
         public enum eTipoDistribucion { Ductos = 0, Autotanques = 1 }
+        public enum eProcesoArchivo { Descargar = 0, Guardar = 1 }
         #endregion
 
         #region Gets And Sets.

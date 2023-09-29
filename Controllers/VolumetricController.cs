@@ -13,6 +13,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using System.IO.Compression;
+using System.Text.RegularExpressions;
 
 namespace APIControlNet.Controllers
 {
@@ -23,18 +24,18 @@ namespace APIControlNet.Controllers
     {
         private readonly CnetCoreContext objContext;
         private readonly IMapper objMapper;
-        private readonly ServicioBinnacle servicioBinnacle;
+        private readonly ServicioBinnacle objServicioBinnacle;
 
-        public VolumetricController(CnetCoreContext viContext, IMapper viMapper, ServicioBinnacle servicioBinnacle)
+        public VolumetricController(CnetCoreContext viContext, IMapper viMapper, ServicioBinnacle viServicioBinnacle)
         {
             this.objContext = viContext;
             this.objMapper = viMapper;
-            this.servicioBinnacle = servicioBinnacle;
+            this.objServicioBinnacle = viServicioBinnacle;
         }
 
-        //[AllowAnonymous]
+        [AllowAnonymous]
         [HttpGet(Name = "CVolJSon")]
-        public async Task<IActionResult> GenerarCVolJSon(Guid? viNCompania, Guid? viNEstacion, CVolJSonDTO.eTipoReporte viTipoReporte, Boolean viReporteEstacion, DateTime viFecha, Boolean viGenerarComplemento, Boolean viGenerarCompTransporte, Boolean viGenCompRecepcion, Boolean viGenComEntrega)
+        public async Task<IActionResult> GenerarCVolJSon(Guid? viNCompania, Guid? viNEstacion, CVolJSonDTO.eTipoReporte viTipoReporte, Boolean viReporteEstacion, DateTime viFecha, CVolJSonDTO.eProcesoArchivo viProcesoArchivo, Boolean viGenerarCompTransporte, Boolean viGenCompRecepcion, Boolean viGenComEntrega)
         {
             CVolJSonDTO objCVolDatos = new CVolJSonDTO();
             Dictionary<Guid, DailySummary> dictDailySummary = null;
@@ -151,7 +152,7 @@ namespace APIControlNet.Controllers
             objCVolDatos.RfcProveedores = null;
 
             #region Caracteres (Permisos).
-            String sCaracterValor = CVolJSonDTO.CARACTER_PERMISIONARIO,
+            String sCaracterValor = CVolJSonDTO.CARACTER_PERMISIONARIO, // <*DUDA*> Lugar de donde obtenerlo
                    sDescripInstalacion = String.Empty;
             Object oModalidadPermiso = null, oNumPermiso = null,
                    //oTipoCaracter = null, oCaracter = null,
@@ -202,12 +203,12 @@ namespace APIControlNet.Controllers
 
                             #region Validamos valores requeridos.
                             if (String.IsNullOrEmpty(sRfcProveedor))
-                                return BadRequest(iNStore + "|SatRfcSupplier");
+                                return BadRequest(iNStore + "|RfcSystemSupplier");
                             else
                                 objCVolDatos.RfcProveedor = sRfcProveedor;
 
                             if (String.IsNullOrEmpty(sNomClaveInstalacion))
-                                return BadRequest(iNStore + "|SatInstallationKey");
+                                return BadRequest(iNStore + "|JsonClaveInstalacionId");
 
                             if (String.IsNullOrEmpty(oModalidadPermiso.ToString()))
                                 return BadRequest(iNStore + "|CrePermission");
@@ -216,10 +217,10 @@ namespace APIControlNet.Controllers
                                 return BadRequest(iNStore + "|SatPermission");
 
                             if (String.IsNullOrEmpty(sClaveTipoReporte))
-                                return BadRequest(iNStore + "|SatReportType");
+                                return BadRequest(iNStore + "|JsonTipoReporteId");
 
                             if (String.IsNullOrEmpty(sDescripInstalacion))
-                                return BadRequest(iNStore + "|SatDescriptionInstallation");
+                                return BadRequest(iNStore + "|SystemDescriptionInstallation");
 
                             if (String.IsNullOrEmpty(sTipoComplementoEstacion))
                                 return BadRequest(iNStore + "|ComplementType");
@@ -325,12 +326,10 @@ namespace APIControlNet.Controllers
                                join td in objContext.SaleSuborders on th.SaleOrderId equals td.SaleOrderId
                                join p in objContext.Products on td.ProductId equals p.ProductId
                                join ps in objContext.ProductSats on new { f1 = th.StoreId, f2 = td.ProductId } equals new { f1 = ps.StoreId, f2 = ps.ProductId }
-                               //join ps in objContext.ProductSats on new { f1 = th.StoreId, f2 = td.ProductId } equals new { f1 = ps.StoreId, f2 = ps.ProductId } into rf
-                               //from ps in rf.DefaultIfEmpty()
                                where th.StoreId == viNEstacion &&
                                      th.StartDate >= dtPerDateIni && th.StartDate <= dtPerDateEnd
                                      && p.IsFuel == true
-                               group p by new { p.ProductId, p.ProductCode, p.Name, ps.SatProductKey, ps.SatProductSubkey, ps.ComposOctanajeGasolina, ps.SatWithFossil, ps.SatPercentageWithFossil } into ProdDatos
+                               group p by new { p.ProductId, p.ProductCode, p.Name, ps.SatProductKey, ps.SatProductSubkey, p.JsonClaveUnidadMedidaId, ps.ComposOctanajeGasolina, ps.SatWithFossil, ps.SatPercentageWithFossil, ps.TurbosinaConCombustibleNoFosil, ps.ComposDeCombustibleNoFosilEnTurbosina, ps.ComposDePropanoEnGasLp, ps.ComposDeButanoEnGasLp, ps.DensidadDePetroleo, ps.ComposDeAzufreEnPetroleo } into ProdDatos
                                select new
                                {
                                    ProductoID = ProdDatos.Key.ProductId,
@@ -338,9 +337,16 @@ namespace APIControlNet.Controllers
                                    ProductName = ProdDatos.Key.Name,
                                    ClaveProducto = (ProdDatos.Key.SatProductKey ?? ""),
                                    ClaveSubProducto = (ProdDatos.Key.SatProductSubkey ?? ""),
+                                   UnidadMedida = (ProdDatos.Key.JsonClaveUnidadMedidaId ?? "UM03"),
                                    ComposOctanajeGasolina = (ProdDatos.Key.ComposOctanajeGasolina ?? 0),
                                    ConFosil = (ProdDatos.Key.SatWithFossil ?? 0),
-                                   PorcentajeConFosil = (ProdDatos.Key.SatPercentageWithFossil ?? 0)
+                                   PorcentajeConFosil = (ProdDatos.Key.SatPercentageWithFossil ?? 0),
+                                   TurbosinaConCombustibleNoFosil = (ProdDatos.Key.TurbosinaConCombustibleNoFosil ?? "0"),
+                                   ComposDeCombustibleNoFosilEnTurbosina = (ProdDatos.Key.ComposDeCombustibleNoFosilEnTurbosina ?? 0),
+                                   ComposDePropanoEnGasLP = (ProdDatos.Key.ComposDePropanoEnGasLp ?? 0),
+                                   ComposDeButanoEnGasLP = (ProdDatos.Key.ComposDeButanoEnGasLp ?? 0),
+                                   DensidadDePetroleo = (ProdDatos.Key.DensidadDePetroleo ?? 0),
+                                   ComposDeAzufreEnPetroleo = (ProdDatos.Key.ComposDeAzufreEnPetroleo ?? 0)
                                });
 
             if (vQProductos == null)
@@ -356,8 +362,14 @@ namespace APIControlNet.Controllers
                 String sNProducto = vProd.ProductCode,
                        sClaveProducto = vProd.ClaveProducto.ToString();
                 Object oSubClaveProducto = null;
-                int iConFosil = vProd.ConFosil;
-                int iPorcentajeFosil = vProd.PorcentajeConFosil;
+                Int32 iConFosil = vProd.ConFosil,
+                      iPorcentajeFosil = vProd.PorcentajeConFosil,
+                      iTurboConFosil = Convert.ToInt32(vProd.TurbosinaConCombustibleNoFosil.ToString()),
+                      iTurboPorcenajeFosil = vProd.ComposDeCombustibleNoFosilEnTurbosina;
+                Decimal dPorcPropano = vProd.ComposDePropanoEnGasLP,
+                        dPorcButano = vProd.ComposDeButanoEnGasLP,
+                        dPetroleoDensidad = vProd.DensidadDePetroleo,
+                        dPetrolePorcenAzufre = vProd.DensidadDePetroleo;
                 #endregion
 
                 #region Producto: Validamos datos.
@@ -416,17 +428,97 @@ namespace APIControlNet.Controllers
                         else
                             objProductoDato.TurbosinaConCombustibleNoFosil = "No";
                         break;
+                    #endregion
+
+                    #region ClaveProducto: PR12 (GAS LP)
+                    case "PR12":
+                        if (dPorcPropano <= 0 || dPorcPropano > 99)
+                            return BadRequest("El producto '" + sNProducto + "' tiene un Porcentaje de Propano MENOR a 0.1 o MAYOR a 99 (ProductSat)");
+
+                        if (dPorcButano <= 0 || dPorcButano > 99)
+                            return BadRequest("El producto '" + sNProducto + "' tiene un Porcentaje de Butano MENOR a 0.1 o MAYOR a 99 (ProductSat)");
+
+                        objProductoDato.ComposDePropanoEnGasLP = Math.Round(dPorcPropano, 2);
+                        objProductoDato.ComposDeButanoEnGasLP = Math.Round(dPorcButano, 2);
+                        break;
+                    #endregion
+
+                    #region ClaveProducto: PR08 (Petroleo)
+                    case "PR08":
+                        if (dPetroleoDensidad <= 0 || dPetroleoDensidad > 80)
+                            return BadRequest("El producto '" + sNProducto + "' tiene un Densidad MENOR a 0.1 o MAYOR a 80 (ProductSat)");
+
+                        if (dPetrolePorcenAzufre <= 0 || dPetrolePorcenAzufre > 10)
+                            return BadRequest("El producto '" + sNProducto + "' tiene un Porcentaje de Azufre MENOR a 0.1 o MAYOR a 10 (ProducSat)");
+
+                        objProductoDato.DensidadDePetroleo = Math.Round(dPetroleoDensidad, 1);
+                        objProductoDato.ComposDeAzufreEnPetroleo = Math.Round(dPetrolePorcenAzufre, 1);
+                        break;
                         #endregion
                 }
+
+                #region Composición del Producto.
+                //if(sCaracterValor.Equals(CVolJSonDTO.CARACTER_CONTRATISTA) || sCaracterValor.Equals(CVolJSonDTO.CARACTER_ASIGNATARIO))
+                if (sClaveProducto.Equals("PR09") || sClaveProducto.Equals("PR10"))
+                {
+                    List<CVolJSonDTO.stGasNaturalOCondensadosDatos> lstGasComponentes = new List<CVolJSonDTO.stGasNaturalOCondensadosDatos>();
+
+                    #region Consulta: Composición del Producto.
+                    var vQComposicionProd = (from c in objContext.ProductCompositions
+                                             where c.ProductId == Guid.Parse("7ECC6829-BDEA-4882-8939-DF65EFE9B6C2")
+                                             select new
+                                             {
+                                                 TipoCompuesto = c.JsonTipoComposicionId,
+                                                 FraccionMolar = c.MolarFraction,
+                                                 PoderCalorifico = c.CalorificPower
+                                             });
+                    #endregion
+
+                    #region Lectura: Composición del Producto.
+                    if (vQComposicionProd != null)
+                    {
+                        foreach (var vComposicionDatos in vQComposicionProd)
+                        {
+                            #region Composición del Producto: Asignamos Valores.
+                            Decimal dFraccionMolar = vComposicionDatos.FraccionMolar.GetValueOrDefault(),
+                                    dPoderCalorifico = vComposicionDatos.PoderCalorifico.GetValueOrDefault();
+                            String sTipoCompuesto = vComposicionDatos.TipoCompuesto;
+                            #endregion
+
+                            #region Composición del Producto: Validamos Valores.
+                            if (String.IsNullOrEmpty(sTipoCompuesto))
+                                return BadRequest("El producto '" + sNProducto + "' no tiene Tipo de Compuesto (ProductComposition).");
+
+                            if (dFraccionMolar >= 1)
+                                return BadRequest("El producto '" + sNProducto + "' tiene Fraccion Molar MAYOR a 0.999 (ProductComposition).");
+
+                            if (dPoderCalorifico <= 0 || dPoderCalorifico > 1500000)
+                                return BadRequest("El producto '" + sNProducto + "' tiene Poder Calorifico MENOR a 0.001 o MAYOR a 1500000 (ProductComposition).");
+                            #endregion
+
+                            #region Composición del Producto: Llenado de Estructura.
+                            lstGasComponentes.Add(new CVolJSonDTO.stGasNaturalOCondensadosDatos
+                            {
+                                ComposGasNaturalOCondensados = sTipoCompuesto,
+                                FraccionMolar = Math.Round(dFraccionMolar, 3),
+                                PoderCalorifico = Math.Round(dPoderCalorifico, 3)
+                            });
+                            #endregion
+                        }
+                    }
+                    else
+                        return BadRequest("El Producto '" + sNProducto + "' no contiene definidos sus compuestos. (Compuesto, FraccionMolar, PoderCalorifico)");
+                    #endregion
+
+                    objProductoDato.GasNaturalOCondensados = lstGasComponentes;
+                }
+                #endregion
 
                 if (objTipoDistribucion == CVolJSonDTO.eTipoDistribucion.Ductos)
                 {
                     List<CVolJSonDTO.stDuctoDatos> lstDuctosNew = new List<CVolJSonDTO.stDuctoDatos>();
                     objProductoDato.Ducto = lstDuctosNew;
                 }
-
-                //objCVolDatos.Producto.Add(objProductoDato);
-                //dictProductosExis.Add(sNProducto, oSubClaveProducto.ToString());
                 #endregion
 
                 #region Tipo de Reporte.
@@ -445,6 +537,7 @@ namespace APIControlNet.Controllers
                             });
                         }
 
+                        #region JSON Día: Estación.
                         if (viReporteEstacion)
                         {
                             #region Tanque Datos.
@@ -523,7 +616,7 @@ namespace APIControlNet.Controllers
                                          iTanqueIncertidumbre = vTanqDatos.PorcentIncertMed;
                                     String sDescripcionSAT = vTanqDatos.Nombre;
                                     DateTime dtTanqueFCalibracion = Convert.ToDateTime(vTanqDatos.FechaCalibracion);
-                                    String sTanqueUniMed = "UM03",
+                                    String sTanqueUniMed = vProd.UnidadMedida,//"UM03",
                                            sTanqueClaveSAT = vTanqDatos.Tipo,
                                            sTanqueStatus = vTanqDatos.Estatus,
                                            sTanqueTipoMedicion = vTanqDatos.TipoMedicion,
@@ -690,7 +783,7 @@ namespace APIControlNet.Controllers
                                     #region Consulta: Recepciones (Compras).
                                     var vQRecepciones = (dynamic)null;
 
-                                    if (viGenerarComplemento && bCompRecep)
+                                    if (bCompRecep)
                                         #region Consulta para Complemento.
                                         vQRecepciones = (from c in objContext.InventoryIns
                                                          join cd in objContext.InventoryInDocuments on new { f1 = c.StoreId, f2 = c.InventoryInId } equals new { f1 = cd.StoreId, f2 = cd.InventoryInId } into rf
@@ -799,7 +892,7 @@ namespace APIControlNet.Controllers
 
                                             #region Complemento.
                                             object oCompRecepDato = null;
-                                            if (viGenerarComplemento && bCompRecep)
+                                            if (bCompRecep)
                                             {
                                                 CVolJSonDTO.stComplementoRecepcionDato objComplementoDato = new CVolJSonDTO.stComplementoRecepcionDato();
 
@@ -1014,7 +1107,6 @@ namespace APIControlNet.Controllers
                             #endregion
 
                             #region Dispensarios Datos.
-                            //List<int> lstDispensariosExist = new List<int>();
                             List<CVolJSonDTO.stDispensarioDato> lstDispensario = new List<CVolJSonDTO.stDispensarioDato>();
                             CVolJSonDTO.stDispensarioDato objDispensarioDatos;
 
@@ -1161,7 +1253,7 @@ namespace APIControlNet.Controllers
                                             #region Complemento: Entrega Manguera.
                                             object oEntComplDato = null;
 
-                                            if (viGenerarComplemento && bCompEntregas)
+                                            if (bCompEntregas)
                                                 #region Aclaracion.
                                                 if (sClienteConsignacion.Equals("Y"))
                                                 {
@@ -1239,15 +1331,2031 @@ namespace APIControlNet.Controllers
                             dictDailySummary[vProd.ProductoID].InventoryDifference = dictDailySummary[vProd.ProductoID].EndInventoryQuantity - dictDailySummary[vProd.ProductoID].TheoryInventoryQuantity;
                             dictDailySummary[vProd.ProductoID].InventoryDifferencePercentage = dictDailySummary[vProd.ProductoID].InventoryDifference / dictDailySummary[vProd.ProductoID].SaleQuantity;
                         }
+                        #endregion
+
+                        #region JSON Día: Autotanques y Ductos.
                         else
                         {
+                            #region Consulta: Total de Recepciones y Entregas del Producto.
+                            var vQTRecepEntProd = (from p in objContext.ProductStores
+                                                   where p.StoreId == viNEstacion &&
+                                                         p.ProductId == vProd.ProductoID
+                                                   select new
+                                                   {
+                                                       idProducto = p.ProductId,
+                                                       TotalRecepciones = (from r in objContext.InventoryIns
+                                                                           where r.StoreId == p.StoreId &&
+                                                                                 r.ProductId == p.ProductId &&
+                                                                                 r.EndDate >= dtPerDateIni &&
+                                                                                 r.EndDate <= dtPerDateEnd
+                                                                           select r.InventoryInId).Count(),
+                                                       //TotalEntregas = (from eh in objContext.SaleOrders
+                                                       //                 join ed in objContext.SaleSuborders on eh.SaleOrderId equals ed.SaleOrderId
+                                                       //                 where eh.StoreId == p.StoreId &&
+                                                       //                       eh.Date >= dtPerDateIni &&
+                                                       //                       eh.Date <= dtPerDateEnd &&
+                                                       //                       ed.ProductId == p.ProductId
+                                                       //                 select eh.SaleOrderId).Count()
+                                                       TotalEntregas = (from eh in objContext.InventoryInSaleOrders // <*DUDA*>
+                                                                        where eh.StoreId == p.StoreId &&
+                                                                              eh.ProductId == p.ProductId &&
+                                                                              eh.EndDate >= dtPerDateIni &&
+                                                                              eh.EndDate <= dtPerDateEnd
+                                                                        select eh.InventoryInNumber).Count()
+                                                   });
+                            #endregion
 
+                            #region Lectura: Total de Recepciones y Entregas del Producto.
+                            if (vQTRecepEntProd != null)
+                                foreach (var vRecepEntDatos in vQTRecepEntProd)
+                                {
+                                    #region Recepciones y Entregas: Asignamos Valores.
+                                    int iTotalRecepProd = vRecepEntDatos.TotalRecepciones,
+                                        iTotalEntProd = vRecepEntDatos.TotalEntregas;
+                                    #endregion
+
+                                    if (iTotalRecepProd > 0 || iTotalEntProd > 0)
+                                    {
+                                        List<CVolJSonDTO.stDuctoDatos> lstProdDuctos = new List<CVolJSonDTO.stDuctoDatos>();
+                                        List<CVolJSonDTO.stTanqueDatos> lstProdAutoTanques = new List<CVolJSonDTO.stTanqueDatos>();
+
+                                        #region Recepciones: Ducto y AutoTanque.
+                                        if (iTotalRecepProd > 0)
+                                        {
+                                            #region Consulta: Recepcion Datos.
+                                            var vQRecepDato = (from r in objContext.InventoryIns
+                                                               join d in objContext.Tanks on new { f1 = r.StoreId, f2 = r.TankIdi } equals new { f1 = d.StoreId, f2 = d.TankIdi }
+                                                               join rd in objContext.InventoryInDocuments on r.InventoryInId equals rd.InventoryInId
+                                                               where r.StoreId == viNEstacion &&
+                                                                     r.EndDate >= dtPerDateIni && r.EndDate <= dtPerDateEnd &&
+                                                                     r.ProductId == vProd.ProductoID
+                                                               select new
+                                                               {
+                                                                   GNumeroRecepcion = r.InventoryInId,
+                                                                   TipoDucto = d.SatTypeMediumStorage,
+                                                                   TipoTanqueJS = d.SatTankType,
+                                                                   NumeroDucto = r.TankIdi,
+                                                                   NumeroRecepcion = r.InventoryInNumber,
+                                                                   VolumenPuntoEntrada = r.StartVolume,
+                                                                   VolumenRecepcion = r.Volume,
+                                                                   VolumenFinal = r.EndVolume,
+                                                                   Temperatura = r.EndTemperature,
+                                                                   PresionAbsoluta = r.AbsolutePressure,
+                                                                   FechaYHoraInicioRecepcion = r.StartDate,
+                                                                   FechaYHoraFinalRecepcion = r.EndDate,
+                                                                   Precio = rd.Price,
+                                                                   Importe = rd.Amount,
+                                                                   TransporteID = rd.SupplierTransportRegisterId,
+                                                                   PedimentoID = rd.PetitionCustomsId
+                                                               });
+                                            #endregion
+
+                                            #region Lectura: Recepciones.
+                                            if (vQRecepDato != null)
+                                                foreach (var vRecepDatos in vQRecepDato)
+                                                {
+                                                    #region Recepcion: Asignamos Valores.
+                                                    int iRecepNTanque = vRecepDatos.NumeroDucto,
+                                                        iNRecepcion = vRecepDatos.NumeroRecepcion.GetValueOrDefault();
+                                                    Decimal dRecepVolPuntoEntrada = vRecepDatos.VolumenPuntoEntrada.GetValueOrDefault(),
+                                                            dRecepVolRecepcion = vRecepDatos.VolumenRecepcion.GetValueOrDefault(),
+                                                            dRecepVolFinal = vRecepDatos.VolumenFinal.GetValueOrDefault(),
+                                                            dRecepTemperatura = vRecepDatos.Temperatura.GetValueOrDefault(),
+                                                            dRecepPresionAbs = vRecepDatos.PresionAbsoluta.GetValueOrDefault(),
+                                                            dRecepPrecio = vRecepDatos.Precio.GetValueOrDefault(),
+                                                            dRecepImporte = vRecepDatos.Importe.GetValueOrDefault();
+                                                    DateTime dtRecepFIni = Convert.ToDateTime(vRecepDatos.FechaYHoraInicioRecepcion),
+                                                             dtRecepFFin = Convert.ToDateTime(vRecepDatos.FechaYHoraFinalRecepcion);
+                                                    String sTipoMedicion = vRecepDatos.TipoDucto.Trim(),
+                                                           sRecepUniMed = vProd.UnidadMedida;
+                                                    Guid gNRecepcionID = Guid.Parse(vRecepDatos.GNumeroRecepcion.ToString()),
+                                                         gTransporteID = Guid.Parse(vRecepDatos.TransporteID.ToString()),
+                                                         gPedimentoID = Guid.Parse(vRecepDatos.PedimentoID.ToString());
+                                                    #endregion
+
+                                                    // Tipo: Ductos | AutoTanques
+                                                    switch (objTipoDistribucion)
+                                                    {
+                                                        #region Ductos.
+                                                        case CVolJSonDTO.eTipoDistribucion.Ductos:
+                                                            if (String.IsNullOrEmpty(sTipoMedicion))
+                                                                return BadRequest("El Ducto '" + iRecepNTanque + "' no contiene la Tipo (tb:Tank)");
+
+                                                            String sClaveDucto = "DUC-" + sTipoMedicion + "-" + iRecepNTanque.ToString("0000");
+
+                                                            #region Datos Ducto.
+                                                            int iIdxDucto = -1;
+                                                            iIdxDucto = lstProdDuctos.FindIndex(d => d.ClaveIdentificacionDucto.Equals(sClaveDucto));
+
+                                                            // Al no existir datos del Ducto consultamos la informacion par agregarla
+                                                            if (iIdxDucto < 0)
+                                                            {
+                                                                #region Consulta: Ducto Datos.
+                                                                var vQDuctoDatos = (from d in objContext.Tanks
+                                                                                    where d.StoreId == viNEstacion &&
+                                                                                          d.TankIdi == iRecepNTanque
+                                                                                    select new
+                                                                                    {
+                                                                                        NumeroDucto = d.TankIdi,
+                                                                                        ClaveSistemaMedicion = d.SatTypeMediumStorage,
+                                                                                        Descripcion = d.Name,
+                                                                                        Diametro = d.DiameterOrWidth,
+                                                                                        VigenciaCalibracion = d.SatDateCalibration,
+                                                                                        IncertidumbreMedicion = (d.SatPercentageUncertaintyMeasurement ?? 0),
+                                                                                        UnidadMedida = "UM03",
+                                                                                        Volumen = 0
+                                                                                    });
+                                                                #endregion
+
+                                                                #region Lectura: Ducto Datos.
+                                                                if (vQDuctoDatos != null)
+                                                                    foreach (var vDuctoDatos in vQDuctoDatos)
+                                                                    {
+                                                                        #region Ducto Datos: Asignamos Valores.
+                                                                        int iDuctoNMedidor = vDuctoDatos.NumeroDucto;
+                                                                        Decimal dDuctoMedIncertidumbre = vDuctoDatos.IncertidumbreMedicion;
+                                                                        DateTime dtDuctoMedVigencia = Convert.ToDateTime(vDuctoDatos.VigenciaCalibracion);
+                                                                        String sDuctoMedClave = vDuctoDatos.ClaveSistemaMedicion,
+                                                                               sDuctoDescripcion = vDuctoDatos.Descripcion,
+                                                                               sDuctoUnidadMedida = vDuctoDatos.UnidadMedida;
+                                                                        Decimal dDuctoDiametro = vDuctoDatos.Diametro.GetValueOrDefault();
+                                                                        //dDuctoVolumen = vDuctoDatos.Volumen;
+                                                                        #endregion
+
+                                                                        #region Ducto Datos: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sDuctoDescripcion))
+                                                                            return BadRequest("El Ducto '" + iRecepNTanque + "' no contiene la Descripción (tb:Tank)");
+                                                                        else if (sDuctoDescripcion.Length < 2 || sDuctoDescripcion.Length > 250)
+                                                                            return BadRequest("El Ducto '" + iRecepNTanque + "' contiene una Descripción menor a 2 o mayor a 250 caracteres (tb:Tank)");
+
+                                                                        if (dDuctoDiametro < 1 || dDuctoDiametro > 100)
+                                                                            return BadRequest("El Ducto '" + iRecepNTanque + "' contiene un diametro menor a 1 o mayor a 100 (tb:Tank)");
+                                                                        #endregion
+
+                                                                        #region Ducto Medidor Datos: Llenado de Estructura.
+                                                                        List<CVolJSonDTO.stDuctoMedicionDato> lstDuctMedidores = new List<CVolJSonDTO.stDuctoMedicionDato>();
+
+                                                                        lstDuctMedidores.Add(new CVolJSonDTO.stDuctoMedicionDato
+                                                                        {
+                                                                            SistemaMedicionDucto = "SMD-DUC-" + sDuctoMedClave + "-" + iDuctoNMedidor.ToString("0000"),
+                                                                            LocalizODescripSistMedicionDucto = sDuctoDescripcion,
+                                                                            IncertidumbreMedicionSistMedicionDucto = Math.Round(dDuctoMedIncertidumbre, 3),
+                                                                            VigenciaCalibracionSistMedicionDucto = dtDuctoMedVigencia.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                        });
+
+                                                                        if (lstDuctMedidores.Count < 0)
+                                                                            return BadRequest("El Ducto '" + iRecepNTanque + "' no contiene medidores.");
+                                                                        #endregion
+
+                                                                        CVolJSonDTO.stRecepcionDato objRecepRecepciones = new CVolJSonDTO.stRecepcionDato();
+                                                                        CVolJSonDTO.stEntregaDato objRecepEntrega = new CVolJSonDTO.stEntregaDato();
+
+                                                                        lstProdDuctos.Add(new CVolJSonDTO.stDuctoDatos
+                                                                        {
+                                                                            ClaveIdentificacionDucto = sClaveDucto,
+                                                                            DescripcionDucto = sDuctoDescripcion,
+                                                                            DiametroDucto = Math.Round(dDuctoDiametro, 3),
+                                                                            Medidores = lstDuctMedidores,
+                                                                            Recepciones = objRecepRecepciones,
+                                                                            ENTREGAS = objRecepEntrega
+                                                                        });
+                                                                        iTotalDuctos++;
+                                                                    }
+                                                                #endregion
+
+                                                                iIdxDucto = lstProdDuctos.FindIndex(d => d.ClaveIdentificacionDucto.Equals(sClaveDucto));
+                                                            }
+                                                            #endregion
+
+                                                            #region Agregamos la Recepcion.
+                                                            List<CVolJSonDTO.stDuctoRecepcionIndividualDato> lstDuctoRecepciones = new List<CVolJSonDTO.stDuctoRecepcionIndividualDato>();
+
+                                                            CVolJSonDTO.stDuctoDatos objProdDucto = lstProdDuctos[iIdxDucto];
+                                                            CVolJSonDTO.stRecepcionDato objProdDucRecepciones = objProdDucto.Recepciones;
+                                                            objProdDucRecepciones.TotalRecepciones++;
+                                                            objProdDucRecepciones.TotalDocumentos++;
+
+                                                            if (objProdDucRecepciones.SumaCompras == null)
+                                                                objProdDucRecepciones.SumaCompras = dRecepImporte;
+                                                            else
+                                                                objProdDucRecepciones.SumaCompras = dRecepImporte + (Decimal)objProdDucRecepciones.SumaCompras;
+
+                                                            #region Suma Volumen Recepcion.
+                                                            CVolJSonDTO.stVolumenDato objSumVolRecepcionDato = new CVolJSonDTO.stVolumenDato();
+                                                            if (objProdDucRecepciones.SumaVolumenRecepcion == null)
+                                                            {
+                                                                objSumVolRecepcionDato.UnidadDeMedida = "UM03";
+                                                                objSumVolRecepcionDato.ValorNumerico = dRecepVolRecepcion;
+                                                            }
+                                                            else
+                                                            {
+                                                                objSumVolRecepcionDato = (CVolJSonDTO.stVolumenDato)objProdDucRecepciones.SumaVolumenRecepcion;
+                                                                objSumVolRecepcionDato.ValorNumerico = dRecepVolRecepcion + (Decimal)objSumVolRecepcionDato.ValorNumerico;
+                                                            }
+
+                                                            objProdDucRecepciones.SumaVolumenRecepcion = objSumVolRecepcionDato;
+                                                            #endregion
+
+                                                            if (objProdDucRecepciones.Recepcion == null)
+                                                                lstDuctoRecepciones = new List<CVolJSonDTO.stDuctoRecepcionIndividualDato>();
+                                                            else
+                                                                lstDuctoRecepciones = (List<CVolJSonDTO.stDuctoRecepcionIndividualDato>)objProdDucRecepciones.Recepcion;
+
+                                                            #region Volumen Punto Entrada.
+                                                            CVolJSonDTO.stVolumenDato objRecepVolPuntoEnt = new CVolJSonDTO.stVolumenDato();
+                                                            objRecepVolPuntoEnt.UnidadDeMedida = "UM03";
+                                                            objRecepVolPuntoEnt.ValorNumerico = Math.Round(dRecepVolPuntoEntrada, 3);
+                                                            #endregion
+
+                                                            #region Volumen Recepcion.
+                                                            CVolJSonDTO.stVolumenDato objRecepVolRecepcion = new CVolJSonDTO.stVolumenDato();
+                                                            objRecepVolRecepcion.UnidadDeMedida = "UM03";
+                                                            objRecepVolRecepcion.ValorNumerico = Math.Round(dRecepVolRecepcion, 3);
+                                                            #endregion
+
+                                                            lstDuctoRecepciones.Add(new CVolJSonDTO.stDuctoRecepcionIndividualDato
+                                                            {
+                                                                NumeroDeRegistro = iNRecepcion,
+                                                                VolumenPuntoEntrada = objRecepVolPuntoEnt,
+                                                                VolumenRecepcion = objRecepVolRecepcion,
+                                                                Temperatura = Math.Round(dRecepTemperatura, 3),
+                                                                PresionAbsoluta = Math.Round(dRecepPresionAbs, 3),
+                                                                FechaYHoraInicioRecepcion = dtRecepFIni.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                FechaYHoraFinalRecepcion = dtRecepFFin.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00"
+                                                            });
+                                                            #endregion
+
+                                                            if (lstDuctoRecepciones.Count > 0)
+                                                                objProdDucRecepciones.Recepcion = lstDuctoRecepciones;
+
+                                                            objProdDucto.Recepciones = objProdDucRecepciones;
+                                                            lstProdDuctos[iIdxDucto] = objProdDucto;
+
+                                                            objProductoDato.Ducto = lstProdDuctos;
+                                                            break;
+                                                        #endregion
+
+                                                        #region AutoTanque.
+                                                        case CVolJSonDTO.eTipoDistribucion.Autotanques:
+                                                            CVolJSonDTO.stTanqueDatos objAutoTanqueDatos;
+
+                                                            if (String.IsNullOrEmpty(sTipoMedicion))
+                                                                return BadRequest("El AutoTanque '" + iRecepNTanque.ToString() + "' no contiene la Tipo de Medición (tb:Tank)");
+
+                                                            String sClaveAutoTanq = sTipoMedicion + "-" + sNomClaveInstalacion + "-" + iRecepNTanque.ToString("0000");
+
+                                                            #region AutoTanque Datos.
+                                                            int iIdxAutoTanq = -1;
+                                                            iIdxAutoTanq = lstProdAutoTanques.FindIndex(d => d.ClaveIdentificacionTanque.Equals(sClaveAutoTanq));
+
+                                                            // Al no existir datos del Ducto consultamos la informacion par agregarla
+                                                            if (iIdxAutoTanq < 0)
+                                                            {
+                                                                #region Agregamos los datos del AutoTanque.
+                                                                #region Consulta: AutoTanque Datos.
+                                                                var vQAutoTanqueDatos = (from a in objContext.Tanks
+                                                                                         where a.StoreId == viNEstacion &&
+                                                                                               a.TankIdi == iRecepNTanque
+                                                                                         //&& a.TankTypeId == "" //<*DUDA*> hasta que se defina el código de tipo de tanque "AutoTanque"
+                                                                                         select new
+                                                                                         {
+                                                                                             TipoTanque = a.SatTankType,
+                                                                                             Descripcion = a.Name,
+                                                                                             UnidadMedida = "UM03",
+                                                                                             CapacidadTotal = a.CapacityTotal,
+                                                                                             CapacidadOperativa = a.CapacityOperational,
+                                                                                             CapacidadUtil = a.CapacityUseful,
+                                                                                             CapacidadFondaje = a.Fondage,
+                                                                                             CapacidadGasTalon = a.CapacityGastalon,
+                                                                                             VolumenMinimoOperacion = a.CapacityMinimumOperating,
+                                                                                             EstadoTanque = a.Active,
+                                                                                             TipoSistMedicion = a.SatTypeMeasurement,
+                                                                                             LocalizODescripSistMedicion = a.SatDescriptionMeasurement,
+                                                                                             IncertidumbreMedicionSistMedicion = a.SatPercentageUncertaintyMeasurement,
+                                                                                             TipoMedioAlmacenamiento = a.SatTypeMediumStorage,
+                                                                                             VigenciaCalibracionSistMedicion = a.SatDateCalibration,
+                                                                                             RecepcionesAnt = (from r in objContext.InventoryIns
+                                                                                                               where r.StoreId == viNEstacion &&
+                                                                                                                     r.TankIdi == a.TankIdi &&
+                                                                                                                     r.EndDate >= dtPerDateIni.AddDays(-1) &&
+                                                                                                                     r.EndDate <= dtPerDateEnd.AddDays(-1) &&
+                                                                                                                     r.ProductId == vProd.ProductoID
+                                                                                                               select new { r.Volume }).Sum(r => r.Volume),
+                                                                                             EntregasAnt = (from e in objContext.SaleOrders
+                                                                                                            join ed in objContext.SaleSuborders on e.SaleOrderId equals ed.SaleOrderId
+                                                                                                            where e.StoreId == viNEstacion &&
+                                                                                                                  e.TankIdi == a.TankIdi &&
+                                                                                                                  e.Date >= dtPerDateIni.AddDays(-1) &&
+                                                                                                                  e.Date <= dtPerDateEnd.AddDays(-1) &&
+                                                                                                                  ed.ProductId == vProd.ProductoID
+                                                                                                            select new { ed.Quantity }).Sum(r => r.Quantity)
+                                                                                         });
+                                                                #endregion
+
+                                                                #region Lectura: AutoTanque Datos.
+                                                                if (vQAutoTanqueDatos != null)
+                                                                    foreach (var vAutoTanqueDatos in vQAutoTanqueDatos)
+                                                                    {
+                                                                        #region AutoTanque: Asignamos Valores.
+                                                                        int iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
+                                                                            iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
+                                                                            iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
+                                                                            iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
+                                                                            iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault(),
+                                                                            iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        String sDescripcionSAT = vAutoTanqueDatos.Descripcion;
+                                                                        DateTime dtTanqueFCalibracion = Convert.ToDateTime(vAutoTanqueDatos.VigenciaCalibracionSistMedicion);
+                                                                        String sTipoAutoTanq = vAutoTanqueDatos.TipoTanque,
+                                                                               sTanqueUniMed = vAutoTanqueDatos.UnidadMedida,
+                                                                               sTanqueTipoMedicion = vAutoTanqueDatos.TipoSistMedicion,
+                                                                               sTanqueDescMedicion = vAutoTanqueDatos.LocalizODescripSistMedicion,
+                                                                               sTanqueTipoMedAlmacenamiento = vAutoTanqueDatos.TipoMedioAlmacenamiento;
+                                                                        Boolean sTanqueStatus = vAutoTanqueDatos.EstadoTanque.GetValueOrDefault();
+                                                                        Decimal dRecepcionesAutTanqAnt = vAutoTanqueDatos.RecepcionesAnt.GetValueOrDefault(),
+                                                                                dEntregasAutTanqAnt = vAutoTanqueDatos.EntregasAnt.GetValueOrDefault();
+                                                                        #endregion
+
+                                                                        #region AutoTanque: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sDescripcionSAT))
+                                                                            return BadRequest("El AutoTanque no contiene la Descripción");
+
+                                                                        if (String.IsNullOrEmpty(sTanqueTipoMedicion))
+                                                                            return BadRequest("El AutoTanque no contiene un Tipo de Medición");
+
+                                                                        if (String.IsNullOrEmpty(sTanqueTipoMedAlmacenamiento))
+                                                                            return BadRequest("El AutoTanque no contiene un Tipo de Medio de Almacenamiento");
+                                                                        else if (sTanqueTipoMedAlmacenamiento.Equals("0"))
+                                                                            return BadRequest("El AutoTanque contiene un Tipo de Medio de Almacenamiento incorrecto '" + sTanqueTipoMedAlmacenamiento + "'");
+
+                                                                        // sTanqueDescMedicion
+                                                                        if (String.IsNullOrEmpty(sTanqueDescMedicion))
+                                                                            return BadRequest("El AutoTanque no contiene la Descripción en la Medición");
+                                                                        else if (sTanqueDescMedicion.Length < 2)
+                                                                            return BadRequest("La Descripción de la Medición debe ser minimo de 2 caracteres");
+                                                                        #endregion
+
+                                                                        #region AutoTanque: Llenado de Estructura.
+                                                                        CVolJSonDTO.stTanqueDatos objAutoTanqueNew = new CVolJSonDTO.stTanqueDatos();
+
+                                                                        objAutoTanqueNew.ClaveIdentificacionTanque = sClaveAutoTanq;
+                                                                        objAutoTanqueNew.LocalizacionYODescripcionTanque = sDescripcionSAT;
+                                                                        objAutoTanqueNew.VigenciaCalibracionTanque = dtTanqueFCalibracion.ToString("yyyy-MM-dd");
+
+                                                                        #region Capacidad Total Tanque.
+                                                                        CVolJSonDTO.stCapacidadDato objCapacidadTotalDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapacidadTotalDato.ValorNumerico = iCapTotal;
+                                                                        objCapacidadTotalDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadTotalTanque = objCapacidadTotalDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Operativa.
+                                                                        CVolJSonDTO.stCapacidadDato objCapOperativaDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapOperativaDato.ValorNumerico = iCapOperativa;
+                                                                        objCapOperativaDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadOperativaTanque = objCapOperativaDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Util.
+                                                                        CVolJSonDTO.stCapacidadDato objCapUtilDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapUtilDato.ValorNumerico = iCapUtil;
+                                                                        objCapUtilDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadUtilTanque = objCapUtilDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Fondaje.
+                                                                        CVolJSonDTO.stCapacidadDato objCapFondaje = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapFondaje.ValorNumerico = iCapFondaje;
+                                                                        objCapFondaje.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadFondajeTanque = objCapFondaje;
+                                                                        #endregion
+
+                                                                        #region Volumen Minimo Operación.
+                                                                        CVolJSonDTO.stCapacidadDato objVolMinOperDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objVolMinOperDato.ValorNumerico = iVolMinOperacion;
+                                                                        objVolMinOperDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.VolumenMinimoOperacion = objVolMinOperDato;
+                                                                        #endregion
+
+                                                                        #region Estado Tanque.
+                                                                        objAutoTanqueNew.EstadoTanque = "F";
+                                                                        if (sTanqueStatus)
+                                                                            objAutoTanqueNew.EstadoTanque = "O";
+                                                                        #endregion
+
+                                                                        #region Medición de Tanques.
+                                                                        Decimal dTanqIncertMed = 0;
+                                                                        if (iTanqueIncertidumbre > 0)
+                                                                            dTanqIncertMed = (iTanqueIncertidumbre / 100);
+
+                                                                        String sSistMedicion = "";
+                                                                        switch (sTanqueTipoMedicion)
+                                                                        {
+                                                                            case "SMD": // SMD-ETA-TQS-USP-0026.
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTanqueTipoMedAlmacenamiento + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iRecepNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+
+                                                                            case "SME": // SME-STQ-EDS-0021.
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iRecepNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+
+                                                                            default:
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iRecepNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+                                                                        }
+
+                                                                        List<CVolJSonDTO.stMedicionTanqueDato> lstMedidores = new List<CVolJSonDTO.stMedicionTanqueDato>();
+                                                                        lstMedidores.Add(new CVolJSonDTO.stMedicionTanqueDato
+                                                                        {
+                                                                            SistemaMedicionTanque = sSistMedicion,
+                                                                            LocalizODescripSistMedicionTanque = sTanqueDescMedicion,
+                                                                            VigenciaCalibracionSistMedicionTanque = dtTanqueFCalibracion.ToString("yyyy-MM-dd"),
+                                                                            IncertidumbreMedicionSistMedicionTanque = Math.Round(dTanqIncertMed, 3)
+                                                                        });
+
+                                                                        objAutoTanqueNew.Medidores = lstMedidores;
+                                                                        #endregion
+
+                                                                        #region Existencias.
+                                                                        CVolJSonDTO.stExistenciaDato objRecepExistenciaDatos = new CVolJSonDTO.stExistenciaDato();
+
+                                                                        objRecepExistenciaDatos.VolumenExistenciasAnterior = 0;
+
+                                                                        #region VolumenAcumOpsRecepcion.
+                                                                        CVolJSonDTO.stVolumenDato objRecepVolAntDato = new CVolJSonDTO.stVolumenDato();
+                                                                        objRecepVolAntDato.UnidadDeMedida = sRecepUniMed;
+                                                                        objRecepVolAntDato.ValorNumerico = Math.Round(dRecepcionesAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.VolumenAcumOpsRecepcion = objRecepVolAntDato;
+                                                                        #endregion
+
+                                                                        objRecepExistenciaDatos.HoraRecepcionAcumulado = dtFechaRegistro.ToString("HH:mm:ss") + "-" +
+                                                                                                                         iDiferenciaHora.ToString("00") + ":00";
+
+                                                                        #region VolumenAcumOpsEntrega.
+                                                                        CVolJSonDTO.stCapacidadDato objEntVolAntDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objEntVolAntDato.UnidadDeMedida = sRecepUniMed;
+                                                                        objEntVolAntDato.ValorNumerico = Math.Round(dEntregasAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.VolumenAcumOpsEntrega = objEntVolAntDato;
+                                                                        #endregion
+
+                                                                        objRecepExistenciaDatos.HoraEntregaAcumulado = dtFechaRegistro.ToString("HH:mm:ss") + "-" +
+                                                                                                                       iDiferenciaHora.ToString("00") + ":00";
+                                                                        objRecepExistenciaDatos.VolumenExistencias = Math.Round(dRecepcionesAutTanqAnt - dEntregasAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.FechaYHoraEstaMedicion = dtPerDateEnd.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00";
+                                                                        objRecepExistenciaDatos.FechaYHoraMedicionAnterior = dtPerDateIni.AddSeconds(-1).ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00";
+
+                                                                        objAutoTanqueNew.Existencias = objRecepExistenciaDatos;
+                                                                        #endregion
+
+                                                                        #region Inicializacion del Nodo: Recepciones.
+                                                                        CVolJSonDTO.stRecepcionDato objRecepcionDatoNew = new CVolJSonDTO.stRecepcionDato();
+
+                                                                        #region Suma Volumen Recepcion.
+                                                                        CVolJSonDTO.stVolumenDato objSumaVolRecepNew = new CVolJSonDTO.stVolumenDato();
+                                                                        objSumaVolRecepNew.UnidadDeMedida = sTanqueUniMed;
+                                                                        objSumaVolRecepNew.ValorNumerico = 0;
+
+                                                                        objRecepcionDatoNew.SumaVolumenRecepcion = objSumaVolRecepNew;
+                                                                        #endregion
+
+                                                                        #region Recepciones.
+                                                                        List<CVolJSonDTO.stRecepcionIndividualDato> lstRecepcionesNew = new List<CVolJSonDTO.stRecepcionIndividualDato>();
+                                                                        objRecepcionDatoNew.Recepcion = lstRecepcionesNew;
+                                                                        #endregion
+
+                                                                        objRecepcionDatoNew.SumaCompras = 0;
+                                                                        objAutoTanqueNew.Recepciones = objRecepcionDatoNew;
+                                                                        #endregion
+
+                                                                        #region Inicializacion del Nodo:Entregas.
+                                                                        CVolJSonDTO.stEntregaDato objEntregaDatoNew = new CVolJSonDTO.stEntregaDato();
+
+                                                                        #region Suma Ventas.
+                                                                        objEntregaDatoNew.SumaVentas = 0;
+                                                                        #endregion
+
+                                                                        #region Suma Volumen Entregado.
+                                                                        CVolJSonDTO.stVolumenDato objSumaVolEntregadoNew = new CVolJSonDTO.stVolumenDato();
+                                                                        objSumaVolEntregadoNew.UnidadDeMedida = sTanqueUniMed;
+                                                                        objSumaVolEntregadoNew.ValorNumerico = 0;
+
+                                                                        objEntregaDatoNew.SumaVolumenEntregado = objSumaVolEntregadoNew;
+                                                                        #endregion
+
+                                                                        #region Entregas.
+                                                                        objEntregaDatoNew.Entrega = null;
+                                                                        #endregion
+
+                                                                        objAutoTanqueNew.Entregas = objEntregaDatoNew;
+                                                                        #endregion
+
+                                                                        lstProdAutoTanques.Add(objAutoTanqueNew);
+                                                                        iTotalTanques++;
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                iIdxAutoTanq = lstProdAutoTanques.FindIndex(d => d.ClaveIdentificacionTanque.Equals(sClaveAutoTanq));
+                                                            }
+                                                            #endregion
+
+                                                            #region Agregamos la Recepcion.
+                                                            objAutoTanqueDatos = lstProdAutoTanques[iIdxAutoTanq];
+                                                            CVolJSonDTO.stRecepcionDato objAutoTanqRecepcion = objAutoTanqueDatos.Recepciones;
+                                                            List<CVolJSonDTO.stRecepcionIndividualDato> lstAutoTanqRecepciones = (List<CVolJSonDTO.stRecepcionIndividualDato>)objAutoTanqRecepcion.Recepcion;
+
+                                                            #region Volumen Inicial Dato.
+                                                            CVolJSonDTO.stCapacidadDato objRecepVolIni = new CVolJSonDTO.stCapacidadDato();
+                                                            objRecepVolIni.ValorNumerico = dRecepVolPuntoEntrada;
+                                                            objRecepVolIni.UnidadDeMedida = sRecepUniMed;
+                                                            #endregion
+
+                                                            #region Volumen Final Dato.
+                                                            CVolJSonDTO.stCapacidadDato objRecepVolFin = new CVolJSonDTO.stCapacidadDato();
+                                                            objRecepVolFin.UnidadDeMedida = sRecepUniMed;
+                                                            objRecepVolFin.ValorNumerico = dRecepVolFinal;
+                                                            #endregion
+
+                                                            #region Volumen de Recepcion.
+                                                            CVolJSonDTO.stCapacidadDato objRecepVolumen = new CVolJSonDTO.stCapacidadDato();
+                                                            objRecepVolumen.ValorNumerico = dRecepVolRecepcion;
+                                                            objRecepVolumen.UnidadDeMedida = sRecepUniMed;
+                                                            #endregion
+
+                                                            #region Complementos.
+                                                            Object oRecepcionComplemento = null;
+
+                                                            if (bCompRecep)
+                                                            {
+                                                                List<CVolJSonDTO.stComplementoDistribucion> lstRecepComplementoDistribucion = new List<CVolJSonDTO.stComplementoDistribucion>();
+                                                                List<CVolJSonDTO.stComplementoTransportista> lstRecepComplementoTransportista = new List<CVolJSonDTO.stComplementoTransportista>();
+                                                                List<CVolJSonDTO.stComplementoComercializadora> lstRecepComplementoComercializadora = new List<CVolJSonDTO.stComplementoComercializadora>();
+
+                                                                #region NODO: Nacional.
+                                                                List<CVolJSonDTO.stCompleDistNacional> lstRecepDistNacional = new List<CVolJSonDTO.stCompleDistNacional>();
+                                                                List<CVolJSonDTO.stComplementoTransNacional> lstRecepTransNacional = new List<CVolJSonDTO.stComplementoTransNacional>();
+                                                                List<CVolJSonDTO.stCompleComerNacional> lstRecepComerNacional = new List<CVolJSonDTO.stCompleComerNacional>();
+
+                                                                #region Consulta: CFDI Datos.
+                                                                var vQRecepCfdiDato = (from r in objContext.InventoryIns
+                                                                                       join rd in objContext.InventoryInDocuments on r.InventoryInId equals rd.InventoryInId
+                                                                                       join pd in objContext.SupplierFuels on new { f1 = r.StoreId, f2 = rd.SupplierFuelIdi.GetValueOrDefault() } equals new { f1 = pd.StoreId, f2 = pd.SupplierFuelIdi }
+                                                                                       join sd in objContext.SupplierTransportRegisters on rd.SupplierTransportRegisterId equals sd.SupplierTransportRegisterId into sdf
+                                                                                       from sd in sdf.DefaultIfEmpty()
+                                                                                       where r.StoreId == viNEstacion &&
+                                                                                             r.InventoryInId == gNRecepcionID
+                                                                                       select new
+                                                                                       {
+                                                                                           ClienteRFC = pd.Rfc,
+                                                                                           NombreCliente = pd.Name,
+                                                                                           NumeroPermisoCRE = pd.FuelPermission,
+                                                                                           TipoCFDI = rd.SatTipoComprobanteId,
+                                                                                           CFDI = rd.Uuid,
+                                                                                           Precio = rd.Price,
+                                                                                           PrecioVtaPublico = rd.PublicSalePrice,
+                                                                                           FechaHora = rd.Date,
+                                                                                           Volumen = rd.Volume,
+                                                                                           ContraPrestacion = (sd.AmountPerService.ToString() ?? "0"),
+                                                                                           TarifaTransporte = (sd.AmountPerFee.ToString() ?? "0"),
+                                                                                           CargoCapacidadTrans = (sd.AmountPerCapacity.ToString() ?? "0"),
+                                                                                           CargoUsoTrans = (sd.AmountPerUse.ToString() ?? "0"),
+                                                                                           CargoVolumenTrans = (sd.AmountPerVolume.ToString() ?? "0"),
+                                                                                           Descuento = (sd.AmountOfDiscount.ToString() ?? "0")
+                                                                                       });
+                                                                #endregion
+
+                                                                #region Lectura: CFDI Datos.
+                                                                if (vQRecepCfdiDato != null)
+                                                                    foreach (var vDuctoRecepDatos in vQRecepCfdiDato)
+                                                                    {
+                                                                        #region CFDI: Asignamos Valores.
+                                                                        String sNacClienteRFC = vDuctoRecepDatos.ClienteRFC,
+                                                                               sNacNombreCliente = vDuctoRecepDatos.NombreCliente,
+                                                                               sNacPermisoCRE = vDuctoRecepDatos.NumeroPermisoCRE,
+                                                                               sNacTipoCFDI = vDuctoRecepDatos.TipoCFDI,
+                                                                               sNacCFDI = vDuctoRecepDatos.CFDI.ToString(),
+                                                                               sNacUnidadMedida = vProd.UnidadMedida;
+                                                                        Decimal dNacPrecioCompra = vDuctoRecepDatos.Precio.GetValueOrDefault(),
+                                                                                dNacPrecioVtaPublico = vDuctoRecepDatos.PrecioVtaPublico.GetValueOrDefault(),
+                                                                                dNacVolumen = vDuctoRecepDatos.Volumen.GetValueOrDefault(),
+                                                                                dNacContraPrestacion = Convert.ToDecimal(vDuctoRecepDatos.ContraPrestacion),
+                                                                                dNacDescuento = Convert.ToDecimal(vDuctoRecepDatos.Descuento),
+                                                                                dNacTarifaTrans = Convert.ToDecimal(vDuctoRecepDatos.TarifaTransporte),
+                                                                                dNacCargoCapTrans = Convert.ToDecimal(vDuctoRecepDatos.CargoCapacidadTrans),
+                                                                                dNacCargoUsoTrans = Convert.ToDecimal(vDuctoRecepDatos.CargoUsoTrans),
+                                                                                dNacCargoVolTrans = Convert.ToDecimal(vDuctoRecepDatos.CargoVolumenTrans);
+                                                                        DateTime dtNacFechaHora = Convert.ToDateTime(vDuctoRecepDatos.FechaHora);
+                                                                        #endregion
+
+                                                                        #region CFDI: Validamos Valores.
+                                                                        if (!ValidarCFDI(sNacCFDI))
+                                                                            return BadRequest("La Recepción '" + iNRecepcion.ToString() + "' contiene un CFDI con formato incorrecto '" + sNacCFDI + "'.");
+
+                                                                        String sRecepMnsErrorTipoCFDI = "";
+                                                                        switch (sNacTipoCFDI.ToUpper())
+                                                                        {
+                                                                            case "INGRESO": sNacTipoCFDI = "Ingreso"; break;
+                                                                            case "EGRESO": sNacTipoCFDI = "Egreso"; break;
+                                                                            case "TRASLADO": sNacTipoCFDI = "Traslado"; break;
+                                                                            default: sRecepMnsErrorTipoCFDI = "Tipo de CFDI no valido '" + sNacTipoCFDI + "'"; break;
+                                                                        }
+
+                                                                        if (!String.IsNullOrEmpty(sRecepMnsErrorTipoCFDI))
+                                                                            return BadRequest(sRecepMnsErrorTipoCFDI);
+                                                                        #endregion
+
+                                                                        #region CFDI: Llenado de Estructura.
+                                                                        int iIdxCliente = -1;
+                                                                        switch (objTipoComplemento)
+                                                                        {
+                                                                            #region Complemento: Distribuidor.
+                                                                            case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                                iIdxCliente = lstRecepDistNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+
+                                                                                CVolJSonDTO.stCompleDistNacional objRecepDistNacionalDato;
+                                                                                if (iIdxCliente < 0)
+                                                                                {
+                                                                                    objRecepDistNacionalDato = new CVolJSonDTO.stCompleDistNacional();
+                                                                                    objRecepDistNacionalDato.RfcClienteOProveedor = sNacClienteRFC;
+                                                                                    objRecepDistNacionalDato.NombreClienteOProveedor = sNacNombreCliente;
+
+                                                                                    if (!String.IsNullOrEmpty(sNacPermisoCRE))
+                                                                                        objRecepDistNacionalDato.PermisoClienteOProveedor = sNacPermisoCRE;
+
+                                                                                    List<CVolJSonDTO.stCompleDistNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleDistNacionalCfdis>();
+                                                                                    objRecepDistNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                    lstRecepDistNacional.Add(objRecepDistNacionalDato);
+                                                                                    iIdxCliente = lstRecepDistNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+                                                                                }
+
+                                                                                #region CFDI Datos.
+                                                                                CVolJSonDTO.stCompleDistNacionalCfdis objDistCFDI_Dato = new CVolJSonDTO.stCompleDistNacionalCfdis();
+                                                                                objDistCFDI_Dato.Cfdi = sNacCFDI;
+                                                                                objDistCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                                objDistCFDI_Dato.PrecioVentaOCompraOContrap = Math.Round(dNacPrecioCompra, 3);
+                                                                                objDistCFDI_Dato.FechaYHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                         iDiferenciaHora.ToString("00") + ":00";
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                                objVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                                objDistCFDI_Dato.VolumenDocumentado = objVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objRecepDistNacionalDato = (CVolJSonDTO.stCompleDistNacional)lstRecepDistNacional[iIdxCliente];
+                                                                                List<CVolJSonDTO.stCompleDistNacionalCfdis> lstCfDIs = (List<CVolJSonDTO.stCompleDistNacionalCfdis>)objRecepDistNacionalDato.CFDIs;
+                                                                                lstCfDIs.Add(objDistCFDI_Dato);
+                                                                                objRecepDistNacionalDato.CFDIs = lstCfDIs;
+                                                                                lstRecepDistNacional[iIdxCliente] = objRecepDistNacionalDato;
+                                                                                break;
+                                                                            #endregion
+
+                                                                            #region Complemento: Transportista.
+                                                                            case CVolJSonDTO.eTipoComplemento.Transportista: break;
+                                                                            #endregion
+
+                                                                            #region Complemento: Comercializadora.
+                                                                            case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                                iIdxCliente = lstRecepComerNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+
+                                                                                CVolJSonDTO.stCompleComerNacional objRecepComerNacionalDato;
+                                                                                if (iIdxCliente < 0)
+                                                                                {
+                                                                                    objRecepComerNacionalDato = new CVolJSonDTO.stCompleComerNacional();
+                                                                                    objRecepComerNacionalDato.RfcClienteOProveedor = sNacClienteRFC;
+                                                                                    objRecepComerNacionalDato.NombreClienteOProveedor = sNacNombreCliente;
+
+                                                                                    if (!String.IsNullOrEmpty(sNacPermisoCRE))
+                                                                                        objRecepComerNacionalDato.PermisoProveedor = sNacPermisoCRE;
+
+                                                                                    List<CVolJSonDTO.stCompleComerNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleComerNacionalCfdis>();
+                                                                                    objRecepComerNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                    lstRecepComerNacional.Add(objRecepComerNacionalDato);
+                                                                                    iIdxCliente = lstRecepComerNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+                                                                                }
+
+                                                                                #region CFDI Datos.
+                                                                                CVolJSonDTO.stCompleComerNacionalCfdis objComerCFDI_Dato = new CVolJSonDTO.stCompleComerNacionalCfdis();
+                                                                                objComerCFDI_Dato.Cfdi = sNacCFDI;
+                                                                                objComerCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                                objComerCFDI_Dato.PrecioCompra = Math.Round(dNacPrecioCompra, 3);
+                                                                                objComerCFDI_Dato.PrecioDeVentaAlPublico = Math.Round(dNacPrecioVtaPublico, 3);
+                                                                                objComerCFDI_Dato.FechayHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                          iDiferenciaHora.ToString("00") + ":00";
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objRecepComerVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objRecepComerVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                                objRecepComerVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                                objComerCFDI_Dato.VolumenDocumentado = objRecepComerVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objRecepComerNacionalDato = (CVolJSonDTO.stCompleComerNacional)lstRecepComerNacional[iIdxCliente];
+                                                                                List<CVolJSonDTO.stCompleComerNacionalCfdis> lstCompRecepCfDIs = (List<CVolJSonDTO.stCompleComerNacionalCfdis>)objRecepComerNacionalDato.CFDIs;
+                                                                                lstCompRecepCfDIs.Add(objComerCFDI_Dato);
+                                                                                objRecepComerNacionalDato.CFDIs = lstCompRecepCfDIs;
+                                                                                lstRecepComerNacional[iIdxCliente] = objRecepComerNacionalDato;
+                                                                                break;
+                                                                                #endregion
+                                                                        }
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                #region NODO: Extranjero.
+                                                                List<CVolJSonDTO.stCompleDistExtranjero> lstRecepDistExtranjero = new List<CVolJSonDTO.stCompleDistExtranjero>();
+                                                                List<CVolJSonDTO.stCompleComerExtranjero> lstRecepComerExtranjero = new List<CVolJSonDTO.stCompleComerExtranjero>();
+
+                                                                #region Consulta: Pedimento Datos.
+                                                                var vQRecepPedimentoDato = (from p in objContext.PetitionCustoms
+                                                                                            join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                                            where p.PetitionCustomsId == gPedimentoID
+                                                                                            select new
+                                                                                            {
+                                                                                                ClavePermisoImportOExport = p.KeyOfImportationExportation,
+                                                                                                PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
+                                                                                                Pais = (p.SatPaisId ?? String.Empty),
+                                                                                                MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                                                ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
+                                                                                                Incoterms = (p.Incoterms ?? String.Empty),
+                                                                                                PrecioDeImportOExport = p.AmountOfImportationExportation,
+                                                                                                Volumen = p.QuantityDocumented,
+                                                                                                UnidadMedida = (p.JsonClaveUnidadMedidadId ?? "UM03")
+                                                                                            });
+                                                                #endregion
+
+                                                                #region Lectura: Pedimentos.
+                                                                if (vQRecepPedimentoDato != null)
+                                                                    foreach (var vPedimentoDatos in vQRecepPedimentoDato)
+                                                                    {
+                                                                        #region Pedimento Datos: Asignamos Valores.
+                                                                        String sExtClavePermiso = vPedimentoDatos.ClavePermisoImportOExport,
+                                                                               sExtPais = vPedimentoDatos.Pais,
+                                                                               sExtClavePedimento = vPedimentoDatos.ClavePedimento,
+                                                                               sExtIncoterms = vPedimentoDatos.Incoterms,
+                                                                               sExtUnidadMedida = vPedimentoDatos.UnidadMedida;
+                                                                        int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDatos.PuntoInternacionOExtracccion),
+                                                                            iExtMedioIngOSal = Convert.ToInt32(vPedimentoDatos.MedioIngresoOSalida);
+                                                                        Decimal dExtImporte = vPedimentoDatos.PrecioDeImportOExport,
+                                                                                dExtVolumen = vPedimentoDatos.Volumen;
+                                                                        #endregion
+
+                                                                        #region Pedimento Datos: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sExtClavePermiso))
+                                                                            return BadRequest("No se encontro el dato 'ClavePermiso' del Pedimento de Recepción.");
+
+                                                                        if (String.IsNullOrEmpty(sExtPais))
+                                                                            return BadRequest("No se encontro el dato 'Pais' del Pedimento de Recepción.");
+
+                                                                        if (String.IsNullOrEmpty(sExtClavePedimento))
+                                                                            return BadRequest("No se encontro el dato 'ClavePedimento' del Pedimento de Recepción.");
+
+                                                                        if (String.IsNullOrEmpty(sExtIncoterms))
+                                                                            return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Recepción.");
+                                                                        #endregion
+
+                                                                        #region Pedimento Datos: Llenado de Estructura.
+                                                                        int iIdxPermiso = -1;
+                                                                        switch (objTipoComplemento)
+                                                                        {
+                                                                            #region Distribucion.
+                                                                            case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                                iIdxPermiso = lstRecepDistExtranjero.FindIndex(e => e.PermisoImportacionOExportacion.Equals(sExtClavePermiso));
+
+                                                                                CVolJSonDTO.stCompleDistExtranjero objRecepDistExtranjeroDato;
+                                                                                if (iIdxPermiso < 0)
+                                                                                {
+                                                                                    objRecepDistExtranjeroDato = new CVolJSonDTO.stCompleDistExtranjero();
+                                                                                    objRecepDistExtranjeroDato.PermisoImportacionOExportacion = sExtClavePermiso;
+                                                                                    List<CVolJSonDTO.stCompleDistExtranjeroPedimentos> lstPedimentosNew = new List<CVolJSonDTO.stCompleDistExtranjeroPedimentos>();
+                                                                                    objRecepDistExtranjeroDato.Pedimentos = lstPedimentosNew;
+
+                                                                                    lstRecepDistExtranjero.Add(objRecepDistExtranjeroDato);
+                                                                                    iIdxPermiso = lstRecepDistExtranjero.FindIndex(e => e.PermisoImportacionOExportacion.Equals(sExtClavePermiso));
+                                                                                }
+
+                                                                                #region Pedimento Datos.
+                                                                                CVolJSonDTO.stCompleDistExtranjeroPedimentos objRecepDistPedimentoDato = new CVolJSonDTO.stCompleDistExtranjeroPedimentos();
+                                                                                objRecepDistPedimentoDato.PuntoDeInternacionOExtraccion = iExtPuntoInterOExtra.ToString();
+                                                                                objRecepDistPedimentoDato.PaisOrigenODestino = sExtPais;
+                                                                                objRecepDistPedimentoDato.MedioDeTransEntraOSaleAduana = iExtMedioIngOSal.ToString();
+                                                                                objRecepDistPedimentoDato.Incoterms = sExtIncoterms;
+                                                                                objRecepDistPedimentoDato.PrecioDeImportacionOExportacion = Math.Round(dExtImporte, 3);
+                                                                                objRecepDistPedimentoDato.PedimentoAduanal = sExtClavePedimento;
+
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objVolumenDocumentado.ValorNumerico = Math.Round(dExtVolumen, 3);
+                                                                                objVolumenDocumentado.UnidadDeMedida = sExtUnidadMedida;
+
+                                                                                objRecepDistPedimentoDato.VolumenDocumentado = objVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objRecepDistExtranjeroDato = (CVolJSonDTO.stCompleDistExtranjero)lstRecepDistExtranjero[iIdxPermiso];
+                                                                                List<CVolJSonDTO.stCompleDistExtranjeroPedimentos> lstRecepDistPedimentos = (List<CVolJSonDTO.stCompleDistExtranjeroPedimentos>)objRecepDistExtranjeroDato.Pedimentos;
+                                                                                lstRecepDistPedimentos.Add(objRecepDistPedimentoDato);
+                                                                                objRecepDistExtranjeroDato.Pedimentos = lstRecepDistPedimentos;
+                                                                                lstRecepDistExtranjero[iIdxPermiso] = objRecepDistExtranjeroDato;
+                                                                                break;
+                                                                            #endregion
+
+                                                                            #region Comercializadora.
+                                                                            case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                                iIdxPermiso = lstRecepComerExtranjero.FindIndex(e => e.PermisoImportacion.Equals(sExtClavePermiso));
+
+                                                                                CVolJSonDTO.stCompleComerExtranjero objRecepComerExtranjeroDato;
+                                                                                if (iIdxPermiso < 0)
+                                                                                {
+                                                                                    objRecepComerExtranjeroDato = new CVolJSonDTO.stCompleComerExtranjero();
+                                                                                    objRecepComerExtranjeroDato.PermisoImportacion = sExtClavePermiso;
+                                                                                    List<CVolJSonDTO.stCompleComerExtranjeroPedimentos> lstPedimentosNew = new List<CVolJSonDTO.stCompleComerExtranjeroPedimentos>();
+                                                                                    objRecepComerExtranjeroDato.Pedimentos = lstPedimentosNew;
+
+                                                                                    lstRecepComerExtranjero.Add(objRecepComerExtranjeroDato);
+                                                                                    iIdxPermiso = lstRecepComerExtranjero.FindIndex(e => e.PermisoImportacion.Equals(sExtClavePermiso));
+                                                                                }
+
+                                                                                #region Pedimento Datos.
+                                                                                CVolJSonDTO.stCompleComerExtranjeroPedimentos objRecepComerPedimentoDato = new CVolJSonDTO.stCompleComerExtranjeroPedimentos();
+                                                                                objRecepComerPedimentoDato.PuntoDeInternacion = iExtPuntoInterOExtra;
+                                                                                objRecepComerPedimentoDato.PaisOrigen = sExtPais;
+                                                                                objRecepComerPedimentoDato.MedioDeTransEntraAduana = iExtMedioIngOSal;
+                                                                                objRecepComerPedimentoDato.Incoterms = sExtIncoterms;
+                                                                                objRecepComerPedimentoDato.PrecioDeImportacion = Math.Round(dExtImporte, 3);
+                                                                                objRecepComerPedimentoDato.PedimentoAduanal = sExtClavePedimento;
+
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objRecepComerVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objRecepComerVolumenDocumentado.ValorNumerico = Math.Round(dExtVolumen, 3);
+                                                                                objRecepComerVolumenDocumentado.UnidadDeMedida = sExtUnidadMedida;
+
+                                                                                objRecepComerPedimentoDato.VolumenDocumentado = objRecepComerVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objRecepComerExtranjeroDato = (CVolJSonDTO.stCompleComerExtranjero)lstRecepComerExtranjero[iIdxPermiso];
+                                                                                List<CVolJSonDTO.stCompleComerExtranjeroPedimentos> lstRecepComerPedimentos = (List<CVolJSonDTO.stCompleComerExtranjeroPedimentos>)objRecepComerExtranjeroDato.Pedimentos;
+                                                                                lstRecepComerPedimentos.Add(objRecepComerPedimentoDato);
+                                                                                objRecepComerExtranjeroDato.Pedimentos = lstRecepComerPedimentos;
+                                                                                lstRecepComerExtranjero[iIdxPermiso] = objRecepComerExtranjeroDato;
+                                                                                break;
+                                                                                #endregion
+                                                                        }
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                CVolJSonDTO.stComplementoDistribucion objRecepComplementoDistribuidor = new CVolJSonDTO.stComplementoDistribucion();
+                                                                CVolJSonDTO.stComplementoTransportista objRecepComplementoTransportista = new CVolJSonDTO.stComplementoTransportista();
+                                                                CVolJSonDTO.stComplementoComercializadora objRecepComplementoComercializadora = new CVolJSonDTO.stComplementoComercializadora();
+
+                                                                switch (objTipoComplemento)
+                                                                {
+                                                                    #region Complemento: Distribuidor.
+                                                                    case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                        objRecepComplementoDistribuidor.TipoComplemento = "Distribucion";
+
+                                                                        if (lstRecepDistNacional.Count > 0)
+                                                                            objRecepComplementoDistribuidor.Nacional = lstRecepDistNacional;
+
+                                                                        if (lstRecepDistExtranjero.Count > 0)
+                                                                            objRecepComplementoDistribuidor.Extranjero = lstRecepDistExtranjero;
+
+                                                                        if (lstRecepDistNacional.Count > 0 || lstRecepDistExtranjero.Count > 0)
+                                                                            oRecepcionComplemento = objRecepComplementoDistribuidor;
+                                                                        break;
+                                                                    #endregion
+
+                                                                    #region Complemento: Transportista.
+                                                                    case CVolJSonDTO.eTipoComplemento.Transportista:
+                                                                        objRecepComplementoTransportista.TipoComplemento = "Transporte";
+
+                                                                        if (lstRecepTransNacional.Count > 0)
+                                                                            objRecepComplementoTransportista.Nacional = lstRecepTransNacional;
+
+                                                                        if (lstRecepTransNacional.Count > 0)
+                                                                            oRecepcionComplemento = objRecepComplementoTransportista;
+                                                                        break;
+                                                                    #endregion
+
+                                                                    #region Complemento: Comercializadora.
+                                                                    case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                        objRecepComplementoComercializadora.TipoComplemento = "Comercializacion";
+
+                                                                        if (lstRecepComerNacional.Count > 0)
+                                                                            objRecepComplementoComercializadora.Nacional = lstRecepComerNacional;
+
+                                                                        if (lstRecepComerExtranjero.Count > 0)
+                                                                            objRecepComplementoComercializadora.Extranjero = lstRecepComerExtranjero;
+
+                                                                        if (lstRecepComerNacional.Count > 0 || lstRecepComerExtranjero.Count > 0)
+                                                                            oRecepcionComplemento = objRecepComplementoComercializadora;
+                                                                        break;
+                                                                        #endregion
+                                                                }
+                                                            }
+                                                            #endregion
+
+                                                            lstAutoTanqRecepciones.Add(new CVolJSonDTO.stRecepcionIndividualDato
+                                                            {
+                                                                NumeroDeRegistro = iNRecepcion,
+                                                                VolumenInicialTanque = objRecepVolIni,
+                                                                VolumenFinalTanque = dRecepVolFinal,
+                                                                VolumenRecepcion = objRecepVolumen,
+                                                                Temperatura = Math.Round(dRecepTemperatura, 3),
+                                                                PresionAbsoluta = Math.Round(dRecepPresionAbs, 3),
+                                                                Complemento = oRecepcionComplemento,
+                                                                FechaYHoraInicioRecepcion = dtRecepFIni.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                FechaYHoraFinalRecepcion = dtRecepFFin.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00"
+                                                            });
+                                                            #endregion
+
+                                                            #region Guardamos las Recepciones.
+                                                            objAutoTanqRecepcion.TotalDocumentos++;
+                                                            objAutoTanqRecepcion.TotalRecepciones++;
+
+                                                            #region Suma Compras.
+                                                            Decimal dRecepTotalCompras = Convert.ToDecimal(objAutoTanqRecepcion.SumaCompras);
+                                                            objAutoTanqRecepcion.SumaCompras = Math.Round(dRecepTotalCompras + dRecepImporte, 3);
+                                                            #endregion
+
+                                                            #region Suma Volumen Recepcion.
+                                                            CVolJSonDTO.stVolumenDato objRecepSumaVol = (CVolJSonDTO.stVolumenDato)objAutoTanqRecepcion.SumaVolumenRecepcion;
+                                                            Decimal dRecepTotalVol = Convert.ToDecimal(objRecepSumaVol.ValorNumerico);
+                                                            objRecepSumaVol.ValorNumerico = dRecepTotalVol + dRecepVolRecepcion;
+                                                            objAutoTanqRecepcion.SumaVolumenRecepcion = objRecepSumaVol;
+                                                            #endregion
+
+                                                            if (objAutoTanqRecepcion.TotalRecepciones > 0)
+                                                                objAutoTanqRecepcion.Recepcion = lstAutoTanqRecepciones;
+
+                                                            objAutoTanqueDatos.Recepciones = objAutoTanqRecepcion;
+                                                            lstProdAutoTanques[iIdxAutoTanq] = objAutoTanqueDatos;
+                                                            #endregion
+                                                            break;
+                                                            #endregion
+                                                    }
+                                                }
+                                            #endregion
+                                        }
+                                        #endregion
+
+                                        #region Entregas: Ducto y AutoTanque.
+                                        if (iTotalEntProd > 0)
+                                        {
+                                            #region Consulta: Entregas Datos.
+                                            var vQEntregasDatos = (from e in objContext.InventoryInSaleOrders
+                                                                   join a in objContext.Tanks on new { f1 = e.StoreId, f2 = e.TankIdi } equals new { f1 = a.StoreId, f2 = a.TankIdi }
+                                                                   join ed in objContext.InventoryInDocuments on e.InventoryIn equals ed.InventoryInId
+                                                                   where e.StoreId == viNEstacion &&
+                                                                         e.EndDate >= dtPerDateIni && e.EndDate <= dtPerDateEnd &&
+                                                                         e.ProductId == vProd.ProductoID
+                                                                   select new
+                                                                   {
+                                                                       TipoTanque = a.SatTankType, // eh.JsonTipoDistribucionId
+                                                                       TipoMedicion = a.SatTypeMediumStorage,
+                                                                       NumeroTanque = e.TankIdi,
+                                                                       NumeroEntrega = e.InventoryInNumber,
+                                                                       GNumeroEntrega = e.InventoryIn,
+                                                                       VolumenPuntoSalida = e.StartVolume,
+                                                                       VolumenEntregado = e.Volume,
+                                                                       VolumenFinal = e.EndVolume,
+                                                                       Temperatura = (e.EndTemperature ?? 0),
+                                                                       PresionAbsoluta = (e.AbsolutePressure ?? 0),
+                                                                       FechaYHoraInicialEntrega = e.Date,
+                                                                       FechaYHoraFinalEntrega = e.Date,
+                                                                       Precio = ed.Price,
+                                                                       Importe = ed.Amount,
+                                                                       PedimentoID = ed.PetitionCustomsId
+                                                                   });
+                                            #endregion
+
+                                            #region Lectura: Entregas.
+                                            if (vQEntregasDatos != null)
+                                                foreach (var vEntregaDatos in vQEntregasDatos)
+                                                {
+                                                    #region Entrega: Asignamos Valores.
+                                                    int iEntregaNTanque = vEntregaDatos.NumeroTanque,
+                                                        iNEntrega = vEntregaDatos.NumeroEntrega.GetValueOrDefault();
+                                                    Guid gNEntrega = vEntregaDatos.GNumeroEntrega,
+                                                         gPedimentoID = vEntregaDatos.PedimentoID.GetValueOrDefault();
+                                                    Decimal dEntregaVolPuntoSalida = vEntregaDatos.VolumenPuntoSalida.GetValueOrDefault(),
+                                                            dEntregaVolEntregado = vEntregaDatos.VolumenEntregado.GetValueOrDefault(),
+                                                            dEntregaVolFinal = vEntregaDatos.VolumenFinal.GetValueOrDefault(),
+                                                            dEntregaTemperatura = vEntregaDatos.Temperatura,
+                                                            dEntregaPresionAbs = vEntregaDatos.PresionAbsoluta,
+                                                            dEntregaPrecio = vEntregaDatos.Precio.GetValueOrDefault(),
+                                                            dEntregaImporte = vEntregaDatos.Importe.GetValueOrDefault();
+                                                    DateTime dtEntregaFIni = Convert.ToDateTime(vEntregaDatos.FechaYHoraInicialEntrega),
+                                                             dtEntregaFFin = Convert.ToDateTime(vEntregaDatos.FechaYHoraFinalEntrega);
+                                                    String sTipoTanque = vEntregaDatos.TipoTanque,
+                                                           sTipoMedicion = vEntregaDatos.TipoMedicion,
+                                                           sEUnidadMedida = vProd.UnidadMedida;//vEntregaDatos.UnidadMedida;
+                                                    #endregion
+
+                                                    // Tipo: Ductos | AutoTanques
+                                                    switch (objTipoDistribucion)
+                                                    {
+                                                        #region Ductos.
+                                                        case CVolJSonDTO.eTipoDistribucion.Ductos:
+                                                            #region Entrega: Validamos Valores.
+                                                            if (String.IsNullOrEmpty(sTipoTanque))
+                                                                return BadRequest("El Ducto '" + iEntregaNTanque + "' no contiene la TipoDucto (tb:Tank)");
+                                                            #endregion
+
+                                                            String sClaveDucto = "DUC-" + sTipoMedicion + "-" + iEntregaNTanque.ToString("0000");
+
+                                                            #region Datos Ducto.
+                                                            int iIdxDucto = -1;
+                                                            iIdxDucto = lstProdDuctos.FindIndex(d => d.ClaveIdentificacionDucto.Equals(sClaveDucto));
+
+                                                            // Al no existir datos del Ducto consultamos la informacion par agregarla
+                                                            if (iIdxDucto < 0)
+                                                            {
+                                                                #region Consulta: Ducto Datos.
+                                                                var vQDuctoDatos = (from d in objContext.Tanks
+                                                                                    where d.StoreId == viNEstacion &&
+                                                                                          d.TankIdi == iEntregaNTanque
+                                                                                    select new
+                                                                                    {
+                                                                                        NumeroDucto = d.TankIdi,
+                                                                                        ClaveSistemaMedicion = d.SatTypeMediumStorage,
+                                                                                        Descripcion = d.Name,
+                                                                                        Diametro = d.DiameterOrWidth,
+                                                                                        VigenciaCalibracion = d.SatDateCalibration,
+                                                                                        IncertidumbreMedicion = (d.SatPercentageUncertaintyMeasurement ?? 0),
+                                                                                        UnidadMedida = "UM03",
+                                                                                        Volumen = 0
+                                                                                    });
+                                                                #endregion
+
+                                                                #region Lectura: Ducto Datos.
+                                                                if (vQDuctoDatos != null)
+                                                                    foreach (var vDuctoDatos in vQDuctoDatos)
+                                                                    {
+                                                                        #region Ducto Datos: Asignamos Valores.
+                                                                        int iDuctoNMedidor = vDuctoDatos.NumeroDucto;
+                                                                        Decimal dDuctoMedIncertidumbre = vDuctoDatos.IncertidumbreMedicion;
+                                                                        DateTime dtDuctoMedVigencia = Convert.ToDateTime(vDuctoDatos.VigenciaCalibracion);
+                                                                        String sDuctoMedClave = vDuctoDatos.ClaveSistemaMedicion,
+                                                                               sDuctoDescripcion = vDuctoDatos.Descripcion,
+                                                                               sDuctoUnidadMedida = vDuctoDatos.UnidadMedida;
+                                                                        Decimal dDuctoDiametro = vDuctoDatos.Diametro.GetValueOrDefault();
+                                                                        //dDuctoVolumen = vDuctoDatos.Volumen;
+                                                                        #endregion
+
+                                                                        #region Ducto Datos: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sDuctoDescripcion))
+                                                                            return BadRequest("El Ducto '" + iEntregaNTanque + "' no contiene la Descripción (tb:Tank)");
+                                                                        else if (sDuctoDescripcion.Length < 2 || sDuctoDescripcion.Length > 250)
+                                                                            return BadRequest("El Ducto '" + iEntregaNTanque + "' contiene una Descripción menor a 2 o mayor a 250 caracteres (tb:Tank)");
+
+                                                                        if (dDuctoDiametro < 1 || dDuctoDiametro > 100)
+                                                                            return BadRequest("El Ducto '" + iEntregaNTanque + "' contiene un diametro menor a 1 o mayor a 100 (tb:Tank)");
+                                                                        #endregion
+
+                                                                        #region Ducto Medidor Datos: Llenado de Estructura.
+                                                                        List<CVolJSonDTO.stDuctoMedicionDato> lstDuctMedidores = new List<CVolJSonDTO.stDuctoMedicionDato>();
+
+                                                                        lstDuctMedidores.Add(new CVolJSonDTO.stDuctoMedicionDato
+                                                                        {
+                                                                            SistemaMedicionDucto = "SMD-DUC-" + sDuctoMedClave + "-" + iDuctoNMedidor.ToString("0000"),
+                                                                            LocalizODescripSistMedicionDucto = sDuctoDescripcion,
+                                                                            IncertidumbreMedicionSistMedicionDucto = Math.Round(dDuctoMedIncertidumbre, 3),
+                                                                            VigenciaCalibracionSistMedicionDucto = dtDuctoMedVigencia.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                        });
+
+                                                                        if (lstDuctMedidores.Count < 0)
+                                                                            return BadRequest("El Ducto '" + iEntregaNTanque + "' no contiene medidores.");
+                                                                        #endregion
+
+                                                                        CVolJSonDTO.stRecepcionDato objRecepRecepciones = new CVolJSonDTO.stRecepcionDato();
+                                                                        CVolJSonDTO.stEntregaDato objRecepEntrega = new CVolJSonDTO.stEntregaDato();
+
+                                                                        lstProdDuctos.Add(new CVolJSonDTO.stDuctoDatos
+                                                                        {
+                                                                            ClaveIdentificacionDucto = sClaveDucto,
+                                                                            DescripcionDucto = sDuctoDescripcion,
+                                                                            DiametroDucto = Math.Round(dDuctoDiametro, 3),
+                                                                            Medidores = lstDuctMedidores,
+                                                                            Recepciones = objRecepRecepciones,
+                                                                            ENTREGAS = objRecepEntrega
+                                                                        });
+                                                                        iTotalDuctos++;
+                                                                    }
+                                                                #endregion
+
+                                                                iIdxDucto = lstProdDuctos.FindIndex(d => d.ClaveIdentificacionDucto.Equals(sClaveDucto));
+                                                            }
+                                                            #endregion
+
+                                                            #region Agregamos la Entrega.
+                                                            List<CVolJSonDTO.stDuctoEntregaIndividualDato> lstDuctoEntregas = new List<CVolJSonDTO.stDuctoEntregaIndividualDato>();
+
+                                                            CVolJSonDTO.stDuctoDatos objProdDucto = lstProdDuctos[iIdxDucto];
+                                                            CVolJSonDTO.stEntregaDato objProdDucEntrega = objProdDucto.ENTREGAS;
+                                                            objProdDucEntrega.TotalEntregas++;
+                                                            objProdDucEntrega.TotalDocumentos++;
+
+                                                            #region SumaVentas.
+                                                            if (objProdDucEntrega.SumaVentas == null)
+                                                                objProdDucEntrega.SumaVentas = dEntregaImporte;
+                                                            else
+                                                                objProdDucEntrega.SumaVentas = dEntregaImporte + (Decimal)objProdDucEntrega.SumaVentas;
+                                                            #endregion
+
+                                                            #region SumaVolumenEntregado.
+                                                            CVolJSonDTO.stVolumenDato objSumVolEntreganDato;
+                                                            if (objProdDucEntrega.SumaVolumenEntregado == null)
+                                                                objSumVolEntreganDato = new CVolJSonDTO.stVolumenDato();
+                                                            else
+                                                                objSumVolEntreganDato = (CVolJSonDTO.stVolumenDato)objProdDucEntrega.SumaVolumenEntregado;
+
+                                                            if (objSumVolEntreganDato.ValorNumerico == null)
+                                                            {
+                                                                objSumVolEntreganDato.UnidadDeMedida = sEUnidadMedida;
+                                                                objSumVolEntreganDato.ValorNumerico = dEntregaVolEntregado;
+                                                            }
+                                                            else
+                                                                objSumVolEntreganDato.ValorNumerico = dEntregaVolEntregado + (Decimal)objSumVolEntreganDato.ValorNumerico;
+                                                            objProdDucEntrega.SumaVolumenEntregado = objSumVolEntreganDato;
+                                                            #endregion
+
+                                                            if (objProdDucEntrega.Entrega == null)
+                                                                lstDuctoEntregas = new List<CVolJSonDTO.stDuctoEntregaIndividualDato>();
+                                                            else
+                                                                lstDuctoEntregas = (List<CVolJSonDTO.stDuctoEntregaIndividualDato>)objProdDucEntrega.Entrega;
+
+                                                            #region Volumen Punto Salida.
+                                                            CVolJSonDTO.stVolumenDato objEntregaVolPuntoSalida = new CVolJSonDTO.stVolumenDato();
+                                                            objEntregaVolPuntoSalida.UnidadDeMedida = sEUnidadMedida;
+                                                            objEntregaVolPuntoSalida.ValorNumerico = Math.Round(dEntregaVolPuntoSalida, 3);
+                                                            #endregion
+
+                                                            #region Volumen Entregado.
+                                                            CVolJSonDTO.stVolumenDato objEntregaVolEntregado = new CVolJSonDTO.stVolumenDato();
+                                                            objEntregaVolEntregado.UnidadDeMedida = sEUnidadMedida;
+                                                            objEntregaVolEntregado.ValorNumerico = Math.Round(dEntregaVolEntregado, 3);
+                                                            #endregion
+
+                                                            lstDuctoEntregas.Add(new CVolJSonDTO.stDuctoEntregaIndividualDato
+                                                            {
+                                                                NumeroDeRegistro = iNEntrega,
+                                                                VolumenPuntoSalida = objEntregaVolPuntoSalida,
+                                                                VolumenEntregado = objEntregaVolEntregado,
+                                                                PresionAbsoluta = dEntregaPresionAbs,
+                                                                Temperatura = dEntregaTemperatura,
+                                                                FechaYHoraInicialEntrega = dtEntregaFIni.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                FechaYHoraFinalEntrega = dtEntregaFFin.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00"
+                                                            });
+                                                            #endregion
+
+                                                            objProdDucEntrega.Entrega = lstDuctoEntregas;
+                                                            objProdDucto.ENTREGAS = objProdDucEntrega;
+                                                            lstProdDuctos[iIdxDucto] = objProdDucto;
+
+                                                            objProductoDato.Ducto = lstProdDuctos;
+                                                            break;
+                                                        #endregion
+
+                                                        #region Autotanques.
+                                                        case CVolJSonDTO.eTipoDistribucion.Autotanques:
+                                                            CVolJSonDTO.stTanqueDatos objEntAutoTanqDatos;
+
+                                                            #region Entrega: Validamos Valores.
+                                                            if (String.IsNullOrEmpty(sTipoTanque))
+                                                                return BadRequest("El AutoTanque '" + iEntregaNTanque.ToString() + "' no contiene la Tipo de Tanque (tb:Tank)");
+                                                            #endregion
+
+                                                            String sClaveAutoTanq = sTipoTanque + "-" + sNomClaveInstalacion + "-" + iEntregaNTanque.ToString("0000");
+
+                                                            #region AutoTanque Datos.
+                                                            int iIdxAutoTanq = -1;
+                                                            iIdxAutoTanq = lstProdAutoTanques.FindIndex(d => d.ClaveIdentificacionTanque.Equals(sClaveAutoTanq));
+
+                                                            // Al no existir datos del Ducto consultamos la informacion par agregarla
+                                                            if (iIdxAutoTanq < 0)
+                                                            {
+                                                                #region Agregamos los datos del AutoTanque.
+                                                                #region Consulta: AutoTanque Datos.
+                                                                var vQAutoTanqueDatos = (from a in objContext.Tanks
+                                                                                         where a.StoreId == viNEstacion &&
+                                                                                               a.TankIdi == iEntregaNTanque
+                                                                                         //&& a.TankTypeId == "" //<*DUDA*> hasta que se defina el código de tipo de tanque "AutoTanque"
+                                                                                         select new
+                                                                                         {
+                                                                                             TipoTanque = a.SatTankType,
+                                                                                             Descripcion = a.Name,
+                                                                                             CapacidadTotal = a.CapacityTotal,
+                                                                                             CapacidadOperativa = a.CapacityOperational,
+                                                                                             CapacidadUtil = a.CapacityUseful,
+                                                                                             CapacidadFondaje = a.Fondage,
+                                                                                             CapacidadGasTalon = a.CapacityGastalon,
+                                                                                             VolumenMinimoOperacion = a.CapacityMinimumOperating,
+                                                                                             EstadoTanque = a.Active,
+                                                                                             TipoSistMedicion = a.SatTypeMeasurement,
+                                                                                             LocalizODescripSistMedicion = a.SatDescriptionMeasurement,
+                                                                                             IncertidumbreMedicionSistMedicion = a.SatPercentageUncertaintyMeasurement,
+                                                                                             TipoMedioAlmacenamiento = a.SatTypeMediumStorage,
+                                                                                             VigenciaCalibracionSistMedicion = a.SatDateCalibration,
+                                                                                             RecepcionesAnt = (from r in objContext.InventoryIns
+                                                                                                               where r.StoreId == viNEstacion &&
+                                                                                                                     r.TankIdi == a.TankIdi &&
+                                                                                                                     r.EndDate >= dtPerDateIni.AddDays(-1) &&
+                                                                                                                     r.EndDate <= dtPerDateEnd.AddDays(-1) &&
+                                                                                                                     r.ProductId == vProd.ProductoID
+                                                                                                               select new { r.Volume }).Sum(r => r.Volume),
+                                                                                             EntregasAnt = (from e in objContext.SaleOrders
+                                                                                                            join ed in objContext.SaleSuborders on e.SaleOrderId equals ed.SaleOrderId
+                                                                                                            where e.StoreId == viNEstacion &&
+                                                                                                                  e.TankIdi == a.TankIdi &&
+                                                                                                                  e.Date >= dtPerDateIni.AddDays(-1) &&
+                                                                                                                  e.Date <= dtPerDateEnd.AddDays(-1) &&
+                                                                                                                  ed.ProductId == vProd.ProductoID
+                                                                                                            select new { ed.Quantity }).Sum(r => r.Quantity)
+                                                                                         });
+                                                                #endregion
+
+                                                                #region Lectura: AutoTanque Datos.
+                                                                if (vQAutoTanqueDatos != null)
+                                                                    foreach (var vAutoTanqueDatos in vQAutoTanqueDatos)
+                                                                    {
+                                                                        #region AutoTanque: Asignamos Valores.
+                                                                        int iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
+                                                                            iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
+                                                                            iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
+                                                                            iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
+                                                                            iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault(),
+                                                                            iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        String sDescripcionSAT = vAutoTanqueDatos.Descripcion;
+                                                                        DateTime dtTanqueFCalibracion = Convert.ToDateTime(vAutoTanqueDatos.VigenciaCalibracionSistMedicion);
+                                                                        String sTipoAutoTanq = vAutoTanqueDatos.TipoTanque,
+                                                                               sTanqueUniMed = vProd.UnidadMedida,//vAutoTanqueDatos.UnidadMedida,
+                                                                               sTanqueTipoMedicion = vAutoTanqueDatos.TipoSistMedicion,
+                                                                               sTanqueDescMedicion = vAutoTanqueDatos.LocalizODescripSistMedicion,
+                                                                               sTanqueTipoMedAlmacenamiento = vAutoTanqueDatos.TipoMedioAlmacenamiento;
+                                                                        Boolean sTanqueStatus = vAutoTanqueDatos.EstadoTanque.GetValueOrDefault();
+                                                                        Decimal dRecepcionesAutTanqAnt = vAutoTanqueDatos.RecepcionesAnt.GetValueOrDefault(),
+                                                                                dEntregasAutTanqAnt = vAutoTanqueDatos.EntregasAnt.GetValueOrDefault();
+                                                                        #endregion
+
+                                                                        #region AutoTanque: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sDescripcionSAT))
+                                                                            return BadRequest("El AutoTanque no contiene la Descripción");
+
+                                                                        if (String.IsNullOrEmpty(sTanqueTipoMedicion))
+                                                                            return BadRequest("El AutoTanque no contiene un Tipo de Medición");
+
+                                                                        if (String.IsNullOrEmpty(sTanqueTipoMedAlmacenamiento))
+                                                                            return BadRequest("El AutoTanque no contiene un Tipo de Medio de Almacenamiento");
+                                                                        else if (sTanqueTipoMedAlmacenamiento.Equals("0"))
+                                                                            return BadRequest("El AutoTanque contiene un Tipo de Medio de Almacenamiento incorrecto '" + sTanqueTipoMedAlmacenamiento + "'");
+
+                                                                        // sTanqueDescMedicion
+                                                                        if (String.IsNullOrEmpty(sTanqueDescMedicion))
+                                                                            return BadRequest("El AutoTanque no contiene la Descripción en la Medición");
+                                                                        else if (sTanqueDescMedicion.Length < 2)
+                                                                            return BadRequest("La Descripción de la Medición debe ser minimo de 2 caracteres");
+                                                                        #endregion
+
+                                                                        #region AutoTanque: Llenado de Estructura.
+                                                                        CVolJSonDTO.stTanqueDatos objAutoTanqueNew = new CVolJSonDTO.stTanqueDatos();
+
+                                                                        objAutoTanqueNew.ClaveIdentificacionTanque = sClaveAutoTanq;
+                                                                        objAutoTanqueNew.LocalizacionYODescripcionTanque = sDescripcionSAT;
+                                                                        objAutoTanqueNew.VigenciaCalibracionTanque = dtTanqueFCalibracion.ToString("yyyy-MM-dd");
+
+                                                                        #region Capacidad Total Tanque.
+                                                                        CVolJSonDTO.stCapacidadDato objCapacidadTotalDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapacidadTotalDato.ValorNumerico = iCapTotal;
+                                                                        objCapacidadTotalDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadTotalTanque = objCapacidadTotalDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Operativa.
+                                                                        CVolJSonDTO.stCapacidadDato objCapOperativaDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapOperativaDato.ValorNumerico = iCapOperativa;
+                                                                        objCapOperativaDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadOperativaTanque = objCapOperativaDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Util.
+                                                                        CVolJSonDTO.stCapacidadDato objCapUtilDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapUtilDato.ValorNumerico = iCapUtil;
+                                                                        objCapUtilDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadUtilTanque = objCapUtilDato;
+                                                                        #endregion
+
+                                                                        #region Capacidad Fondaje.
+                                                                        CVolJSonDTO.stCapacidadDato objCapFondaje = new CVolJSonDTO.stCapacidadDato();
+                                                                        objCapFondaje.ValorNumerico = iCapFondaje;
+                                                                        objCapFondaje.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.CapacidadFondajeTanque = objCapFondaje;
+                                                                        #endregion
+
+                                                                        #region Volumen Minimo Operación.
+                                                                        CVolJSonDTO.stCapacidadDato objVolMinOperDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objVolMinOperDato.ValorNumerico = iVolMinOperacion;
+                                                                        objVolMinOperDato.UnidadDeMedida = sTanqueUniMed;
+
+                                                                        objAutoTanqueNew.VolumenMinimoOperacion = objVolMinOperDato;
+                                                                        #endregion
+
+                                                                        #region Estado Tanque.
+                                                                        objAutoTanqueNew.EstadoTanque = "F";
+                                                                        if (sTanqueStatus)
+                                                                            objAutoTanqueNew.EstadoTanque = "O";
+                                                                        #endregion
+
+                                                                        #region Medición de Tanques.
+                                                                        Decimal dTanqIncertMed = 0;
+                                                                        if (iTanqueIncertidumbre > 0)
+                                                                            dTanqIncertMed = (iTanqueIncertidumbre / 100);
+
+                                                                        String sSistMedicion = "";
+                                                                        switch (sTanqueTipoMedicion)
+                                                                        {
+                                                                            case "SMD": // SMD-ETA-TQS-USP-0026.
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTanqueTipoMedAlmacenamiento + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iEntregaNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+
+                                                                            case "SME": // SME-STQ-EDS-0021.
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iEntregaNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+
+                                                                            default:
+                                                                                sSistMedicion = sTanqueTipoMedicion + "-" +
+                                                                                                sTipoAutoTanq + "-" +
+                                                                                                sNomClaveInstalacion + "-" +
+                                                                                                iEntregaNTanque.ToString().PadLeft(4, '0');
+                                                                                break;
+                                                                        }
+
+                                                                        List<CVolJSonDTO.stMedicionTanqueDato> lstMedidores = new List<CVolJSonDTO.stMedicionTanqueDato>();
+                                                                        lstMedidores.Add(new CVolJSonDTO.stMedicionTanqueDato
+                                                                        {
+                                                                            SistemaMedicionTanque = sSistMedicion,
+                                                                            LocalizODescripSistMedicionTanque = sTanqueDescMedicion,
+                                                                            VigenciaCalibracionSistMedicionTanque = dtTanqueFCalibracion.ToString("yyyy-MM-dd"),
+                                                                            IncertidumbreMedicionSistMedicionTanque = Math.Round(dTanqIncertMed, 3)
+                                                                        });
+
+                                                                        objAutoTanqueNew.Medidores = lstMedidores;
+                                                                        #endregion
+
+                                                                        #region Existencias.
+                                                                        CVolJSonDTO.stExistenciaDato objRecepExistenciaDatos = new CVolJSonDTO.stExistenciaDato();
+
+                                                                        objRecepExistenciaDatos.VolumenExistenciasAnterior = 0;
+
+                                                                        #region VolumenAcumOpsRecepcion.
+                                                                        CVolJSonDTO.stVolumenDato objRecepVolAntDato = new CVolJSonDTO.stVolumenDato();
+                                                                        objRecepVolAntDato.UnidadDeMedida = sTanqueUniMed;
+                                                                        objRecepVolAntDato.ValorNumerico = Math.Round(dRecepcionesAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.VolumenAcumOpsRecepcion = objRecepVolAntDato;
+                                                                        #endregion
+
+                                                                        objRecepExistenciaDatos.HoraRecepcionAcumulado = dtFechaRegistro.ToString("HH:mm:ss") + "-" +
+                                                                                                                         iDiferenciaHora.ToString("00") + ":00";
+
+                                                                        #region VolumenAcumOpsEntrega.
+                                                                        CVolJSonDTO.stCapacidadDato objEntVolAntDato = new CVolJSonDTO.stCapacidadDato();
+                                                                        objEntVolAntDato.UnidadDeMedida = sTanqueUniMed;
+                                                                        objEntVolAntDato.ValorNumerico = Math.Round(dEntregasAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.VolumenAcumOpsEntrega = objEntVolAntDato;
+                                                                        #endregion
+
+                                                                        objRecepExistenciaDatos.HoraEntregaAcumulado = dtFechaRegistro.ToString("HH:mm:ss") + "-" +
+                                                                                                                       iDiferenciaHora.ToString("00") + ":00";
+                                                                        objRecepExistenciaDatos.VolumenExistencias = Math.Round(dRecepcionesAutTanqAnt - dEntregasAutTanqAnt, 3);
+                                                                        objRecepExistenciaDatos.FechaYHoraEstaMedicion = dtPerDateEnd.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00";
+                                                                        objRecepExistenciaDatos.FechaYHoraMedicionAnterior = dtPerDateIni.AddSeconds(-1).ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00";
+
+                                                                        objAutoTanqueNew.Existencias = objRecepExistenciaDatos;
+                                                                        #endregion
+
+                                                                        #region Inicializacion del Nodo: Recepciones.
+                                                                        CVolJSonDTO.stRecepcionDato objRecepcionDatoNew = new CVolJSonDTO.stRecepcionDato();
+
+                                                                        #region Suma Volumen Recepcion.
+                                                                        CVolJSonDTO.stVolumenDato objSumaVolRecepNew = new CVolJSonDTO.stVolumenDato();
+                                                                        objSumaVolRecepNew.UnidadDeMedida = sTanqueUniMed;
+                                                                        objSumaVolRecepNew.ValorNumerico = 0;
+
+                                                                        objRecepcionDatoNew.SumaVolumenRecepcion = objSumaVolRecepNew;
+                                                                        #endregion
+
+                                                                        #region Recepciones.
+                                                                        List<CVolJSonDTO.stRecepcionIndividualDato> lstRecepcionesNew = new List<CVolJSonDTO.stRecepcionIndividualDato>();
+                                                                        objRecepcionDatoNew.Recepcion = lstRecepcionesNew;
+                                                                        #endregion
+
+                                                                        objRecepcionDatoNew.SumaCompras = 0;
+                                                                        objAutoTanqueNew.Recepciones = objRecepcionDatoNew;
+                                                                        #endregion
+
+                                                                        #region Inicializacion del Nodo:Entregas.
+                                                                        CVolJSonDTO.stEntregaDato objEntregaDatoNew = new CVolJSonDTO.stEntregaDato();
+
+                                                                        #region Suma Ventas.
+                                                                        objEntregaDatoNew.SumaVentas = 0;
+                                                                        #endregion
+
+                                                                        #region Suma Volumen Entregado.
+                                                                        CVolJSonDTO.stVolumenDato objSumaVolEntregadoNew = new CVolJSonDTO.stVolumenDato();
+                                                                        objSumaVolEntregadoNew.UnidadDeMedida = sTanqueUniMed;
+                                                                        objSumaVolEntregadoNew.ValorNumerico = 0;
+
+                                                                        objEntregaDatoNew.SumaVolumenEntregado = objSumaVolEntregadoNew;
+                                                                        #endregion
+
+                                                                        #region Entregas.
+                                                                        objEntregaDatoNew.Entrega = null;
+                                                                        #endregion
+
+                                                                        objAutoTanqueNew.Entregas = objEntregaDatoNew;
+                                                                        #endregion
+
+                                                                        lstProdAutoTanques.Add(objAutoTanqueNew);
+                                                                        iTotalTanques++;
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                iIdxAutoTanq = lstProdAutoTanques.FindIndex(d => d.ClaveIdentificacionTanque.Equals(sClaveAutoTanq));
+                                                            }
+                                                            #endregion
+
+                                                            #region Llenado: Entrega.
+                                                            // Obtenemos el Nodo:Entregas del AutoTanque
+                                                            objEntAutoTanqDatos = lstProdAutoTanques[iIdxAutoTanq];
+                                                            CVolJSonDTO.stEntregaDato objAutoTanqEntrega = (CVolJSonDTO.stEntregaDato)objEntAutoTanqDatos.Entregas;
+                                                            // Obtenemos la lista de Entregas del Tanque.
+
+                                                            List<CVolJSonDTO.stEntregaIndividualDato> lstAutoTanqEntregas = new List<CVolJSonDTO.stEntregaIndividualDato>();
+                                                            if (objAutoTanqEntrega.Entrega != null)
+                                                                lstAutoTanqEntregas = (List<CVolJSonDTO.stEntregaIndividualDato>)objAutoTanqEntrega.Entrega;
+
+                                                            #region Volumen Inicial Dato.
+                                                            CVolJSonDTO.stCapacidadDato objEntVolIni = new CVolJSonDTO.stCapacidadDato();
+                                                            objEntVolIni.ValorNumerico = dEntregaVolPuntoSalida;
+                                                            objEntVolIni.UnidadDeMedida = sEUnidadMedida;
+                                                            #endregion
+
+                                                            #region Volumen Final Dato.
+                                                            CVolJSonDTO.stCapacidadDato objEntVolFin = new CVolJSonDTO.stCapacidadDato();
+                                                            objEntVolFin.UnidadDeMedida = sEUnidadMedida;
+                                                            objEntVolFin.ValorNumerico = dEntregaVolFinal;
+                                                            #endregion
+
+                                                            #region Volumen Entregado.
+                                                            CVolJSonDTO.stCapacidadDato objEntVolumen = new CVolJSonDTO.stCapacidadDato();
+                                                            objEntVolumen.ValorNumerico = dEntregaVolEntregado;
+                                                            objEntVolumen.UnidadDeMedida = sEUnidadMedida;
+                                                            #endregion
+
+                                                            #region Complemento.
+                                                            Object oEntregaComplemento = null;
+
+                                                            // ***  Indica si se genera el Complemento de Entregas  ***
+                                                            if (bCompEntregas)
+                                                            {
+                                                                List<CVolJSonDTO.stComplementoDistribucion> lstEntComplementoDistribucion = new List<CVolJSonDTO.stComplementoDistribucion>();
+                                                                List<CVolJSonDTO.stComplementoTransportista> lstEntComplementoTransportista = new List<CVolJSonDTO.stComplementoTransportista>();
+                                                                List<CVolJSonDTO.stComplementoComercializadora> lstEntComplementoComercializadora = new List<CVolJSonDTO.stComplementoComercializadora>();
+
+                                                                CVolJSonDTO.stComplementoDistribucion objEntComplementoDistribuidor = new CVolJSonDTO.stComplementoDistribucion();
+                                                                CVolJSonDTO.stComplementoTransportista objEntComplementoTransportista = new CVolJSonDTO.stComplementoTransportista();
+                                                                CVolJSonDTO.stComplementoComercializadora objEntComplementoComercializadora = new CVolJSonDTO.stComplementoComercializadora();
+
+                                                                #region NODO: Nacional.
+                                                                List<CVolJSonDTO.stCompleDistNacional> lstEntDistNacional = new List<CVolJSonDTO.stCompleDistNacional>();
+                                                                List<CVolJSonDTO.stComplementoTransNacional> lstEntTransNacional = new List<CVolJSonDTO.stComplementoTransNacional>();
+                                                                List<CVolJSonDTO.stCompleComerNacional> lstEntComerNacional = new List<CVolJSonDTO.stCompleComerNacional>();
+
+                                                                #region Consulta: CFDI Datos.
+                                                                var vQEntregaCfdiDato = (from tf in objContext.InvoiceSaleOrders
+                                                                                         join fh in objContext.Invoices on tf.InvoiceId equals fh.InvoiceId
+                                                                                         join fd in objContext.InvoiceDetails on fh.InvoiceId equals fd.InvoiceId
+                                                                                         join c in objContext.Customers on fh.CustomerId equals c.CustomerId
+                                                                                         join t in objContext.SaleOrders on tf.SaleOrderId equals t.SaleOrderId
+                                                                                         join tc in objContext.SatTipoComprobantes on fh.SatTipoComprobanteId equals tc.SatTipoComprobanteId
+                                                                                         join tr in objContext.SupplierTransportRegisters on t.SupplierTransportRegisterId equals tr.SupplierTransportRegisterId into rtr
+                                                                                         from tr in rtr.DefaultIfEmpty()
+                                                                                         where tf.SaleOrderId == Guid.Parse("7ECC6829-BDEA-4882-8939-DF65EFE9B6C2") &&
+                                                                                               fh.StoreId == viNEstacion
+                                                                                         select new
+                                                                                         {
+                                                                                             NumeroEntrega = t.SaleOrderNumber,
+                                                                                             ClienteRFC = c.Rfc,
+                                                                                             NombreCliente = c.Name,
+                                                                                             NumeroPermisoCRE = c.CustomerPermission,
+                                                                                             TipoCfdiID = fh.SatTipoComprobanteId,
+                                                                                             TipoCFDI = tc.Descripcion,
+                                                                                             CFDI = fh.Uuid,
+                                                                                             Precio = fd.Price,
+                                                                                             PrecioVtaPublico = fd.Price,
+                                                                                             FechaHora = fh.Date,
+                                                                                             Volumen = fd.Quantity,
+                                                                                             UnidadMedida = "UM03",
+                                                                                             ContraPrestacion = (tr.AmountPerService.ToString() ?? "0"),
+                                                                                             TarifaTransporte = (tr.AmountPerFee.ToString() ?? "0"),
+                                                                                             CargoCapacidadTrans = (tr.AmountPerCapacity.ToString() ?? "0"),
+                                                                                             CargoUsoTrans = (tr.AmountPerUse.ToString() ?? "0"),
+                                                                                             CargoVolumenTrans = (tr.AmountPerVolume.ToString() ?? "0"),
+                                                                                             Descuento = (tr.AmountOfDiscount.ToString() ?? "0")
+                                                                                         });
+                                                                #endregion
+
+                                                                #region Lectura: CFDI Datos.
+                                                                if (vQEntregaCfdiDato != null)
+                                                                    foreach (var vCfdiDatos in vQEntregaCfdiDato)
+                                                                    {
+                                                                        #region CFDI: Asignamos Valores.
+                                                                        String sNacClienteRFC = vCfdiDatos.ClienteRFC,
+                                                                               sNacNombreCliente = vCfdiDatos.NombreCliente,
+                                                                               sNacPermisoCRE = vCfdiDatos.NumeroPermisoCRE,
+                                                                               sNacTipoCfdiID = vCfdiDatos.TipoCfdiID,
+                                                                               sNacTipoCFDI = vCfdiDatos.TipoCFDI,
+                                                                               sNacCFDI = vCfdiDatos.CFDI,
+                                                                               sNacUnidadMedida = vCfdiDatos.UnidadMedida;
+                                                                        Decimal dNacPrecioCompra = vCfdiDatos.Precio.GetValueOrDefault(),
+                                                                                dNacPrecioVtaPublico = vCfdiDatos.PrecioVtaPublico.GetValueOrDefault(),
+                                                                                dNacVolumen = vCfdiDatos.Volumen.GetValueOrDefault(),
+                                                                                dNacContraPrestacion = Convert.ToDecimal(vCfdiDatos.ContraPrestacion),
+                                                                                dNacDescuento = Convert.ToDecimal(vCfdiDatos.Descuento),
+                                                                                dNacTarifaTrans = Convert.ToDecimal(vCfdiDatos.TarifaTransporte),
+                                                                                dNacCargoCapTrans = Convert.ToDecimal(vCfdiDatos.CargoCapacidadTrans),
+                                                                                dNacCargoUsoTrans = Convert.ToDecimal(vCfdiDatos.CargoUsoTrans),
+                                                                                dNacCargoVolTrans = Convert.ToDecimal(vCfdiDatos.CargoVolumenTrans);
+                                                                        DateTime dtNacFechaHora = Convert.ToDateTime(vCfdiDatos.FechaHora);
+                                                                        Int32 iNumeroEntrega = vCfdiDatos.NumeroEntrega.GetValueOrDefault();
+                                                                        #endregion
+
+                                                                        #region CFDI: Validamos Valores.
+                                                                        if (!sNacTipoCfdiID.ToUpper().Equals("I") && !sNacTipoCfdiID.ToUpper().Equals("E") && !sNacTipoCfdiID.ToUpper().Equals("T"))
+                                                                            return BadRequest("Tipo de CFDI no valido '" + sNacTipoCFDI + "'");
+
+                                                                        if (!ValidarCFDI(sNacCFDI))
+                                                                            return BadRequest("La Entrega '" + iNEntrega.ToString() + "' contiene un CFDI con formato incorrecto '" + sNacCFDI + "'.");
+                                                                        #endregion
+
+                                                                        #region CFDI: Llenado de Estructura.
+                                                                        int iIdxCliente = -1;
+
+                                                                        switch (objTipoComplemento)
+                                                                        {
+                                                                            #region Distribuidor.
+                                                                            case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                                iIdxCliente = lstEntDistNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+
+                                                                                CVolJSonDTO.stCompleDistNacional objEntDistNacionalDato;
+                                                                                if (iIdxCliente < 0)
+                                                                                {
+                                                                                    objEntDistNacionalDato = new CVolJSonDTO.stCompleDistNacional();
+                                                                                    objEntDistNacionalDato.RfcClienteOProveedor = sNacClienteRFC;
+                                                                                    objEntDistNacionalDato.NombreClienteOProveedor = sNacNombreCliente;
+
+                                                                                    if (!String.IsNullOrEmpty(sNacPermisoCRE))
+                                                                                        objEntDistNacionalDato.PermisoClienteOProveedor = sNacPermisoCRE;
+
+                                                                                    List<CVolJSonDTO.stCompleDistNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleDistNacionalCfdis>();
+                                                                                    objEntDistNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                    lstEntDistNacional.Add(objEntDistNacionalDato);
+                                                                                    iIdxCliente = lstEntDistNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+                                                                                }
+
+                                                                                #region CFDI Datos.
+                                                                                CVolJSonDTO.stCompleDistNacionalCfdis objDistCFDI_Dato = new CVolJSonDTO.stCompleDistNacionalCfdis();
+                                                                                objDistCFDI_Dato.Cfdi = sNacCFDI;
+                                                                                objDistCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                                objDistCFDI_Dato.PrecioVentaOCompraOContrap = Math.Round(dNacPrecioCompra, 3);
+                                                                                objDistCFDI_Dato.FechaYHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                         iDiferenciaHora.ToString("00") + ":00";
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                                objVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                                objDistCFDI_Dato.VolumenDocumentado = objVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objEntDistNacionalDato = (CVolJSonDTO.stCompleDistNacional)lstEntDistNacional[iIdxCliente];
+                                                                                List<CVolJSonDTO.stCompleDistNacionalCfdis> lstCfDIs = (List<CVolJSonDTO.stCompleDistNacionalCfdis>)objEntDistNacionalDato.CFDIs;
+                                                                                lstCfDIs.Add(objDistCFDI_Dato);
+                                                                                objEntDistNacionalDato.CFDIs = lstCfDIs;
+                                                                                lstEntDistNacional[iIdxCliente] = objEntDistNacionalDato;
+                                                                                break;
+                                                                            #endregion
+
+                                                                            #region Transportista.
+                                                                            case CVolJSonDTO.eTipoComplemento.Transportista:
+                                                                                iIdxCliente = lstEntTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+
+                                                                                CVolJSonDTO.stComplementoTransNacional objEntTransNacionalDato;
+                                                                                if (iIdxCliente < 0)
+                                                                                {
+                                                                                    objEntTransNacionalDato = new CVolJSonDTO.stComplementoTransNacional();
+                                                                                    objEntTransNacionalDato.RfcCliente = sNacClienteRFC;
+                                                                                    objEntTransNacionalDato.NombreCliente = sNacNombreCliente;
+
+                                                                                    List<CVolJSonDTO.stCompleTransNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleTransNacionalCfdis>();
+                                                                                    objEntTransNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                    lstEntTransNacional.Add(objEntTransNacionalDato);
+                                                                                    iIdxCliente = lstEntTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+                                                                                }
+
+                                                                                #region CFDI Datos.
+                                                                                CVolJSonDTO.stCompleTransNacionalCfdis objTransCFDI_Dato = new CVolJSonDTO.stCompleTransNacionalCfdis();
+                                                                                objTransCFDI_Dato.Cfdi = sNacCFDI;
+                                                                                objTransCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                                objTransCFDI_Dato.Contraprestacion = dNacContraPrestacion;
+                                                                                objTransCFDI_Dato.TarifaDeTransporte = dNacTarifaTrans;
+                                                                                objTransCFDI_Dato.FechaYHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                          iDiferenciaHora.ToString("00") + ":00";
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objEntTransVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objEntTransVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                                objEntTransVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                                objTransCFDI_Dato.VolumenDocumentado = objEntTransVolumenDocumentado;
+                                                                                #endregion
+
+                                                                                if (dNacCargoCapTrans > 0)
+                                                                                    objTransCFDI_Dato.CargoPorCapacidadDeTrans = dNacCargoCapTrans;
+
+                                                                                if (dNacCargoUsoTrans > 0)
+                                                                                    objTransCFDI_Dato.CargoPorUsoTrans = dNacCargoUsoTrans;
+
+                                                                                if (dNacCargoVolTrans > 0)
+                                                                                    objTransCFDI_Dato.CargoVolumetricoTrans = dNacCargoVolTrans;
+
+                                                                                if (dNacDescuento > 0)
+                                                                                    objTransCFDI_Dato.Descuento = dNacDescuento;
+                                                                                #endregion
+
+                                                                                objEntTransNacionalDato = (CVolJSonDTO.stComplementoTransNacional)lstEntTransNacional[iIdxCliente];
+                                                                                List<CVolJSonDTO.stCompleTransNacionalCfdis> lstEntTransCfDIs = (List<CVolJSonDTO.stCompleTransNacionalCfdis>)objEntTransNacionalDato.CFDIs;
+                                                                                lstEntTransCfDIs.Add(objTransCFDI_Dato);
+                                                                                objEntTransNacionalDato.CFDIs = lstEntTransCfDIs;
+                                                                                lstEntTransNacional[iIdxCliente] = objEntTransNacionalDato;
+                                                                                break;
+                                                                            #endregion
+
+                                                                            #region Comercializadora.
+                                                                            case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                                iIdxCliente = lstEntComerNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+
+                                                                                CVolJSonDTO.stCompleComerNacional objEntComerNacionalDato;
+                                                                                if (iIdxCliente < 0)
+                                                                                {
+                                                                                    objEntComerNacionalDato = new CVolJSonDTO.stCompleComerNacional();
+                                                                                    objEntComerNacionalDato.RfcClienteOProveedor = sNacClienteRFC;
+                                                                                    objEntComerNacionalDato.NombreClienteOProveedor = sNacNombreCliente;
+
+                                                                                    if (!String.IsNullOrEmpty(sNacPermisoCRE))
+                                                                                        objEntComerNacionalDato.PermisoProveedor = sNacPermisoCRE;
+
+                                                                                    List<CVolJSonDTO.stCompleComerNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleComerNacionalCfdis>();
+                                                                                    objEntComerNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                    lstEntComerNacional.Add(objEntComerNacionalDato);
+                                                                                    iIdxCliente = lstEntComerNacional.FindIndex(n => n.RfcClienteOProveedor.Equals(sNacClienteRFC));
+                                                                                }
+
+                                                                                #region CFDI Datos.
+                                                                                CVolJSonDTO.stCompleComerNacionalCfdis objComerCFDI_Dato = new CVolJSonDTO.stCompleComerNacionalCfdis();
+                                                                                objComerCFDI_Dato.Cfdi = sNacCFDI;
+                                                                                objComerCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                                objComerCFDI_Dato.PrecioCompra = Math.Round(dNacPrecioCompra, 3);
+                                                                                objComerCFDI_Dato.PrecioDeVentaAlPublico = Math.Round(dNacPrecioVtaPublico, 3);
+                                                                                objComerCFDI_Dato.FechayHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                          iDiferenciaHora.ToString("00") + ":00";
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objEntComerVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objEntComerVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                                objEntComerVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                                objComerCFDI_Dato.VolumenDocumentado = objEntComerVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objEntComerNacionalDato = (CVolJSonDTO.stCompleComerNacional)lstEntComerNacional[iIdxCliente];
+                                                                                List<CVolJSonDTO.stCompleComerNacionalCfdis> lstEntComerCfDIs = (List<CVolJSonDTO.stCompleComerNacionalCfdis>)objEntComerNacionalDato.CFDIs;
+                                                                                lstEntComerCfDIs.Add(objComerCFDI_Dato);
+                                                                                objEntComerNacionalDato.CFDIs = lstEntComerCfDIs;
+                                                                                lstEntComerNacional[iIdxCliente] = objEntComerNacionalDato;
+                                                                                break;
+                                                                                #endregion
+                                                                        }
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                #region NODO: Extrajero.
+                                                                List<CVolJSonDTO.stCompleDistExtranjero> lstEntDistExtranjero = new List<CVolJSonDTO.stCompleDistExtranjero>();
+                                                                List<CVolJSonDTO.stCompleComerExtranjero> lstEntComerExtranjero = new List<CVolJSonDTO.stCompleComerExtranjero>();
+
+                                                                #region Consulta: Pedimento Datos.
+                                                                var vQEntregaPedimentoDato = (from p in objContext.PetitionCustoms
+                                                                                              join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                                              where p.PetitionCustomsId == gPedimentoID
+                                                                                              select new
+                                                                                              {
+                                                                                                  ClavePermisoImportOExport = p.KeyOfImportationExportation,
+                                                                                                  PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
+                                                                                                  Pais = (p.SatPaisId ?? String.Empty),
+                                                                                                  MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                                                  ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
+                                                                                                  Incoterms = (p.Incoterms ?? String.Empty),
+                                                                                                  PrecioDeImportOExport = p.AmountOfImportationExportation,
+                                                                                                  Volumen = p.QuantityDocumented,
+                                                                                                  UnidadMedida = (p.JsonClaveUnidadMedidadId ?? sEUnidadMedida)
+                                                                                              });
+                                                                #endregion
+
+                                                                #region Lectura: Datos Pedimentos.
+                                                                if (vQEntregaPedimentoDato != null)
+                                                                    foreach (var vPedimentoDato in vQEntregaPedimentoDato)
+                                                                    {
+                                                                        #region Pedimento: Asignamos Valores.
+                                                                        String sExtClavePermiso = vPedimentoDato.ClavePermisoImportOExport,
+                                                                               sExtPais = vPedimentoDato.Pais,
+                                                                               sExtClavePedimento = vPedimentoDato.ClavePedimento,
+                                                                               sExtIncoterms = vPedimentoDato.Incoterms,
+                                                                               sExtUnidadMedida = vPedimentoDato.UnidadMedida;
+                                                                        int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDato.PuntoInternacionOExtracccion),
+                                                                            iExtMedioIngOSal = Convert.ToInt32(vPedimentoDato.MedioIngresoOSalida);
+                                                                        Decimal dExtImporte = vPedimentoDato.PrecioDeImportOExport,
+                                                                                dExtVolumen = vPedimentoDato.Volumen;
+                                                                        #endregion
+
+                                                                        #region Pedimento: Validamos Valores.
+                                                                        if (String.IsNullOrEmpty(sExtClavePermiso))
+                                                                            return BadRequest("No se encontro el dato 'ClavePermiso' del Pedimento de Entrega.");
+
+                                                                        if (String.IsNullOrEmpty(sExtPais))
+                                                                            return BadRequest("No se encontro el dato 'Pais' del Pedimento de Entrega.");
+
+                                                                        if (String.IsNullOrEmpty(sExtClavePedimento))
+                                                                            return BadRequest("No se encontro el dato 'ClavePedimento' del Pedimento de Entrega.");
+
+                                                                        if (String.IsNullOrEmpty(sExtIncoterms))
+                                                                            return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Entrega.");
+                                                                        #endregion
+
+                                                                        #region Pedimento: Llenado de Estructura.
+                                                                        int iIdxPermiso = -1;
+
+                                                                        switch (objTipoComplemento)
+                                                                        {
+                                                                            #region Distribucion.
+                                                                            case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                                iIdxPermiso = lstEntDistExtranjero.FindIndex(e => e.PermisoImportacionOExportacion.Equals(sExtClavePermiso));
+
+                                                                                CVolJSonDTO.stCompleDistExtranjero objEntDistExtranjeroDato;
+                                                                                if (iIdxPermiso < 0)
+                                                                                {
+                                                                                    objEntDistExtranjeroDato = new CVolJSonDTO.stCompleDistExtranjero();
+                                                                                    objEntDistExtranjeroDato.PermisoImportacionOExportacion = sExtClavePermiso;
+                                                                                    List<CVolJSonDTO.stCompleDistExtranjeroPedimentos> lstPedimentosNew = new List<CVolJSonDTO.stCompleDistExtranjeroPedimentos>();
+                                                                                    objEntDistExtranjeroDato.Pedimentos = lstPedimentosNew;
+
+                                                                                    lstEntDistExtranjero.Add(objEntDistExtranjeroDato);
+                                                                                    iIdxPermiso = lstEntDistExtranjero.FindIndex(e => e.PermisoImportacionOExportacion.Equals(sExtClavePermiso));
+                                                                                }
+
+                                                                                #region Pedimento Datos.
+                                                                                CVolJSonDTO.stCompleDistExtranjeroPedimentos objEntDistPedimentoDato = new CVolJSonDTO.stCompleDistExtranjeroPedimentos();
+                                                                                objEntDistPedimentoDato.PuntoDeInternacionOExtraccion = iExtPuntoInterOExtra.ToString();
+                                                                                objEntDistPedimentoDato.PaisOrigenODestino = sExtPais;
+                                                                                objEntDistPedimentoDato.MedioDeTransEntraOSaleAduana = iExtMedioIngOSal.ToString();
+                                                                                objEntDistPedimentoDato.Incoterms = sExtIncoterms;
+                                                                                objEntDistPedimentoDato.PrecioDeImportacionOExportacion = Math.Round(dExtImporte, 3);
+                                                                                objEntDistPedimentoDato.PedimentoAduanal = sExtClavePedimento;
+
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objVolumenDocumentado.ValorNumerico = Math.Round(dExtVolumen, 3);
+                                                                                objVolumenDocumentado.UnidadDeMedida = sExtUnidadMedida;
+
+                                                                                objEntDistPedimentoDato.VolumenDocumentado = objVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objEntDistExtranjeroDato = (CVolJSonDTO.stCompleDistExtranjero)lstEntDistExtranjero[iIdxPermiso];
+                                                                                List<CVolJSonDTO.stCompleDistExtranjeroPedimentos> lstEntDistPedimentos = (List<CVolJSonDTO.stCompleDistExtranjeroPedimentos>)objEntDistExtranjeroDato.Pedimentos;
+                                                                                lstEntDistPedimentos.Add(objEntDistPedimentoDato);
+                                                                                objEntDistExtranjeroDato.Pedimentos = lstEntDistPedimentos;
+                                                                                lstEntDistExtranjero[iIdxPermiso] = objEntDistExtranjeroDato;
+                                                                                break;
+                                                                            #endregion
+
+                                                                            #region Comercializadora.
+                                                                            case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                                iIdxPermiso = lstEntComerExtranjero.FindIndex(e => e.PermisoImportacion.Equals(sExtClavePermiso));
+
+                                                                                CVolJSonDTO.stCompleComerExtranjero objEntComerExtranjeroDato;
+                                                                                if (iIdxPermiso < 0)
+                                                                                {
+                                                                                    objEntComerExtranjeroDato = new CVolJSonDTO.stCompleComerExtranjero();
+                                                                                    objEntComerExtranjeroDato.PermisoImportacion = sExtClavePermiso;
+                                                                                    List<CVolJSonDTO.stCompleComerExtranjeroPedimentos> lstPedimentosNew = new List<CVolJSonDTO.stCompleComerExtranjeroPedimentos>();
+                                                                                    objEntComerExtranjeroDato.Pedimentos = lstPedimentosNew;
+
+                                                                                    lstEntComerExtranjero.Add(objEntComerExtranjeroDato);
+                                                                                    iIdxPermiso = lstEntComerExtranjero.FindIndex(e => e.PermisoImportacion.Equals(sExtClavePermiso));
+                                                                                }
+
+                                                                                #region Pedimento Datos.
+                                                                                CVolJSonDTO.stCompleComerExtranjeroPedimentos objEntComerPedimentoDato = new CVolJSonDTO.stCompleComerExtranjeroPedimentos();
+                                                                                objEntComerPedimentoDato.PuntoDeInternacion = iExtPuntoInterOExtra;
+                                                                                objEntComerPedimentoDato.PaisOrigen = sExtPais;
+                                                                                objEntComerPedimentoDato.MedioDeTransEntraAduana = iExtMedioIngOSal;
+                                                                                objEntComerPedimentoDato.Incoterms = sExtIncoterms;
+                                                                                objEntComerPedimentoDato.PrecioDeImportacion = Math.Round(dExtImporte, 3);
+                                                                                objEntComerPedimentoDato.PedimentoAduanal = sExtClavePedimento;
+
+                                                                                #region VolumenDocumentado.
+                                                                                CVolJSonDTO.stVolumenDato objEntComerVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                                objEntComerVolumenDocumentado.ValorNumerico = Math.Round(dExtVolumen, 3);
+                                                                                objEntComerVolumenDocumentado.UnidadDeMedida = sExtUnidadMedida;
+
+                                                                                objEntComerPedimentoDato.VolumenDocumentado = objEntComerVolumenDocumentado;
+                                                                                #endregion
+                                                                                #endregion
+
+                                                                                objEntComerExtranjeroDato = (CVolJSonDTO.stCompleComerExtranjero)lstEntComerExtranjero[iIdxPermiso];
+                                                                                List<CVolJSonDTO.stCompleComerExtranjeroPedimentos> lstEntComerPedimentos = (List<CVolJSonDTO.stCompleComerExtranjeroPedimentos>)objEntComerExtranjeroDato.Pedimentos;
+                                                                                lstEntComerPedimentos.Add(objEntComerPedimentoDato);
+                                                                                objEntComerExtranjeroDato.Pedimentos = lstEntComerPedimentos;
+                                                                                lstEntComerExtranjero[iIdxPermiso] = objEntComerExtranjeroDato;
+                                                                                break;
+                                                                                #endregion
+                                                                        }
+                                                                        #endregion
+                                                                    }
+                                                                #endregion
+                                                                #endregion
+
+                                                                switch (objTipoComplemento)
+                                                                {
+                                                                    #region Distribuidor.
+                                                                    case CVolJSonDTO.eTipoComplemento.Distribuidor:
+                                                                        objEntComplementoDistribuidor.TipoComplemento = "Distribucion";
+
+                                                                        if (lstEntDistNacional.Count > 0)
+                                                                            objEntComplementoDistribuidor.Nacional = lstEntDistNacional;
+
+                                                                        if (lstEntDistExtranjero.Count > 0)
+                                                                            objEntComplementoDistribuidor.Extranjero = lstEntDistExtranjero;
+
+                                                                        if (lstEntDistNacional.Count > 0 || lstEntDistExtranjero.Count > 0)
+                                                                            oEntregaComplemento = objEntComplementoDistribuidor;
+                                                                        break;
+                                                                    #endregion
+
+                                                                    #region Transportista.
+                                                                    case CVolJSonDTO.eTipoComplemento.Transportista:
+                                                                        objEntComplementoTransportista.TipoComplemento = "Transporte";
+
+                                                                        if (lstEntTransNacional.Count > 0)
+                                                                            objEntComplementoTransportista.Nacional = lstEntTransNacional;
+
+                                                                        if (lstEntTransNacional.Count > 0)
+                                                                        {
+                                                                            lstEntComplementoTransportista.Add(objEntComplementoTransportista);
+                                                                            oEntregaComplemento = objEntComplementoTransportista;
+                                                                        }
+                                                                        break;
+                                                                    #endregion
+
+                                                                    #region Comercializadora.
+                                                                    case CVolJSonDTO.eTipoComplemento.Comercializadora:
+                                                                        objEntComplementoComercializadora.TipoComplemento = "Comercializacion";
+
+                                                                        if (lstEntComerNacional.Count > 0)
+                                                                            objEntComplementoComercializadora.Nacional = lstEntComerNacional;
+
+                                                                        if (lstEntComerExtranjero.Count > 0)
+                                                                            objEntComplementoComercializadora.Extranjero = lstEntComerExtranjero;
+
+                                                                        if (lstEntComerNacional.Count > 0 || lstEntComerExtranjero.Count > 0)
+                                                                            oEntregaComplemento = objEntComplementoComercializadora;
+                                                                        break;
+                                                                        #endregion
+                                                                }
+                                                            }
+                                                            #endregion
+
+                                                            lstAutoTanqEntregas.Add(new CVolJSonDTO.stEntregaIndividualDato
+                                                            {
+                                                                NumeroDeRegistro = iNEntrega,
+                                                                VolumenInicialTanque = objEntVolIni,
+                                                                VolumenFinalTanque = Math.Round(dEntregaVolFinal, 3),
+                                                                VolumenEntregado = objEntVolumen,
+                                                                Temperatura = Math.Round(dEntregaTemperatura, 3),
+                                                                PresionAbsoluta = Math.Round(dEntregaPresionAbs, 3),
+                                                                FechaYHoraInicialEntrega = dtEntregaFIni.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                FechaYHoraFinalEntrega = dtEntregaFFin.ToString("s") + "-" + iDiferenciaHora.ToString("00") + ":00",
+                                                                Complemento = oEntregaComplemento
+                                                            });
+                                                            #endregion
+
+                                                            #region Guardamos las Entregas.
+                                                            objAutoTanqEntrega.TotalDocumentos++;
+                                                            objAutoTanqEntrega.TotalEntregas++;
+
+                                                            #region Suma Ventas.
+                                                            Decimal dSumTotalVentas = Convert.ToDecimal(objAutoTanqEntrega.SumaVentas);
+                                                            objAutoTanqEntrega.SumaVentas = Math.Round((dSumTotalVentas + dEntregaImporte), 3);
+                                                            #endregion
+
+                                                            #region Suma Volumen Entregado.
+                                                            CVolJSonDTO.stVolumenDato objEntSumaVol = (CVolJSonDTO.stVolumenDato)objAutoTanqEntrega.SumaVolumenEntregado;
+                                                            Decimal dEntTotalVol = Convert.ToDecimal(objEntSumaVol.ValorNumerico);
+                                                            objEntSumaVol.ValorNumerico = dEntTotalVol + dEntregaVolEntregado;
+                                                            objAutoTanqEntrega.SumaVolumenEntregado = objEntSumaVol;
+                                                            #endregion
+
+                                                            if (objAutoTanqEntrega.TotalEntregas > 0)
+                                                                objAutoTanqEntrega.Entrega = lstAutoTanqEntregas;
+                                                            else
+                                                                objAutoTanqEntrega.Entrega = null;
+
+                                                            objEntAutoTanqDatos.Entregas = objAutoTanqEntrega;
+                                                            lstProdAutoTanques[iIdxAutoTanq] = objEntAutoTanqDatos;
+                                                            #endregion
+                                                            break;
+                                                            #endregion
+                                                    }
+                                                }
+                                            #endregion
+                                        }
+                                        #endregion
+
+                                        switch (objTipoDistribucion)
+                                        {
+                                            case CVolJSonDTO.eTipoDistribucion.Autotanques:
+                                                if (lstProdAutoTanques.Count > 0)
+                                                    objProductoDato.Tanque = lstProdAutoTanques;
+                                                break;
+
+                                            case CVolJSonDTO.eTipoDistribucion.Ductos:
+                                                if (lstProdDuctos.Count > 0)
+                                                    objProductoDato.Ducto = lstProdDuctos;
+                                                break;
+                                        }
+                                    }
+                                }
+                            #endregion
                         }
+                        #endregion
                         break;
                     #endregion
 
                     #region Tipo: Reporte Mensual.
                     case CVolJSonDTO.eTipoReporte.Mes:
+                        #region Resumen Mensual. (Monthly_Summary)
                         // Agregamos el registro para generar el resumen en la tabla "Monthly_Summary"
                         if (!dictMonthlySummary.ContainsKey(vProd.ProductoID))
                         {
@@ -1291,11 +3399,12 @@ namespace APIControlNet.Controllers
                                 StartInventoryQuantity = vQVolIniProd,
                                 EndInventoryQuantity = vQVolFinProd
                             });
-
                         }
+                        #endregion
 
                         CVolJSonDTO.stReporteVolumenMensualDato objRepVolMenDato = new CVolJSonDTO.stReporteVolumenMensualDato();
 
+                        #region JSON: Estación.
                         if (viReporteEstacion)
                         {
                             #region Reporte para Estación.
@@ -1377,7 +3486,7 @@ namespace APIControlNet.Controllers
                                     List<CVolJSonDTO.stComplementoRecepcionDato> lstComplementos = new List<CVolJSonDTO.stComplementoRecepcionDato>();
                                     lstComplementos.Clear();
 
-                                    if (viGenerarComplemento && bCompRecep)
+                                    if (bCompRecep)
                                     {
                                         #region Consulta: Recepcion Proveedores Datos.
                                         var vQRecepProv = (from c in objContext.InventoryIns
@@ -1388,8 +3497,8 @@ namespace APIControlNet.Controllers
                                                                  c.ProductId == vProd.ProductoID
                                                            select new
                                                            {
-                                                               cd.SupplierFuelIdi,
-                                                               SupplierFuelId = sd.SupplierFuelIdi,
+                                                               //cd.SupplierFuelIdi,
+                                                               SupplierFuelIdi = sd.SupplierFuelIdi,
                                                                SupplierType = (sd.SupplierType ?? ""),
                                                                SupplierRfc = (sd.Rfc ?? ""),
                                                                Name = (sd.Name ?? ""),
@@ -1405,7 +3514,7 @@ namespace APIControlNet.Controllers
                                             {
                                                 CVolJSonDTO.stComplementoRecepcionDato objComplementoDato = new CVolJSonDTO.stComplementoRecepcionDato();
                                                 List<CVolJSonDTO.stNacionalDato> lstNacional = new List<CVolJSonDTO.stNacionalDato>();
-                                                String sAclaracionSAT = String.Empty;
+                                                String sAclaracionSAT = "";
 
                                                 #region Asignacion: Recepcion Proveedores.
                                                 String sTipoProveedor = vRProvDato.SupplierType,
@@ -1414,7 +3523,7 @@ namespace APIControlNet.Controllers
                                                            sPermisoProveedor = vRProvDato.SupplierPermission,
                                                            sPermisoAlmProveedor = vRProvDato.StorageAndDistributionPermission,
                                                            sConsignacionProveedor = vRProvDato.IsConsignment;
-                                                int iNProveedor = vRProvDato.SupplierFuelId;
+                                                int iNProveedor = vRProvDato.SupplierFuelIdi;
                                                 //Guid? gProveedorID = vRProvDato.SupplierFuelId;
                                                 #endregion
 
@@ -1512,7 +3621,7 @@ namespace APIControlNet.Controllers
                                                                         return BadRequest("La Aclaración de la Recepcion con CFDI '" + sNacCFDI + "' no debe ser menor a 6 caracteres.");
                                                                 #endregion
 
-                                                                #region Llenado: .
+                                                                #region Llenado: Recepcion CFDI.
                                                                 switch (sNacTipoCFDI.ToUpper())
                                                                 {
                                                                     case "INGRESO": sNacTipoCFDI = "Ingreso"; break;
@@ -1635,7 +3744,7 @@ namespace APIControlNet.Controllers
                                     List<CVolJSonDTO.stComplementoRecepcionDato> lstComplementos = new List<CVolJSonDTO.stComplementoRecepcionDato>();
                                     lstComplementos.Clear();
 
-                                    if (viGenerarComplemento && bCompEntregas)
+                                    if (bCompEntregas)
                                     {
                                         CVolJSonDTO.stComplementoRecepcionDato objComplementoDato = new CVolJSonDTO.stComplementoRecepcionDato();
                                         List<CVolJSonDTO.stNacionalDato> lstNacional = new List<CVolJSonDTO.stNacionalDato>();
@@ -1786,12 +3895,14 @@ namespace APIControlNet.Controllers
                             dictMonthlySummary[vProd.ProductoID].InventoryDifferencePercentage = dictMonthlySummary[vProd.ProductoID].InventoryDifference / dictMonthlySummary[vProd.ProductoID].SaleQuantity;
                             #endregion
                         }
+                        #endregion
+
+                        #region JSON: Autotanques y Ductos.
                         else
                         {
-                            #region Reporte para Autotanques y Ductos.
-
-                            #endregion
+                            
                         }
+                        #endregion
 
                         #region Calculo Totales Finales.
                         // Cantidad de Tanques.
@@ -1799,17 +3910,17 @@ namespace APIControlNet.Controllers
                                          where t.StoreId == viNEstacion && t.Active == true
                                          select t.TankIdi).Count();
 
-                        iTotalTanques += (from at in objContext.AutoTanques
-                                          join s in objContext.Stores on viNEstacion equals s.StoreId
-                                          where at.NumeroEstacion == s.StoreNumber.ToString()
-                                          select at.NumeroAutoTanque).Count();
+                        //iTotalTanques += (from at in objContext.AutoTanques
+                        //                  join s in objContext.Stores on viNEstacion equals s.StoreId
+                        //                  where at.NumeroEstacion == s.StoreNumber.ToString()
+                        //                  select at.NumeroAutoTanque).Count();
 
                         iTotalDispensarios = (from d in objContext.Dispensaries
                                               where d.StoreId == viNEstacion && d.Active == true
                                               select d.DispensaryIdi).Count();
+                        #endregion
                         break;
-                        #endregion
-                        #endregion
+                    #endregion
                 }
                 #endregion
 
@@ -1899,63 +4010,68 @@ namespace APIControlNet.Controllers
             #endregion
 
             #region Generación de Archivo.
-            String sRutaArchivo = GenerarRutaCarpetaArchivo(viRutaCarpetaRaiz: sRutaCarpetaRaiz,
+            String sRutaArchivo = String.Empty;
+
+            if (viProcesoArchivo == CVolJSonDTO.eProcesoArchivo.Guardar)
+            {
+                sRutaArchivo = GenerarRutaCarpetaArchivo(viRutaCarpetaRaiz: sRutaCarpetaRaiz,
                                                          viNEstacion: iNStore.ToString(),
                                                          viTipoReporte: sTipoArchivo,
                                                          viFecha: dtPerDateIni,
                                                          viNombreArchivo: sNombreArchivo);
 
-            System.IO.File.Delete(sRutaArchivo + ".json");
-            System.IO.File.Delete(sRutaArchivo + ".zip");
+                System.IO.File.Delete(sRutaArchivo + ".json");
+                System.IO.File.Delete(sRutaArchivo + ".zip");
 
-            System.IO.File.WriteAllText(sRutaArchivo + ".json", sEstructuraDatos);
-            //String sOutZip = CrearRarArchivo(sRutaArchivo + ".json", sRutaArchivo + ".zip");
+                System.IO.File.WriteAllText(sRutaArchivo + ".json", sEstructuraDatos);
+                //String sOutZip = CrearRarArchivo(sRutaArchivo + ".json", sRutaArchivo + ".zip");
 
-            using (ZipArchive objCarpeta = ZipFile.Open(sRutaArchivo + ".zip", ZipArchiveMode.Create))
-            {
-                objCarpeta.CreateEntryFromFile(sRutaArchivo + ".json", Path.GetFileName(sRutaArchivo + ".json"));
-            }
+                using (ZipArchive objCarpeta = ZipFile.Open(sRutaArchivo + ".zip", ZipArchiveMode.Create))
+                {
+                    objCarpeta.CreateEntryFromFile(sRutaArchivo + ".json", Path.GetFileName(sRutaArchivo + ".json"));
+                }
 
-            #region Guardar informacion del Archivo Generado.
-            // Guardamos los datos de generación en la tabla 
-            var vExistArchivo = objContext.Volumetrics.Any(a =>
-                                                           a.StoreId.Equals(viNEstacion) &&
-                                                           a.TypeOfPeriod == sTipoArchivo &&
-                                                           a.Date.Equals(dtPerDateIni));
-            Volumetric objArchivoDatos = new Volumetric();
+                #region Guardar informacion del Archivo Generado.
+                // Guardamos los datos de generación en la tabla 
+                var vExistArchivo = objContext.Volumetrics.Any(a =>
+                                                               a.StoreId.Equals(viNEstacion) &&
+                                                               a.TypeOfPeriod == sTipoArchivo &&
+                                                               a.Date.Equals(dtPerDateIni));
+                Volumetric objArchivoDatos = new Volumetric();
 
-            if (!vExistArchivo)
-            {
-                #region Insert.
-                objArchivoDatos.StoreId = viNEstacion.GetValueOrDefault();
-                objArchivoDatos.TypeOfPeriod = sTipoArchivo;
-                objArchivoDatos.Date = dtPerDateIni;
-                objArchivoDatos.IsGenarated = 1;
-                objArchivoDatos.IsSent = 0;
-                objArchivoDatos.EnableSend = 1;
-                objArchivoDatos.EnableGenerated = 1;
-                objArchivoDatos.NameFile = sNombreArchivo;
-                objArchivoDatos.Updated = DateTime.Now;
-                objArchivoDatos.Active = true;
-                objArchivoDatos.Locked = false;
-                objArchivoDatos.Deleted = false;
+                if (!vExistArchivo)
+                {
+                    #region Insert.
+                    objArchivoDatos.StoreId = viNEstacion.GetValueOrDefault();
+                    objArchivoDatos.TypeOfPeriod = sTipoArchivo;
+                    objArchivoDatos.Date = dtPerDateIni;
+                    objArchivoDatos.IsGenarated = 1;
+                    objArchivoDatos.IsSent = 0;
+                    objArchivoDatos.EnableSend = 1;
+                    objArchivoDatos.EnableGenerated = 1;
+                    objArchivoDatos.NameFile = sNombreArchivo;
+                    objArchivoDatos.Updated = DateTime.Now;
+                    objArchivoDatos.Active = true;
+                    objArchivoDatos.Locked = false;
+                    objArchivoDatos.Deleted = false;
 
-                objContext.Volumetrics.Add(objArchivoDatos);
+                    objContext.Volumetrics.Add(objArchivoDatos);
+                    #endregion
+                }
+                else
+                {
+                    #region UpDate.
+                    objArchivoDatos = objContext.Volumetrics.FirstOrDefault(a =>
+                                                                            a.StoreId.Equals(viNEstacion) &&
+                                                                            a.TypeOfPeriod == sTipoArchivo &&
+                                                                            a.Date.Equals(dtPerDateIni));
+                    objArchivoDatos.NameFile = sNombreArchivo;
+                    objArchivoDatos.Updated = DateTime.Now;
+                    objContext.Volumetrics.Update(objArchivoDatos);
+                    #endregion
+                }
                 #endregion
             }
-            else
-            {
-                #region UpDate.
-                objArchivoDatos = objContext.Volumetrics.FirstOrDefault(a =>
-                                                                        a.StoreId.Equals(viNEstacion) &&
-                                                                        a.TypeOfPeriod == sTipoArchivo &&
-                                                                        a.Date.Equals(dtPerDateIni));
-                objArchivoDatos.NameFile = sNombreArchivo;
-                objArchivoDatos.Updated = DateTime.Now;
-                objContext.Volumetrics.Update(objArchivoDatos);
-                #endregion
-            }
-            #endregion
             #endregion
 
             #region Resumenes (Dario y Mensual).
@@ -2004,12 +4120,6 @@ namespace APIControlNet.Controllers
                             #endregion
                         }
 
-                        var storeId2 = viNEstacion;
-                        var usuarioId = obtenerUsuarioId();
-                        var ipUser = obtenetIP();
-                        var tableName = "Se genero Json Sat Diario";
-                        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, tableName, storeId2);
-
                         objContext.SaveChanges();
                     }
                     break;
@@ -2057,20 +4167,23 @@ namespace APIControlNet.Controllers
                             #endregion
                         }
 
-                        var storeId2 = viNEstacion;
-                        var usuarioId = obtenerUsuarioId();
-                        var ipUser = obtenetIP();
-                        var tableName = "Se genero Json Sat Mensual";
-                        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, tableName, storeId2);
                         objContext.SaveChanges();
                     }
                     break;
                     #endregion
-
             }
             #endregion
 
-            return Ok("OK|Archivo Generado");
+            String sRespuestaSalida = String.Empty;
+
+            switch (viProcesoArchivo)
+            {
+                case CVolJSonDTO.eProcesoArchivo.Descargar: sRespuestaSalida = sEstructuraDatos; break;
+                case CVolJSonDTO.eProcesoArchivo.Guardar: sRespuestaSalida = "OK|Archivo Generado|" + sRutaArchivo; break;
+            }
+
+            return Ok(sRespuestaSalida);
+            //return Ok("OK|Archivo Generado");
         }
 
         private static String GenerarRutaCarpetaArchivo(String viRutaCarpetaRaiz, String viNEstacion, String viTipoReporte, DateTime viFecha, String viNombreArchivo)
@@ -2110,5 +4223,22 @@ namespace APIControlNet.Controllers
             return sUbicacionArchivo;
         }
 
+        /// <summary>
+        /// Validaa la estructura del CFDI.
+        /// </summary>
+        /// <param name="viCFDI">CFDI</param>
+        /// <returns></returns>
+        private static Boolean ValidarCFDI(String viCFDI)
+        {
+            bool isValid = false;
+            if (!string.IsNullOrEmpty(viCFDI))
+            {
+                Regex isGuid = new Regex(@"^({){0,1}[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(}){0,1}$", RegexOptions.Compiled);
+
+                if (isGuid.IsMatch(viCFDI))
+                    isValid = true;
+            }
+            return isValid;
+        }
     }
 }
