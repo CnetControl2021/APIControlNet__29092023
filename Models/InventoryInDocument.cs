@@ -5,8 +5,6 @@ namespace APIControlNet.Models
 {
     public partial class InventoryInDocument
     {
-        internal readonly object InventoryInNumber;
-
         public int InventoryInDocumentIdx { get; set; }
         public Guid StoreId { get; set; }
         public Guid InventoryInId { get; set; }

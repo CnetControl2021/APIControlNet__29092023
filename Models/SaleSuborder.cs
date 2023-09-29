@@ -35,6 +35,8 @@ namespace APIControlNet.Models
         public decimal? AbsolutePressure { get; set; }
         public decimal? CalorificPower { get; set; }
         public int? ProductCompositionId { get; set; }
+        public decimal? StartQuantity { get; set; }
+        public decimal? EndQuantity { get; set; }
 
         public virtual SaleOrder SaleOrder { get; set; }
     }

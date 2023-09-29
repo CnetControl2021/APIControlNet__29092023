@@ -37,6 +37,7 @@ namespace APIControlNet.Models
         public int? ProductCompositionId { get; set; }
         public Guid? PetitionCustomsId { get; set; }
         public int? TankIdi { get; set; }
+        public Guid? InventoryInId { get; set; }
 
         public virtual Store Store { get; set; }
         public virtual ICollection<SaleSuborder> SaleSuborders { get; set; }
