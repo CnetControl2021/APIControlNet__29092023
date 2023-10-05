@@ -47,5 +47,6 @@ namespace APIControlNet.Models
         public string SatCustomerRfc { get; set; }
         public int? Type { get; set; }
         public int? IsClosing { get; set; }
+        public string SatCustomerName { get; set; }
     }
 }

@@ -29,18 +29,24 @@ namespace APIControlNet.DTOs
         public DateTime? StartDate { get; set; }
         public int? TicketNumber { get; set; }
         public DateTime? Date { get; set; }
-        public DateTime? Updated { get; set; } =DateTime.Now;
-        public bool? Active { get; set; } = true;
-        public bool? Locked { get; set; } = false;
-        public bool? Deleted { get; set; }=false;
+        public DateTime? Updated { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
         public string JsonTipoDistribucionId { get; set; }
         public Guid? SupplierTransportRegisterId { get; set; }
         public int? ProductCompositionId { get; set; }
         public Guid? PetitionCustomsId { get; set; }
         public int? TankIdi { get; set; }
+        public Guid? InventoryInId { get; set; }
 
         public virtual StoreDTO Store { get; set; }
         public virtual ICollection<SaleSuborderDTO> SaleSuborders { get; set; }
+
+        public decimal? Price { get; set; } //agrege
+        public decimal? Quantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
+        public decimal? TotalAmount { get; set; }
     }
    
 }

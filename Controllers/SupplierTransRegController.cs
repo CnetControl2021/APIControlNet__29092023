@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+
 
 namespace APIControlNet.Controllers
 {
@@ -28,65 +30,68 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("{storeId?}")]
-        public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+
+
+        [HttpGet("byGuid/{idGuid}")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get3(Guid idGuid)
         {
-            var queryable = context.SupplierTransportRegisters.AsQueryable();
-            //if (!string.IsNullOrEmpty(nombre))
-            //{
-            //    queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            //}
-            //if (storeId != Guid.Empty)
-            //{
-            //    queryable = queryable.Where(x => x.StoreId == storeId);
-            //}
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var supTraReg = await queryable.Paginar(paginacionDTO)
-                .AsNoTracking()
-                .ToListAsync();
+            var data = await context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
+            var uuid = data.SupplierTransportRegisterId;
+
+            var supTraReg = await context.SupplierTransportRegisters.Where(x => x.SupplierTransportRegisterId == (uuid)).ToListAsync();
+
             return mapper.Map<List<SupplierTransportRegisterDTO>>(supTraReg);
         }
 
 
-        [HttpGet("Active")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
+
+        [HttpPost("{idGuid}")]
+        [AllowAnonymous]
+        public async Task<int> Post([FromBody] SupplierTransportRegisterDTO supplierTR, Guid idGuid)
         {
-            var queryable = context.SupplierTransportRegisters.Where(x => x.Active == 1).AsQueryable();
-
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var supTraReg = await queryable.Paginar(paginacionDTO)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<SupplierTransportRegisterDTO>>(supTraReg);
-        }
-
-        [HttpGet("ActiveSinPag")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get3([FromQuery] string nombre, Guid storeId)
-        {
-            var queryable = context.SupplierTransportRegisters.Where(x => x.Active == 1 && x.Deleted == 0).AsQueryable();
-            var supTraReg = await queryable.OrderByDescending(x => x.SupplierTransportRegisterIdx)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<SupplierTransportRegisterDTO>>(supTraReg);
-        }
-
-
-        [HttpGet("{id:int}", Name = "obtSupTraReg")]
-        public async Task<ActionResult<SupplierTransportRegisterDTO>> Get(int id)
-        {
-            var supTraReg = await context.SupplierTransportRegisters.FirstOrDefaultAsync(x => x.SupplierTransportRegisterIdx == id);
-
-            if (supTraReg == null)
+            int rpta = 0;
+            try
             {
-                return NotFound();
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    SupplierTransportRegister str = new();
+
+                    str.SupplierTransportRegisterId = Guid.NewGuid();
+                    str.SupplierId = supplierTR.SupplierId;
+                    str.AmountPerFee = supplierTR.AmountPerFee; //importe por tarifa
+                    str.AmountPerCapacity = supplierTR.AmountPerCapacity;
+                    str.AmountPerUse = supplierTR.AmountPerUse;
+                    str.AmountPerVolume = supplierTR.AmountPerVolume;
+                    str.AmountPerService = supplierTR.AmountPerService;
+                    str.AmountOfDiscount = supplierTR.AmountOfDiscount;
+                    str.Date = DateTime.Now;
+                    str.Updated = DateTime.Now;
+                    str.Active = 1;
+                    str.Locked = 0;
+                    str.Deleted = 0;
+
+                    context.SupplierTransportRegisters.Add(str);
+                    context.SaveChanges();
+
+                    InventoryInDocument iiDoc = await context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
+
+                    iiDoc.InventoryInId = idGuid;
+                    iiDoc.SupplierTransportRegisterId = str.SupplierTransportRegisterId;
+
+                    context.InventoryInDocuments.Update(iiDoc);
+                    context.SaveChanges();
+
+                    await transaccion.CommitAsync();
+                    rpta = 1;           
+                }
             }
-
-            return mapper.Map<SupplierTransportRegisterDTO>(supTraReg);
+            catch (Exception)
+            {
+                rpta = 0;   
+            }
+            return rpta;
         }
-
-
 
 
 
@@ -137,5 +142,50 @@ namespace APIControlNet.Controllers
             }
 
         }
+
+        [HttpPost("{storeId}/{idGuid}")]
+        //[AllowAnonymous]
+        public async Task<int> Save([FromBody] SupplierTransportRegisterDTO suppTrRegDTO, Guid storeId, Guid idGuid)
+        {
+            int rpta = 0;
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    SupplierTransportRegister oSuppTR = new();
+
+                    oSuppTR.SupplierId = Guid.NewGuid();
+                    oSuppTR.AmountPerFee = suppTrRegDTO.AmountPerFee;
+                    oSuppTR.AmountPerCapacity = suppTrRegDTO.AmountPerCapacity;
+                    oSuppTR.AmountPerUse = suppTrRegDTO.AmountPerUse;
+                    oSuppTR.AmountPerVolume = suppTrRegDTO.AmountPerVolume;
+                    oSuppTR.AmountPerService = suppTrRegDTO.AmountPerService;
+                    oSuppTR.AmountOfDiscount = suppTrRegDTO.AmountOfDiscount;
+                    oSuppTR.Date = DateTime.Now;
+                    oSuppTR.Updated = DateTime.Now;
+                    oSuppTR.Active = 1;
+                    oSuppTR.Locked = 0;
+                    oSuppTR.Deleted = 0;
+
+                    context.SupplierTransportRegisters.Add(oSuppTR);
+
+                    InventoryInDocument oInvoiceDTODocument = context.InventoryInDocuments.First(x => x.InventoryInId == idGuid);
+                    //Guid myGuid = new Guid(oSuppTR.SupplierId);
+                    oInvoiceDTODocument.SupplierTransportRegisterId = oSuppTR.SupplierId;
+
+                    context.InventoryInDocuments.Update(oInvoiceDTODocument);
+                    context.SaveChanges();
+
+                    await transaccion.CommitAsync();
+                    rpta = 1;
+                }
+            }
+            catch (Exception)
+            {
+                rpta = 0;
+            }
+            return rpta;
+        }
     }
 }
+

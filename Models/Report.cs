@@ -17,5 +17,6 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
         public int? NumberOfColumnsForSubtotal { get; set; }
         public string NameOfColumnsForSubtotal { get; set; }
+        public string ShortName { get; set; }
     }
 }

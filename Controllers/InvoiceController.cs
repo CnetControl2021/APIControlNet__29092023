@@ -30,10 +30,13 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("Active")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<InvoiceDTO>> Get2(Guid storeId, Guid idGuid, [FromQuery] string nombre)
         {
-            var queryable = context.Invoices.Where(x => x.InvoiceId == idGuid && x.Active == true).AsQueryable();
+            var data = context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
+            var uuid = data.Result.Uuid.ToString();
+
+            var queryable = context.Invoices.Where(x => x.Uuid == uuid).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
             {
                 queryable = queryable.Where(x => x.Folio.ToLower().Contains(nombre));
@@ -42,18 +45,19 @@ namespace APIControlNet.Controllers
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            var data = await queryable.OrderByDescending(x => x.InvoiceIdx)
+            var data2 = await queryable.OrderByDescending(x => x.InvoiceIdx)
                 //.Include(x => x.LoadPosition)
                 .AsNoTracking()
                 .ToListAsync();
-            return mapper.Map<List<InvoiceDTO>>(data);
+            return mapper.Map<List<InvoiceDTO>>(data2);
         }
+
 
         [HttpPost("{storeId}/{idGuid}")]
         //[AllowAnonymous]
-        public async Task<int> Save([FromBody] InvoiceDTO invoiceDTO, Guid storeId, Guid idGuid)
+        public async Task<ActionResult> Save([FromBody] InvoiceDTO invoiceDTO, Guid storeId, Guid idGuid)
         {
-            int rpta = 0;
+            var rpta = 0;
             try
             {
                 using (var transaccion = await context.Database.BeginTransactionAsync())
@@ -77,24 +81,28 @@ namespace APIControlNet.Controllers
 
                     context.Invoices.Add(oInvoiceDTO);
 
-                    InventoryInDocument oInvoiceDTODocument = context.InventoryInDocuments.First(x => x.InventoryInId == idGuid);
+                    InventoryInDocument oInvoiceDTODocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
                     Guid myGuid = new Guid(oInvoiceDTO.Uuid);
-                    oInvoiceDTODocument.Uuid = myGuid;
-                    //oInvoiceDTO.Uuid = oInvoiceDTO.Uuid;
-                    
-                    context.InventoryInDocuments.Update(oInvoiceDTODocument);
-                    context.SaveChanges();
 
-                    await transaccion.CommitAsync();
-                    rpta = 1;
+                    if (oInvoiceDTODocument.Uuid is null || oInvoiceDTODocument.Uuid == Guid.Empty)
+                    {
+                        oInvoiceDTODocument.Uuid = myGuid;
+                        context.InventoryInDocuments.Update(oInvoiceDTODocument);
+                        context.SaveChanges();
+                        await transaccion.CommitAsync();
+                        return Ok();
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("Ya tiene factura esta compra");
+                    }          
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                rpta = 0;
+                //return  rpta = 0;
+                return BadRequest("Ya tiene factura esta compra");
             }
-            return rpta;
         }
-
     }
 }

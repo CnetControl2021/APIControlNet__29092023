@@ -21,6 +21,7 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public int? IsInMobileApp { get; set; }
 
         public virtual ICollection<Customer> Customers { get; set; }
     }

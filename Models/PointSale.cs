@@ -14,7 +14,7 @@ namespace APIControlNet.Models
         public int? Subtype { get; set; }
         public int? Address { get; set; }
         public int? PrinterBaudRate { get; set; }
-        public int? PrinterType { get; set; }
+        public int? PrinterBrandId { get; set; }
         public int? PrinterIdi { get; set; }
         public int? TypeAuthorization { get; set; }
         public string PointSaleUnique { get; set; }
@@ -26,6 +26,7 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public int? IsEnabledPrintToPrinterIdi { get; set; }
 
         public virtual Store Store { get; set; }
     }

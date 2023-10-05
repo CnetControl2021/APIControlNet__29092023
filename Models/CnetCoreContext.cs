@@ -122,6 +122,7 @@ namespace APIControlNet.Models
         public virtual DbSet<Port> Ports { get; set; }
         public virtual DbSet<PortType> PortTypes { get; set; }
         public virtual DbSet<Printer> Printers { get; set; }
+        public virtual DbSet<PrinterBrand> PrinterBrands { get; set; }
         public virtual DbSet<Product> Products { get; set; }
         public virtual DbSet<ProductCategory> ProductCategories { get; set; }
         public virtual DbSet<ProductComposition> ProductCompositions { get; set; }
@@ -135,6 +136,7 @@ namespace APIControlNet.Models
         public virtual DbSet<ReportModuleDetail> ReportModuleDetails { get; set; }
         public virtual DbSet<SaleOrder> SaleOrders { get; set; }
         public virtual DbSet<SaleOrderPayment> SaleOrderPayments { get; set; }
+        public virtual DbSet<SaleOrderPhoto> SaleOrderPhotos { get; set; }
         public virtual DbSet<SaleSuborder> SaleSuborders { get; set; }
         public virtual DbSet<SatClaveProductoServicio> SatClaveProductoServicios { get; set; }
         public virtual DbSet<SatClaveUnidad> SatClaveUnidads { get; set; }
@@ -204,8 +206,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
-            
+           
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -2897,6 +2898,9 @@ namespace APIControlNet.Models
 
                 entity.ToTable("inventory_in");
 
+                entity.HasIndex(e => e.InventoryInId, "IX_inventory_in")
+                    .IsUnique();
+
                 entity.HasIndex(e => new { e.StoreId, e.InventoryInNumber, e.Date }, "IX_inventory_in_compound")
                     .IsUnique();
 
@@ -3060,6 +3064,8 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.InventoryInIdi).HasColumnName("inventory_in_idi");
 
+                entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+
                 entity.Property(e => e.JsonClaveUnidadMedidaId)
                     .HasMaxLength(4)
                     .IsUnicode(false)
@@ -3132,6 +3138,13 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Volume)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("volume");
+
+                entity.HasOne(d => d.InventoryIn)
+                    .WithMany(p => p.InventoryInDocuments)
+                    .HasPrincipalKey(p => p.InventoryInId)
+                    .HasForeignKey(d => d.InventoryInId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_inventory_in_document_inventory_in");
 
                 entity.HasOne(d => d.S)
                     .WithMany(p => p.InventoryInDocuments)
@@ -3492,7 +3505,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.CompanyId).HasColumnName("company_id");
 
                 entity.Property(e => e.CustomerName)
-                    .HasMaxLength(100)
+                    .HasMaxLength(250)
                     .IsUnicode(false)
                     .HasColumnName("customer_name");
 
@@ -3548,7 +3561,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.Name)
-                    .HasMaxLength(100)
+                    .HasMaxLength(250)
                     .IsUnicode(false)
                     .HasColumnName("name");
 
@@ -3556,6 +3569,11 @@ namespace APIControlNet.Models
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("rfc");
+
+                entity.Property(e => e.SatCustomerName)
+                    .HasMaxLength(250)
+                    .IsUnicode(false)
+                    .HasColumnName("sat_customer_name");
 
                 entity.Property(e => e.SatCustomerRfc)
                     .HasMaxLength(20)
@@ -6076,6 +6094,8 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("invoice_serie_id");
 
+                entity.Property(e => e.IsEnabledPrintToPrinterIdi).HasColumnName("is_enabled_print_to_printer_idi");
+
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.Name)
@@ -6094,9 +6114,9 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.PrinterBaudRate).HasColumnName("printer_baud_rate");
 
-                entity.Property(e => e.PrinterIdi).HasColumnName("printer_idi");
+                entity.Property(e => e.PrinterBrandId).HasColumnName("printer_brand_id");
 
-                entity.Property(e => e.PrinterType).HasColumnName("printer_type");
+                entity.Property(e => e.PrinterIdi).HasColumnName("printer_idi");
 
                 entity.Property(e => e.StatusRes).HasColumnName("status_res");
 
@@ -6246,22 +6266,31 @@ namespace APIControlNet.Models
 
                 entity.ToTable("printer");
 
+                entity.HasIndex(e => new { e.StoreId, e.PrinterIdi }, "IX_printer_compound")
+                    .IsUnique();
+
                 entity.Property(e => e.PrinterIdx).HasColumnName("printer_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
 
-                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
-                entity.Property(e => e.Locked).HasColumnName("locked");
-
-                entity.Property(e => e.Name)
+                entity.Property(e => e.Description)
                     .HasMaxLength(80)
                     .IsUnicode(false)
-                    .HasColumnName("name");
+                    .HasColumnName("description");
+
+                entity.Property(e => e.EnablePrintToPrinterName).HasColumnName("enable_print_to_printer_name");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.PrinterBaudRate).HasColumnName("printer_baud_rate");
+
+                entity.Property(e => e.PrinterBrandId).HasColumnName("printer_brand_id");
 
                 entity.Property(e => e.PrinterIdi).HasColumnName("printer_idi");
 
@@ -6277,11 +6306,40 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("printer_name");
 
-                entity.Property(e => e.PrinterType).HasColumnName("printer_type");
-
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
-                entity.Property(e => e.Updated).HasColumnName("updated");
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<PrinterBrand>(entity =>
+            {
+                entity.ToTable("printer_brand");
+
+                entity.Property(e => e.PrinterBrandId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("printer_brand_id");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<Product>(entity =>
@@ -6302,7 +6360,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Active).HasColumnName("active");
 
                 entity.Property(e => e.AppName)
-                    .HasMaxLength(10)
+                    .HasMaxLength(30)
                     .IsUnicode(false)
                     .HasColumnName("app_name");
 
@@ -6718,6 +6776,11 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.ReportId).HasColumnName("report_id");
 
+                entity.Property(e => e.ShortName)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("short_name");
+
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
@@ -7035,6 +7098,40 @@ namespace APIControlNet.Models
                     .HasColumnName("sat_forma_pago_id");
 
                 entity.Property(e => e.SatFormaSubpagoId).HasColumnName("sat_forma_subpago_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<SaleOrderPhoto>(entity =>
+            {
+                entity.HasKey(e => e.SaleOrderPhotoIdx)
+                    .HasName("PK_sale_order_photo_idx");
+
+                entity.ToTable("sale_order_photo");
+
+                entity.HasIndex(e => new { e.SaleOrderId, e.SaleOrderPhotoIdi }, "IX_sale_order_photo_compound");
+
+                entity.Property(e => e.SaleOrderPhotoIdx).HasColumnName("sale_order_photo_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Photo)
+                    .HasColumnType("text")
+                    .HasColumnName("photo");
+
+                entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
+
+                entity.Property(e => e.SaleOrderPhotoIdi).HasColumnName("sale_order_photo_idi");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -7410,6 +7507,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.FechaInicioVigencia)
                     .HasColumnType("datetime")
                     .HasColumnName("fecha_inicio_vigencia");
+
+                entity.Property(e => e.IsInMobileApp).HasColumnName("is_in_mobile_app");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 

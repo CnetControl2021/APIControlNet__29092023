@@ -5,6 +5,11 @@ namespace APIControlNet.Models
 {
     public partial class InventoryIn
     {
+        public InventoryIn()
+        {
+            InventoryInDocuments = new HashSet<InventoryInDocument>();
+        }
+
         public int InventoryInIdx { get; set; }
         public Guid InventoryInId { get; set; }
         public Guid StoreId { get; set; }
@@ -42,5 +47,6 @@ namespace APIControlNet.Models
         public int? TransportPermissionId { get; set; }
 
         public virtual Store Store { get; set; }
+        public virtual ICollection<InventoryInDocument> InventoryInDocuments { get; set; }
     }
 }

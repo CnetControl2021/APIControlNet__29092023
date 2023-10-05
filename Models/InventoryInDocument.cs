@@ -22,6 +22,7 @@ namespace APIControlNet.Models
         public decimal? SalePrice { get; set; }
         public decimal? PublicSalePrice { get; set; }
         public string SatTipoComprobanteId { get; set; }
+        public Guid? InvoiceId { get; set; }
         public Guid? Uuid { get; set; }
         public string JsonTipoComplementoId { get; set; }
         public string JsonClaveUnidadMedidaId { get; set; }
@@ -33,6 +34,7 @@ namespace APIControlNet.Models
         public Guid? SupplierTransportRegisterId { get; set; }
         public Guid? PetitionCustomsId { get; set; }
 
+        public virtual InventoryIn InventoryIn { get; set; }
         public virtual SupplierTransport S { get; set; }
     }
 }

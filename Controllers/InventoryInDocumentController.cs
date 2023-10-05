@@ -74,23 +74,16 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<InventoryInDocumentDTO>>(invindocument);
         }
 
+
         //[HttpGet("sinPag/{nombre}")]
-        //////[AllowAnonymous]
-        //public async Task<IEnumerable<InventoryInDocumentDTO>> Get(Guid storeId, string nombre)
+        //[AllowAnonymous]
+        //public async Task<IEnumerable<InventoryInDocumentDTO>> Get(Guid storeId, Guid idGuid)
         //{
-        //    var queryable = context.PointSales.AsQueryable();
-        //    if (!string.IsNullOrEmpty(nombre))
-        //    {
-        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-        //    }
-        //    if (storeId != Guid.Empty)
-        //    {
-        //        queryable = queryable.Where(x => x.StoreId == storeId);
-        //    }
-        //    var pointsale = await queryable
-        //        .AsNoTracking()
-        //        .ToListAsync();
-        //    return mapper.Map<List<InventoryInDocumentDTO>>(pointsale);
+        //    var data = context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
+        //    var uuid = data.Result.Uuid.ToString();
+
+           
+        //    return mapper.Map<List<InventoryInDocumentDTO>>(data);
         //}
 
 
@@ -108,51 +101,51 @@ namespace APIControlNet.Controllers
             return mapper.Map<InventoryInDocumentDTO>(invindocument);
         }
 
-        [HttpGet("{InventoryInId?}")]
-        //[AllowAnonymous]
-        public async Task<ActionResult<InventoryInDocumentDTO>> Get(Guid InventoryInId)
+        [HttpGet("{InventoryInId}/{storeId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<InventoryInDocumentDTO>> Get(Guid InventoryInId, Guid storeId)
         {
-            var invindocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == InventoryInId);
+            var list = await context.InventoryInDocuments.Where(x => x.InventoryInId == InventoryInId
+            && x.StoreId == storeId ).ToListAsync();
 
-            if (invindocument == null)
+            if (list == null)
             {
                 return NotFound();
             }
-
-            return mapper.Map<InventoryInDocumentDTO>(invindocument);
+            return Ok(list);
         }
 
 
-        [HttpPost]
-        public async Task<ActionResult> Post([FromBody] InventoryInDocumentDTO inventoryInDocumentDTO)
-        {
-            var existeid = await context.InventoryInDocuments.AnyAsync
-            (x => x.InventoryInId == inventoryInDocumentDTO.InventoryInId && x.StoreId == inventoryInDocumentDTO.StoreId && x.InventoryInIdi == inventoryInDocumentDTO.InventoryInIdi);
+        //[HttpPost]
+        //public async Task<ActionResult> Post([FromBody] InventoryInDocumentDTO inventoryInDocumentDTO)
+        //{
+        //    var existeid = await context.InventoryInDocuments.AnyAsync
+        //    (x => x.InventoryInId == inventoryInDocumentDTO.InventoryInId && x.StoreId == inventoryInDocumentDTO.StoreId && x.InventoryInIdi == inventoryInDocumentDTO.InventoryInIdi);
 
-            var invindocument = mapper.Map<InventoryInDocument>(inventoryInDocumentDTO);
+        //    var invindocument = mapper.Map<InventoryInDocument>(inventoryInDocumentDTO);
             
 
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = invindocument.Folio.ToString();
-            var storeId2 = inventoryInDocumentDTO.StoreId;
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = invindocument.Folio.ToString();
+        //    var storeId2 = inventoryInDocumentDTO.StoreId;
 
             
-            if (existeid)
-            {
-                return BadRequest($"Ya existe {inventoryInDocumentDTO.StoreId} en esa empresa");
-            }
-            else
-            {
-                context.Add(invindocument);
+        //    if (existeid)
+        //    {
+        //        return BadRequest($"Ya existe {inventoryInDocumentDTO.StoreId} en esa empresa");
+        //    }
+        //    else
+        //    {
+        //        context.Add(invindocument);
 
-                //await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                await context.SaveChangesAsync();
-            }
-            return Ok();
-            //var storeDTO2 = mapper.Map<InventoryInDocumentDTO>(employeeMap);
-            //return CreatedAtRoute("getEmployee", new { id = employeeMap.EmployeeId }, storeDTO2);
-        }
+        //        //await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //        await context.SaveChangesAsync();
+        //    }
+        //    return Ok();
+        //    //var storeDTO2 = mapper.Map<InventoryInDocumentDTO>(employeeMap);
+        //    //return CreatedAtRoute("getEmployee", new { id = employeeMap.EmployeeId }, storeDTO2);
+        //}
 
 
         [HttpPut("{storeId?}")]

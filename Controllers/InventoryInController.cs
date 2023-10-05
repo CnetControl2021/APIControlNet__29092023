@@ -38,146 +38,230 @@ namespace APIControlNet.Controllers
 
         [HttpPost("{storeId}")]
         //[AllowAnonymous]
-        public async Task<int> Save([FromBody] InvIn_InvInDoc invIn_InvInDoc, Guid storeId, Guid idGuid)
+        public async Task<ActionResult> Post([FromBody] InventoryIn oInventoryIn, Guid storeId, Guid idGuid)
         {
             if (idGuid != Guid.Empty)
             {
                 var existeid = await context.InventoryIns.AnyAsync(x => x.InventoryInId == idGuid);
             }
 
-            int rpta = 0;
             try
             {
-                //using (var transaccion = new TransactionScope())
-                using (var transaccion = await context.Database.BeginTransactionAsync())
-                {
-                    InventoryIn oInventoryIn = new InventoryIn();
-                    oInventoryIn.InventoryInId = Guid.NewGuid();
-                    oInventoryIn.StoreId = storeId;
-                    oInventoryIn.InventoryInNumber = invIn_InvInDoc.inventoryInDTO.InventoryInNumber; //capturado
-                    oInventoryIn.Date = DateTime.Now;
-                    oInventoryIn.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
-                    oInventoryIn.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
-                    oInventoryIn.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
-                    oInventoryIn.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
-                    oInventoryIn.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
-                    oInventoryIn.Volume = invIn_InvInDoc.inventoryInDTO.Volume;
-                    oInventoryIn.EndVolume = invIn_InvInDoc.inventoryInDTO.EndVolume;
-                    oInventoryIn.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
-                    oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
-                    oInventoryIn.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
-                    oInventoryIn.CalorificPower = invIn_InvInDoc.inventoryInDTO.CalorificPower;
-                    oInventoryIn.Updated = invIn_InvInDoc.inventoryInDTO.Updated;
-                    oInventoryIn.Active = invIn_InvInDoc.inventoryInDTO.Active;
-                    oInventoryIn.Locked = invIn_InvInDoc.inventoryInDTO.Locked;
-                    oInventoryIn.Deleted = invIn_InvInDoc.inventoryInDTO.Deleted;
+                InventoryIn newIi = new InventoryIn();
+                newIi.InventoryInId = Guid.NewGuid();
+                newIi.StoreId = storeId;
+                newIi.InventoryInNumber = oInventoryIn.InventoryInNumber; //capturado
+                newIi.StartDate = oInventoryIn.StartDate;
+                newIi.EndDate = oInventoryIn.EndDate;
+                newIi.Date = DateTime.Now;
+                newIi.TankIdi = oInventoryIn.TankIdi;
+                newIi.ProductId = oInventoryIn.ProductId;
+                newIi.StartVolume = oInventoryIn.StartVolume;
+                newIi.Volume = oInventoryIn.Volume;
+                newIi.EndVolume = oInventoryIn.EndVolume;
+                newIi.StartTemperature = oInventoryIn.StartTemperature;
+                newIi.EndTemperature = oInventoryIn.StartTemperature;
+                newIi.AbsolutePressure = oInventoryIn.AbsolutePressure;
+                newIi.CalorificPower = oInventoryIn.CalorificPower;
+                newIi.Updated = DateTime.Now;
+                newIi.Active = true;
+                newIi.Locked = false;
+                newIi.Deleted = false;
 
-                    context.InventoryIns.Add(oInventoryIn);
+                context.InventoryIns.Add(newIi);
+                context.SaveChanges();
 
-                    InventoryInDocument oInventoryInDocument = new InventoryInDocument();
-
-                    oInventoryInDocument.InventoryInId = oInventoryIn.InventoryInId;
-                    oInventoryInDocument.StoreId = oInventoryIn.StoreId;
-                    oInventoryInDocument.InventoryInIdi = 1;
-                    oInventoryInDocument.Date = DateTime.Now;
-                    oInventoryInDocument.Type = "RPT";
-                    oInventoryInDocument.Volume = oInventoryIn.Volume;
-                    oInventoryInDocument.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
-                    oInventoryInDocument.Updated = invIn_InvInDoc.inventoryInDocumentDTO.Updated;
-                    oInventoryInDocument.Active = invIn_InvInDoc.inventoryInDocumentDTO.Active;
-                    oInventoryInDocument.Locked = invIn_InvInDoc.inventoryInDocumentDTO.Locked;
-                    oInventoryInDocument.Deleted = invIn_InvInDoc.inventoryInDocumentDTO.Deleted;
-
-                    context.InventoryInDocuments.Add(oInventoryInDocument);
-                    context.SaveChanges();
-
-                    await transaccion.CommitAsync();
-                    rpta = 1;
-                }
+                return Ok();
+                // }
             }
             catch (Exception)
             {
-                rpta = 0;
+                return BadRequest("Revisar captura");
             }
-            return rpta; 
         }
 
+        //[HttpPost("{storeId}")]
+        ////[AllowAnonymous]
+        //public async Task<int> Save([FromBody] InvIn_InvInDoc invIn_InvInDoc, Guid storeId, Guid idGuid)
+        //{
+        //    if (idGuid != Guid.Empty)
+        //    {
+        //        var existeid = await context.InventoryIns.AnyAsync(x => x.InventoryInId == idGuid);
+        //    }
 
-        [HttpPut("update")]
-        public async Task<IActionResult> Put(Guid idGuid, InvIn_InvInDoc invIn_InvInDoc)
-        {
-            var inv = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
-            if (inv == null)
-            {
-                return NotFound(" no encontrado");
-            }
+        //    int rpta = 0;
+        //    try
+        //    {
+        //        //using (var transaccion = new TransactionScope())
+        //        using (var transaccion = await context.Database.BeginTransactionAsync())
+        //        {
+        //            InventoryIn oInventoryIn = new InventoryIn();
+        //            oInventoryIn.InventoryInId = Guid.NewGuid();
+        //            oInventoryIn.StoreId = storeId;
+        //            oInventoryIn.InventoryInNumber = invIn_InvInDoc.inventoryInDTO.InventoryInNumber; //capturado
+        //            oInventoryIn.Date = DateTime.Now;
+        //            oInventoryIn.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
+        //            oInventoryIn.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
+        //            oInventoryIn.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
+        //            oInventoryIn.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
+        //            oInventoryIn.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
+        //            oInventoryIn.Volume = invIn_InvInDoc.inventoryInDTO.Volume;
+        //            oInventoryIn.EndVolume = invIn_InvInDoc.inventoryInDTO.EndVolume;
+        //            oInventoryIn.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
+        //            oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
+        //            oInventoryIn.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
+        //            oInventoryIn.CalorificPower = invIn_InvInDoc.inventoryInDTO.CalorificPower;
+        //            oInventoryIn.Updated = invIn_InvInDoc.inventoryInDTO.Updated;
+        //            oInventoryIn.Active = invIn_InvInDoc.inventoryInDTO.Active;
+        //            oInventoryIn.Locked = invIn_InvInDoc.inventoryInDTO.Locked;
+        //            oInventoryIn.Deleted = invIn_InvInDoc.inventoryInDTO.Deleted;
 
-            var invDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
-            if (invDoc == null)
-            {
-                return NotFound(" no encontrado");
-            }
+        //            context.InventoryIns.Add(oInventoryIn);
 
-            inv.InventoryInId = idGuid;
-            inv.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
-            inv.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
-            inv.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
-            inv.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
-            inv.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
-            inv.Volume = invIn_InvInDoc.inventoryInDTO?.Volume;
-            inv.EndVolume = invIn_InvInDoc?.inventoryInDTO?.EndVolume;
-            inv.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
-            inv.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
+        //            InventoryInDocument oInventoryInDocument = new InventoryInDocument();
 
-            var upd1 = new InventoryInDTO
-            {
-                InventoryInId = inv.InventoryInId,
-                StartVolume = inv.StartVolume,
-            };
-            ////
-            invDoc.InventoryInId = idGuid;
-            invDoc.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
+        //            oInventoryInDocument.InventoryInId = oInventoryIn.InventoryInId;
+        //            oInventoryInDocument.StoreId = oInventoryIn.StoreId;
+        //            oInventoryInDocument.InventoryInIdi = 1;
+        //            oInventoryInDocument.Date = DateTime.Now;
+        //            oInventoryInDocument.Type = "RPT";
+        //            oInventoryInDocument.Volume = oInventoryIn.Volume;
+        //            oInventoryInDocument.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
+        //            oInventoryInDocument.Updated = invIn_InvInDoc.inventoryInDocumentDTO.Updated;
+        //            oInventoryInDocument.Active = invIn_InvInDoc.inventoryInDocumentDTO.Active;
+        //            oInventoryInDocument.Locked = invIn_InvInDoc.inventoryInDocumentDTO.Locked;
+        //            oInventoryInDocument.Deleted = invIn_InvInDoc.inventoryInDocumentDTO.Deleted;
 
-            var upd2 = new InventoryInDocumentDTO
-            {
-                InventoryInId = invDoc.InventoryInId,
-                Price = invDoc.Price,
-            };
+        //            context.InventoryInDocuments.Add(oInventoryInDocument);
+        //            context.SaveChanges();
 
-            await context.SaveChangesAsync();
-
-            //return Ok(new { InventoryInDTO = upd1, InventoryInDocumentDTO = upd2} );
-            return Ok();
-        }
+        //            await transaccion.CommitAsync();
+        //            rpta = 1;
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //        rpta = 0;
+        //    }
+        //    return rpta; 
+        //}
 
 
-        [HttpGet("empaquetada")]
+        //[HttpPut("update")]
+        //public async Task<IActionResult> Put(Guid idGuid, InvIn_InvInDoc invIn_InvInDoc)
+        //{
+        //    var inv = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
+        //    if (inv == null)
+        //    {
+        //        return NotFound(" no encontrado");
+        //    }
+
+        //    var invDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
+        //    if (invDoc == null)
+        //    {
+        //        return NotFound(" no encontrado");
+        //    }
+
+        //    inv.InventoryInId = idGuid;
+        //    inv.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
+        //    inv.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
+        //    inv.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
+        //    inv.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
+        //    inv.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
+        //    inv.Volume = invIn_InvInDoc.inventoryInDTO?.Volume;
+        //    inv.EndVolume = invIn_InvInDoc?.inventoryInDTO?.EndVolume;
+        //    inv.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
+        //    inv.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
+
+        //    var upd1 = new InventoryInDTO
+        //    {
+        //        InventoryInId = inv.InventoryInId,
+        //        StartVolume = inv.StartVolume,
+        //    };
+        //    ////
+        //    invDoc.InventoryInId = idGuid;
+        //    invDoc.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
+
+        //    var upd2 = new InventoryInDocumentDTO
+        //    {
+        //        InventoryInId = invDoc.InventoryInId,
+        //        Price = invDoc.Price,
+        //    };
+
+        //    await context.SaveChangesAsync();
+
+        //    //return Ok(new { InventoryInDTO = upd1, InventoryInDocumentDTO = upd2} );
+        //    return Ok();
+        //}
+
+        [HttpGet("byIdGuid/{idGuid}")] 
         [AllowAnonymous]
-        public async Task<ActionResult<InvIn_InvInDoc>> GetClaseEmpaquetada(Guid idGuid)
+        public async Task<ActionResult<InventoryInDTO>> Get([FromRoute] Guid idGuid)
         {
-            var iI = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
-            var iIDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
-            //chema
-            var claseEmpaquetada = new InvIn_InvInDoc
-            {
-                inventoryInDTO = new InventoryInDTO { 
-                    InventoryInId = iI.InventoryInId,
-                    TankIdi = iI.TankIdi,
-                    ProductId = iI.ProductId,
-                    StartDate = iI.StartDate,
-                    EndDate = iI.EndDate,
-                    StartVolume = iI.StartVolume,
-                    Volume = iI.Volume,
-                    EndVolume = iI.EndVolume,
-                    StartTemperature = iI.StartTemperature,
-                    AbsolutePressure = iI.AbsolutePressure
-                },
-                inventoryInDocumentDTO = new InventoryInDocumentDTO { Price = iIDoc.Price }
-            };
-            return claseEmpaquetada;
+            if (idGuid == Guid.Empty) {  return BadRequest("Id no valido"); }
+            var resp = await context.InventoryIns.FirstAsync(e => e.InventoryInId.Equals(idGuid));
+            if (resp == null) { return NotFound("No encontrado"); }
+            return mapper.Map<InventoryInDTO>(resp);
+        }
 
+        [HttpPut("{storeId?}")]
+        public async Task<IActionResult> Put(InventoryInDTO inventoryInDTO, Guid storeId)
+        {
+            var db = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == inventoryInDTO.InventoryInId);
+
+            if (db is null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                db = mapper.Map(inventoryInDTO, db);
+                db.Updated = DateTime.Now;
+
+                var storeId2 = storeId;
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var tableName = db.Name;
+                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
+                await context.SaveChangesAsync();
+                return Ok(db);
+
+            }
+            catch
+            {
+                return BadRequest($"Revisar datos");
+            }
 
         }
+
+
+        //[HttpGet("empaquetada")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<InvIn_InvInDoc>> GetClaseEmpaquetada(Guid idGuid)
+        //{
+        //    var iI = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
+        //    var iIDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
+        //    //chema
+        //    var claseEmpaquetada = new InvIn_InvInDoc
+        //    {
+        //        inventoryInDTO = new InventoryInDTO
+        //        {
+        //            InventoryInId = iI.InventoryInId,
+        //            TankIdi = iI.TankIdi,
+        //            ProductId = iI.ProductId,
+        //            StartDate = iI.StartDate,
+        //            EndDate = iI.EndDate,
+        //            StartVolume = iI.StartVolume,
+        //            Volume = iI.Volume,
+        //            EndVolume = iI.EndVolume,
+        //            StartTemperature = iI.StartTemperature,
+        //            AbsolutePressure = iI.AbsolutePressure
+        //        },
+        //        inventoryInDocumentDTO = new InventoryInDocumentDTO { Price = iIDoc.Price }
+        //    };
+        //    return claseEmpaquetada;
+        //}
+
 
         //[HttpGet("informacion")] ///example chatgpt openia
         //public async Task<ActionResult<IEnumerable<InformacionOrdenDTO>>> GetInformacionOrdenes()
@@ -579,11 +663,14 @@ namespace APIControlNet.Controllers
                                 InventoryInIdx = iI.InventoryInIdx,
                                 InventoryInId = iI.InventoryInId,
                                 StoreId = iI.StoreId,
-                                Date = iI.Date,
-                                ProductName = pd.Name,
-                                TankName = tk.Name,
+                                StartDate = iI.StartDate,
                                 Volume = iI.Volume,
-                                Price = iIdoc.Price
+
+                                //ProductName = pd.Name,
+                                //TankName = tk.Name,
+                                //Volume = iI.Volume,
+
+                                //Price = iIdoc.Price
 
                             }).AsNoTracking().ToListAsync();
             return Ok(listSO);

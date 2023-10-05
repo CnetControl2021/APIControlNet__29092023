@@ -3,9 +3,11 @@ using APIControlNet.Models;
 using APIControlNet.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection.Emit;
 using System.Text;
@@ -127,8 +129,18 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("es-MX");
-//CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("es-MX");
+//var supportedCultures = new[]
+//{
+//    //new CultureInfo("en-US"),
+//    new CultureInfo("es-MX"),
+//};
+
+//app.UseRequestLocalization(new RequestLocalizationOptions
+//{
+//    DefaultRequestCulture = new RequestCulture("en-US"),
+//    SupportedCultures = supportedCultures,
+//    SupportedUICultures = supportedCultures
+//});
 
 app.Run();
 
