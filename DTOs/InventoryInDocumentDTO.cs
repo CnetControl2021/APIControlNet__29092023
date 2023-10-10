@@ -1,4 +1,5 @@
 ﻿using APIControlNet.Models;
+using APIControlNet.Utilidades;
 using System.ComponentModel.DataAnnotations;
 
 namespace APIControlNet.DTOs
@@ -25,7 +26,13 @@ namespace APIControlNet.DTOs
         public decimal? SalePrice { get; set; }
         public decimal? PublicSalePrice { get; set; }
         public string SatTipoComprobanteId { get; set; }
+        
+        public Guid? InvoiceId { get; set; }
 
+        [Required(ErrorMessage = "El campo GuidValue es obligatorio.")]
+        //[RegularExpression(@"^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$", ErrorMessage = "El campo GuidValue debe ser un GUID válido.")]
+        [ValidateNonZeroGuid]
+        //[RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")]
         public Guid? Uuid { get; set; }
         public string JsonTipoComplementoId { get; set; }
         public string JsonClaveUnidadMedidaId { get; set; }

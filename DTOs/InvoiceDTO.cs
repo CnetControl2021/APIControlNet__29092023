@@ -13,14 +13,13 @@ namespace APIControlNet.DTOs
         public string Folio { get; set; }
         public DateTime? Date { get; set; }
         public Guid? CustomerId { get; set; }
+        public Guid? SupplierId { get; set; }
         public decimal? Subtotal { get; set; }
         public decimal? AmountTax { get; set; }
         public decimal? AmountIeps { get; set; }
         public decimal? AmountIsr { get; set; }
         public decimal? Amount { get; set; }
-        [Required]
-        [ValidateGuid]
-        public Guid Uuid { get; set; }
+        public Guid? Uuid { get; set; }
         public string InvoiceApplicationTypeId { get; set; }
         public bool? IsCancelled { get; set; }
         public bool? IsStamped { get; set; }

@@ -8,6 +8,13 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<InventoryInDocumentDTO, InventoryInDocument>();
+            CreateMap<InventoryInDocument, InventoryInDocumentDTO>();
+            CreateMap<InvoiceDTO, Invoice>();
+            CreateMap<Invoice, InvoiceDTO>();
+            //CreateMap<InvInDoc_InvoiceDTO, InvInDoc_InvoiceDTO>();  //empaquetada
+
+
             CreateMap<CompanyDTO, Company>();
             CreateMap<Company, CompanyDTO>();   
             CreateMap<Store, StoreDTO>();
@@ -130,9 +137,6 @@ namespace APIControlNet.Utilidades
             CreateMap<InventoryInDTO, InventoryIn>();
             CreateMap<InventoryIn, InventoryInDTO>();
 
-            CreateMap<InventoryInDocumentDTO, InventoryInDocument>();
-            CreateMap<InventoryInDocument, InventoryInDocumentDTO>();
-
             CreateMap<EmployeeDTO, Employee>();
             CreateMap<Employee, EmployeeDTO>();
 
@@ -205,9 +209,6 @@ namespace APIControlNet.Utilidades
             CreateMap<SupplierTransportRegisterDTO, SupplierTransportRegister>();
             CreateMap<SupplierTransportRegister, SupplierTransportRegisterDTO>();
 
-            CreateMap<InvoiceDTO, Invoice>();
-            CreateMap<Invoice, InvoiceDTO>();
-
             CreateMap<SatTipoComprobanteDTO, SatTipoComprobante>();
             CreateMap<SatTipoComprobante, SatTipoComprobanteDTO>();
 
@@ -218,6 +219,7 @@ namespace APIControlNet.Utilidades
             //    .ForMember(AspNetRole => AspNetRole.ChPageRols, opciones => opciones.MapFrom(MapChpagRols));
             //CreateMap<AspNetRolesDTO, AspNetRole>();
         }
+
 
         //private List<ChPageRol> MapChpagRols(AspNetRolesDTO aspNetRolesDTO, AspNetRole aspNetRole)
         //{

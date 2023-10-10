@@ -12,6 +12,7 @@ namespace APIControlNet.Models
         public string Folio { get; set; }
         public DateTime? Date { get; set; }
         public Guid? CustomerId { get; set; }
+        public Guid? SupplierId { get; set; }
         public decimal? Subtotal { get; set; }
         public decimal? AmountTax { get; set; }
         public decimal? AmountIeps { get; set; }

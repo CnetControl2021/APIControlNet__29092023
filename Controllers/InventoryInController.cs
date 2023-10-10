@@ -82,7 +82,7 @@ namespace APIControlNet.Controllers
 
         //[HttpPost("{storeId}")]
         ////[AllowAnonymous]
-        //public async Task<int> Save([FromBody] InvIn_InvInDoc invIn_InvInDoc, Guid storeId, Guid idGuid)
+        //public async Task<int> Save([FromBody] invInDoc_Invoice invInDoc_Invoice, Guid storeId, Guid idGuid)
         //{
         //    if (idGuid != Guid.Empty)
         //    {
@@ -98,23 +98,23 @@ namespace APIControlNet.Controllers
         //            InventoryIn oInventoryIn = new InventoryIn();
         //            oInventoryIn.InventoryInId = Guid.NewGuid();
         //            oInventoryIn.StoreId = storeId;
-        //            oInventoryIn.InventoryInNumber = invIn_InvInDoc.inventoryInDTO.InventoryInNumber; //capturado
+        //            oInventoryIn.InventoryInNumber = invInDoc_Invoice.inventoryInDTO.InventoryInNumber; //capturado
         //            oInventoryIn.Date = DateTime.Now;
-        //            oInventoryIn.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
-        //            oInventoryIn.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
-        //            oInventoryIn.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
-        //            oInventoryIn.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
-        //            oInventoryIn.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
-        //            oInventoryIn.Volume = invIn_InvInDoc.inventoryInDTO.Volume;
-        //            oInventoryIn.EndVolume = invIn_InvInDoc.inventoryInDTO.EndVolume;
-        //            oInventoryIn.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
+        //            oInventoryIn.TankIdi = invInDoc_Invoice.inventoryInDTO.TankIdi;
+        //            oInventoryIn.ProductId = invInDoc_Invoice.inventoryInDTO.ProductId;
+        //            oInventoryIn.StartDate = invInDoc_Invoice.inventoryInDTO.StartDate;
+        //            oInventoryIn.EndDate = invInDoc_Invoice.inventoryInDTO.EndDate;
+        //            oInventoryIn.StartVolume = invInDoc_Invoice.inventoryInDTO.StartVolume;
+        //            oInventoryIn.Volume = invInDoc_Invoice.inventoryInDTO.Volume;
+        //            oInventoryIn.EndVolume = invInDoc_Invoice.inventoryInDTO.EndVolume;
+        //            oInventoryIn.StartTemperature = invInDoc_Invoice.inventoryInDTO.StartTemperature;
         //            oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
-        //            oInventoryIn.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
-        //            oInventoryIn.CalorificPower = invIn_InvInDoc.inventoryInDTO.CalorificPower;
-        //            oInventoryIn.Updated = invIn_InvInDoc.inventoryInDTO.Updated;
-        //            oInventoryIn.Active = invIn_InvInDoc.inventoryInDTO.Active;
-        //            oInventoryIn.Locked = invIn_InvInDoc.inventoryInDTO.Locked;
-        //            oInventoryIn.Deleted = invIn_InvInDoc.inventoryInDTO.Deleted;
+        //            oInventoryIn.AbsolutePressure = invInDoc_Invoice.inventoryInDTO.AbsolutePressure;
+        //            oInventoryIn.CalorificPower = invInDoc_Invoice.inventoryInDTO.CalorificPower;
+        //            oInventoryIn.Updated = invInDoc_Invoice.inventoryInDTO.Updated;
+        //            oInventoryIn.Active = invInDoc_Invoice.inventoryInDTO.Active;
+        //            oInventoryIn.Locked = invInDoc_Invoice.inventoryInDTO.Locked;
+        //            oInventoryIn.Deleted = invInDoc_Invoice.inventoryInDTO.Deleted;
 
         //            context.InventoryIns.Add(oInventoryIn);
 
@@ -126,11 +126,11 @@ namespace APIControlNet.Controllers
         //            oInventoryInDocument.Date = DateTime.Now;
         //            oInventoryInDocument.Type = "RPT";
         //            oInventoryInDocument.Volume = oInventoryIn.Volume;
-        //            oInventoryInDocument.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
-        //            oInventoryInDocument.Updated = invIn_InvInDoc.inventoryInDocumentDTO.Updated;
-        //            oInventoryInDocument.Active = invIn_InvInDoc.inventoryInDocumentDTO.Active;
-        //            oInventoryInDocument.Locked = invIn_InvInDoc.inventoryInDocumentDTO.Locked;
-        //            oInventoryInDocument.Deleted = invIn_InvInDoc.inventoryInDocumentDTO.Deleted;
+        //            oInventoryInDocument.Price = invInDoc_Invoice.inventoryInDocumentDTO.Price;
+        //            oInventoryInDocument.Updated = invInDoc_Invoice.inventoryInDocumentDTO.Updated;
+        //            oInventoryInDocument.Active = invInDoc_Invoice.inventoryInDocumentDTO.Active;
+        //            oInventoryInDocument.Locked = invInDoc_Invoice.inventoryInDocumentDTO.Locked;
+        //            oInventoryInDocument.Deleted = invInDoc_Invoice.inventoryInDocumentDTO.Deleted;
 
         //            context.InventoryInDocuments.Add(oInventoryInDocument);
         //            context.SaveChanges();
@@ -148,7 +148,7 @@ namespace APIControlNet.Controllers
 
 
         //[HttpPut("update")]
-        //public async Task<IActionResult> Put(Guid idGuid, InvIn_InvInDoc invIn_InvInDoc)
+        //public async Task<IActionResult> Put(Guid idGuid, invInDoc_Invoice invInDoc_Invoice)
         //{
         //    var inv = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
         //    if (inv == null)
@@ -163,15 +163,15 @@ namespace APIControlNet.Controllers
         //    }
 
         //    inv.InventoryInId = idGuid;
-        //    inv.TankIdi = invIn_InvInDoc.inventoryInDTO.TankIdi;
-        //    inv.ProductId = invIn_InvInDoc.inventoryInDTO.ProductId;
-        //    inv.StartDate = invIn_InvInDoc.inventoryInDTO.StartDate;
-        //    inv.EndDate = invIn_InvInDoc.inventoryInDTO.EndDate;
-        //    inv.StartVolume = invIn_InvInDoc.inventoryInDTO.StartVolume;
-        //    inv.Volume = invIn_InvInDoc.inventoryInDTO?.Volume;
-        //    inv.EndVolume = invIn_InvInDoc?.inventoryInDTO?.EndVolume;
-        //    inv.StartTemperature = invIn_InvInDoc.inventoryInDTO.StartTemperature;
-        //    inv.AbsolutePressure = invIn_InvInDoc.inventoryInDTO.AbsolutePressure;
+        //    inv.TankIdi = invInDoc_Invoice.inventoryInDTO.TankIdi;
+        //    inv.ProductId = invInDoc_Invoice.inventoryInDTO.ProductId;
+        //    inv.StartDate = invInDoc_Invoice.inventoryInDTO.StartDate;
+        //    inv.EndDate = invInDoc_Invoice.inventoryInDTO.EndDate;
+        //    inv.StartVolume = invInDoc_Invoice.inventoryInDTO.StartVolume;
+        //    inv.Volume = invInDoc_Invoice.inventoryInDTO?.Volume;
+        //    inv.EndVolume = invInDoc_Invoice?.inventoryInDTO?.EndVolume;
+        //    inv.StartTemperature = invInDoc_Invoice.inventoryInDTO.StartTemperature;
+        //    inv.AbsolutePressure = invInDoc_Invoice.inventoryInDTO.AbsolutePressure;
 
         //    var upd1 = new InventoryInDTO
         //    {
@@ -180,7 +180,7 @@ namespace APIControlNet.Controllers
         //    };
         //    ////
         //    invDoc.InventoryInId = idGuid;
-        //    invDoc.Price = invIn_InvInDoc.inventoryInDocumentDTO.Price;
+        //    invDoc.Price = invInDoc_Invoice.inventoryInDocumentDTO.Price;
 
         //    var upd2 = new InventoryInDocumentDTO
         //    {
@@ -237,12 +237,12 @@ namespace APIControlNet.Controllers
 
         //[HttpGet("empaquetada")]
         //[AllowAnonymous]
-        //public async Task<ActionResult<InvIn_InvInDoc>> GetClaseEmpaquetada(Guid idGuid)
+        //public async Task<ActionResult<invInDoc_Invoice>> GetClaseEmpaquetada(Guid idGuid)
         //{
         //    var iI = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
         //    var iIDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInId == idGuid);
         //    //chema
-        //    var claseEmpaquetada = new InvIn_InvInDoc
+        //    var claseEmpaquetada = new invInDoc_Invoice
         //    {
         //        inventoryInDTO = new InventoryInDTO
         //        {
@@ -443,7 +443,7 @@ namespace APIControlNet.Controllers
 
         //[HttpPost("{storeId?}")]
         //[AllowAnonymous]
-        //public async Task<int> Save([FromBody] InvIn_InvInDocum invIn_InvInDocum, Guid storeId, Guid idGuid)
+        //public async Task<int> Save([FromBody] invInDoc_Invoiceum invInDoc_Invoiceum, Guid storeId, Guid idGuid)
         //{
         //    var existeid = await context.InventoryIns.AnyAsync(x => x.InventoryInId == idGuid);
 
@@ -456,25 +456,25 @@ namespace APIControlNet.Controllers
         //            if (!existeid)
         //            {
         //                InventoryIn oInventoryIn = new InventoryIn();
-        //                oInventoryIn.InventoryInId = invIn_InvInDocum.InventoryInDTO.InventoryInId;  //se genera en clase es llave para document
+        //                oInventoryIn.InventoryInId = invInDoc_Invoiceum.InventoryInDTO.InventoryInId;  //se genera en clase es llave para document
         //                oInventoryIn.StoreId = storeId;
-        //                oInventoryIn.InventoryInNumber = invIn_InvInDocum.InventoryInDTO.InventoryInNumber; //capturado
+        //                oInventoryIn.InventoryInNumber = invInDoc_Invoiceum.InventoryInDTO.InventoryInNumber; //capturado
         //                oInventoryIn.Date = DateTime.Now;
-        //                oInventoryIn.TankIdi = invIn_InvInDocum.InventoryInDTO.TankIdi;
-        //                oInventoryIn.ProductId = invIn_InvInDocum.InventoryInDTO.ProductId;
-        //                oInventoryIn.StartDate = invIn_InvInDocum.InventoryInDTO.StartDate;
-        //                oInventoryIn.EndDate = invIn_InvInDocum.InventoryInDTO.EndDate;
-        //                oInventoryIn.StartVolume = invIn_InvInDocum.InventoryInDTO.StartVolume;
-        //                oInventoryIn.Volume = invIn_InvInDocum.InventoryInDTO.Volume;
-        //                oInventoryIn.EndVolume = invIn_InvInDocum.InventoryInDTO.EndVolume;
-        //                oInventoryIn.StartTemperature = invIn_InvInDocum.InventoryInDTO.StartTemperature;
+        //                oInventoryIn.TankIdi = invInDoc_Invoiceum.InventoryInDTO.TankIdi;
+        //                oInventoryIn.ProductId = invInDoc_Invoiceum.InventoryInDTO.ProductId;
+        //                oInventoryIn.StartDate = invInDoc_Invoiceum.InventoryInDTO.StartDate;
+        //                oInventoryIn.EndDate = invInDoc_Invoiceum.InventoryInDTO.EndDate;
+        //                oInventoryIn.StartVolume = invInDoc_Invoiceum.InventoryInDTO.StartVolume;
+        //                oInventoryIn.Volume = invInDoc_Invoiceum.InventoryInDTO.Volume;
+        //                oInventoryIn.EndVolume = invInDoc_Invoiceum.InventoryInDTO.EndVolume;
+        //                oInventoryIn.StartTemperature = invInDoc_Invoiceum.InventoryInDTO.StartTemperature;
         //                oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
-        //                oInventoryIn.AbsolutePressure = invIn_InvInDocum.InventoryInDTO.AbsolutePressure;
-        //                oInventoryIn.CalorificPower = invIn_InvInDocum.InventoryInDTO.CalorificPower;
-        //                oInventoryIn.Updated = invIn_InvInDocum.InventoryInDTO.Updated;
-        //                oInventoryIn.Active = invIn_InvInDocum.InventoryInDTO?.Active;
-        //                oInventoryIn.Locked = invIn_InvInDocum.InventoryInDTO?.Locked;
-        //                oInventoryIn.Deleted = invIn_InvInDocum.InventoryInDTO.Deleted;
+        //                oInventoryIn.AbsolutePressure = invInDoc_Invoiceum.InventoryInDTO.AbsolutePressure;
+        //                oInventoryIn.CalorificPower = invInDoc_Invoiceum.InventoryInDTO.CalorificPower;
+        //                oInventoryIn.Updated = invInDoc_Invoiceum.InventoryInDTO.Updated;
+        //                oInventoryIn.Active = invInDoc_Invoiceum.InventoryInDTO?.Active;
+        //                oInventoryIn.Locked = invInDoc_Invoiceum.InventoryInDTO?.Locked;
+        //                oInventoryIn.Deleted = invInDoc_Invoiceum.InventoryInDTO.Deleted;
 
         //                context.InventoryIns.Add(oInventoryIn);               //Agrego o marco
         //                context.SaveChanges();                                //Guardo
@@ -487,12 +487,12 @@ namespace APIControlNet.Controllers
         //                oInventoryInDocument.InventoryInIdi = 1;
         //                oInventoryInDocument.Date = DateTime.Now;
         //                oInventoryInDocument.Type = "RPT";
-        //                oInventoryInDocument.Volume = invIn_InvInDocum.InventoryInDTO.Volume;
-        //                oInventoryInDocument.Price = invIn_InvInDocum.InventoryInDocumentDTO.Price;
-        //                oInventoryInDocument.Updated = invIn_InvInDocum.InventoryInDocumentDTO.Updated;
-        //                oInventoryInDocument.Active = invIn_InvInDocum.InventoryInDocumentDTO?.Active;
-        //                oInventoryInDocument.Locked = invIn_InvInDocum.InventoryInDocumentDTO?.Locked;
-        //                oInventoryInDocument.Deleted = invIn_InvInDocum.InventoryInDocumentDTO?.Deleted;
+        //                oInventoryInDocument.Volume = invInDoc_Invoiceum.InventoryInDTO.Volume;
+        //                oInventoryInDocument.Price = invInDoc_Invoiceum.InventoryInDocumentDTO.Price;
+        //                oInventoryInDocument.Updated = invInDoc_Invoiceum.InventoryInDocumentDTO.Updated;
+        //                oInventoryInDocument.Active = invInDoc_Invoiceum.InventoryInDocumentDTO?.Active;
+        //                oInventoryInDocument.Locked = invInDoc_Invoiceum.InventoryInDocumentDTO?.Locked;
+        //                oInventoryInDocument.Deleted = invInDoc_Invoiceum.InventoryInDocumentDTO?.Deleted;
 
         //                context.InventoryInDocuments.Add(oInventoryInDocument);                  //Agrego o marco
         //                context.SaveChanges();                                                   //Guardo
@@ -501,17 +501,17 @@ namespace APIControlNet.Controllers
         //                SupplierTransportRegister oSupplierTransportRegister = new SupplierTransportRegister();
         //                oSupplierTransportRegister.SupplierTransportRegisterId = Guid.NewGuid();
         //                oSupplierTransportRegister.SupplierId = oInventoryIn.StoreId;
-        //                oSupplierTransportRegister.AmountPerFee = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerFee;
-        //                oSupplierTransportRegister.AmountPerCapacity = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerCapacity;
-        //                oSupplierTransportRegister.AmountPerUse = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerUse;
-        //                oSupplierTransportRegister.AmountPerVolume = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerVolume;
-        //                oSupplierTransportRegister.AmountPerService = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerService;
-        //                oSupplierTransportRegister.AmountOfDiscount = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountOfDiscount;
-        //                oSupplierTransportRegister.Date = invIn_InvInDocum.SupplierTransportRegisterDTO.Date;
-        //                oSupplierTransportRegister.Updated = invIn_InvInDocum.SupplierTransportRegisterDTO.Updated;
-        //                oSupplierTransportRegister.Active = invIn_InvInDocum.SupplierTransportRegisterDTO.Active;
-        //                oSupplierTransportRegister.Locked = invIn_InvInDocum.SupplierTransportRegisterDTO.Locked;
-        //                oSupplierTransportRegister.Deleted = invIn_InvInDocum.SupplierTransportRegisterDTO.Deleted;
+        //                oSupplierTransportRegister.AmountPerFee = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerFee;
+        //                oSupplierTransportRegister.AmountPerCapacity = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerCapacity;
+        //                oSupplierTransportRegister.AmountPerUse = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerUse;
+        //                oSupplierTransportRegister.AmountPerVolume = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerVolume;
+        //                oSupplierTransportRegister.AmountPerService = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerService;
+        //                oSupplierTransportRegister.AmountOfDiscount = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountOfDiscount;
+        //                oSupplierTransportRegister.Date = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Date;
+        //                oSupplierTransportRegister.Updated = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Updated;
+        //                oSupplierTransportRegister.Active = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Active;
+        //                oSupplierTransportRegister.Locked = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Locked;
+        //                oSupplierTransportRegister.Deleted = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Deleted;
         //                oInventoryInDocument.SupplierTransportRegisterId = oSupplierTransportRegister.SupplierTransportRegisterId; //tabla atras
 
         //                context.SupplierTransportRegisters.Add(oSupplierTransportRegister);
@@ -520,20 +520,20 @@ namespace APIControlNet.Controllers
         //                Invoice oInvInvoice = new Invoice();
         //                oInvInvoice.InvoiceId = Guid.NewGuid();
         //                oInvInvoice.StoreId = storeId;
-        //                oInvInvoice.InvoiceSerieId = invIn_InvInDocum.InvoiceDTO.InvoiceSerieId;
-        //                oInvInvoice.Folio = invIn_InvInDocum.InvoiceDTO.Folio;
-        //                oInvInvoice.Date = invIn_InvInDocum.InvoiceDTO.Date;
-        //                oInvInvoice.CustomerId = invIn_InvInDocum.InvoiceDTO.CustomerId;
-        //                oInvInvoice.Amount = invIn_InvInDocum.InvoiceDTO.Amount; //precio
+        //                oInvInvoice.InvoiceSerieId = invInDoc_Invoiceum.InvoiceDTO.InvoiceSerieId;
+        //                oInvInvoice.Folio = invInDoc_Invoiceum.InvoiceDTO.Folio;
+        //                oInvInvoice.Date = invInDoc_Invoiceum.InvoiceDTO.Date;
+        //                oInvInvoice.CustomerId = invInDoc_Invoiceum.InvoiceDTO.CustomerId;
+        //                oInvInvoice.Amount = invInDoc_Invoiceum.InvoiceDTO.Amount; //precio
         //                oInvInvoice.Subtotal = ((oInvInvoice.Amount) / ((decimal)1.16));
         //                oInvInvoice.AmountTax = ((oInvInvoice.Subtotal) * ((decimal)0.16));
-        //                oInvInvoice.SatTipoComprobanteId = invIn_InvInDocum.InvoiceDTO.SatTipoComprobanteId;
-        //                oInvInvoice.Updated = invIn_InvInDocum.InvoiceDTO.Updated;
-        //                oInvInvoice.Active = invIn_InvInDocum.InvoiceDTO.Active;
-        //                oInvInvoice.Locked = invIn_InvInDocum.InvoiceDTO.Locked;
-        //                oInvInvoice.Deleted = invIn_InvInDocum.InvoiceDTO.Deleted;
-        //                oInvInvoice.Uuid = invIn_InvInDocum.InvoiceDTO.Uuid.ToString();
-        //                oInventoryInDocument.Uuid = invIn_InvInDocum.InvoiceDTO.Uuid;
+        //                oInvInvoice.SatTipoComprobanteId = invInDoc_Invoiceum.InvoiceDTO.SatTipoComprobanteId;
+        //                oInvInvoice.Updated = invInDoc_Invoiceum.InvoiceDTO.Updated;
+        //                oInvInvoice.Active = invInDoc_Invoiceum.InvoiceDTO.Active;
+        //                oInvInvoice.Locked = invInDoc_Invoiceum.InvoiceDTO.Locked;
+        //                oInvInvoice.Deleted = invInDoc_Invoiceum.InvoiceDTO.Deleted;
+        //                oInvInvoice.Uuid = invInDoc_Invoiceum.InvoiceDTO.Uuid.ToString();
+        //                oInventoryInDocument.Uuid = invInDoc_Invoiceum.InvoiceDTO.Uuid;
 
         //                context.Invoices.Add(oInvInvoice);
         //                context.SaveChanges();
@@ -545,25 +545,25 @@ namespace APIControlNet.Controllers
         //            else
         //            {
         //                InventoryIn oInventoryIn = new InventoryIn();
-        //                oInventoryIn.InventoryInId = invIn_InvInDocum.InventoryInDTO.InventoryInId;  //se genera en clase es llave para document
+        //                oInventoryIn.InventoryInId = invInDoc_Invoiceum.InventoryInDTO.InventoryInId;  //se genera en clase es llave para document
         //                oInventoryIn.StoreId = storeId;
-        //                oInventoryIn.InventoryInNumber = invIn_InvInDocum.InventoryInDTO.InventoryInNumber; //capturado
+        //                oInventoryIn.InventoryInNumber = invInDoc_Invoiceum.InventoryInDTO.InventoryInNumber; //capturado
         //                oInventoryIn.Date = DateTime.Now;
-        //                oInventoryIn.TankIdi = invIn_InvInDocum.InventoryInDTO.TankIdi;
-        //                oInventoryIn.ProductId = invIn_InvInDocum.InventoryInDTO.ProductId;
-        //                oInventoryIn.StartDate = invIn_InvInDocum.InventoryInDTO.StartDate;
-        //                oInventoryIn.EndDate = invIn_InvInDocum.InventoryInDTO.EndDate;
-        //                oInventoryIn.StartVolume = invIn_InvInDocum.InventoryInDTO.StartVolume;
-        //                oInventoryIn.Volume = invIn_InvInDocum.InventoryInDTO.Volume;
-        //                oInventoryIn.EndVolume = invIn_InvInDocum.InventoryInDTO.EndVolume;
-        //                oInventoryIn.StartTemperature = invIn_InvInDocum.InventoryInDTO.StartTemperature;
+        //                oInventoryIn.TankIdi = invInDoc_Invoiceum.InventoryInDTO.TankIdi;
+        //                oInventoryIn.ProductId = invInDoc_Invoiceum.InventoryInDTO.ProductId;
+        //                oInventoryIn.StartDate = invInDoc_Invoiceum.InventoryInDTO.StartDate;
+        //                oInventoryIn.EndDate = invInDoc_Invoiceum.InventoryInDTO.EndDate;
+        //                oInventoryIn.StartVolume = invInDoc_Invoiceum.InventoryInDTO.StartVolume;
+        //                oInventoryIn.Volume = invInDoc_Invoiceum.InventoryInDTO.Volume;
+        //                oInventoryIn.EndVolume = invInDoc_Invoiceum.InventoryInDTO.EndVolume;
+        //                oInventoryIn.StartTemperature = invInDoc_Invoiceum.InventoryInDTO.StartTemperature;
         //                oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
-        //                oInventoryIn.AbsolutePressure = invIn_InvInDocum.InventoryInDTO.AbsolutePressure;
-        //                oInventoryIn.CalorificPower = invIn_InvInDocum.InventoryInDTO.CalorificPower;
-        //                oInventoryIn.Updated = invIn_InvInDocum.InventoryInDTO.Updated;
-        //                oInventoryIn.Active = invIn_InvInDocum.InventoryInDTO?.Active;
-        //                oInventoryIn.Locked = invIn_InvInDocum.InventoryInDTO?.Locked;
-        //                oInventoryIn.Deleted = invIn_InvInDocum.InventoryInDTO.Deleted;
+        //                oInventoryIn.AbsolutePressure = invInDoc_Invoiceum.InventoryInDTO.AbsolutePressure;
+        //                oInventoryIn.CalorificPower = invInDoc_Invoiceum.InventoryInDTO.CalorificPower;
+        //                oInventoryIn.Updated = invInDoc_Invoiceum.InventoryInDTO.Updated;
+        //                oInventoryIn.Active = invInDoc_Invoiceum.InventoryInDTO?.Active;
+        //                oInventoryIn.Locked = invInDoc_Invoiceum.InventoryInDTO?.Locked;
+        //                oInventoryIn.Deleted = invInDoc_Invoiceum.InventoryInDTO.Deleted;
 
         //                context.InventoryIns.Update(oInventoryIn);               //Agrego o marco
         //                context.SaveChanges();                                //Guardo
@@ -576,12 +576,12 @@ namespace APIControlNet.Controllers
         //                oInventoryInDocument.InventoryInIdi = 1;
         //                oInventoryInDocument.Date = DateTime.Now;
         //                oInventoryInDocument.Type = "RPT";
-        //                oInventoryInDocument.Volume = invIn_InvInDocum.InventoryInDTO.Volume;
-        //                oInventoryInDocument.Price = invIn_InvInDocum.InventoryInDocumentDTO.Price;
-        //                oInventoryInDocument.Updated = invIn_InvInDocum.InventoryInDocumentDTO.Updated;
-        //                oInventoryInDocument.Active = invIn_InvInDocum.InventoryInDocumentDTO?.Active;
-        //                oInventoryInDocument.Locked = invIn_InvInDocum.InventoryInDocumentDTO?.Locked;
-        //                oInventoryInDocument.Deleted = invIn_InvInDocum.InventoryInDocumentDTO?.Deleted;
+        //                oInventoryInDocument.Volume = invInDoc_Invoiceum.InventoryInDTO.Volume;
+        //                oInventoryInDocument.Price = invInDoc_Invoiceum.InventoryInDocumentDTO.Price;
+        //                oInventoryInDocument.Updated = invInDoc_Invoiceum.InventoryInDocumentDTO.Updated;
+        //                oInventoryInDocument.Active = invInDoc_Invoiceum.InventoryInDocumentDTO?.Active;
+        //                oInventoryInDocument.Locked = invInDoc_Invoiceum.InventoryInDocumentDTO?.Locked;
+        //                oInventoryInDocument.Deleted = invInDoc_Invoiceum.InventoryInDocumentDTO?.Deleted;
 
         //                context.InventoryInDocuments.Update(oInventoryInDocument);                  //Agrego o marco
         //                context.SaveChanges();                                                   //Guardo
@@ -590,17 +590,17 @@ namespace APIControlNet.Controllers
         //                SupplierTransportRegister oSupplierTransportRegister = new SupplierTransportRegister();
         //                oSupplierTransportRegister.SupplierTransportRegisterId = Guid.NewGuid();
         //                oSupplierTransportRegister.SupplierId = oInventoryIn.StoreId;
-        //                oSupplierTransportRegister.AmountPerFee = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerFee;
-        //                oSupplierTransportRegister.AmountPerCapacity = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerCapacity;
-        //                oSupplierTransportRegister.AmountPerUse = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerUse;
-        //                oSupplierTransportRegister.AmountPerVolume = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerVolume;
-        //                oSupplierTransportRegister.AmountPerService = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountPerService;
-        //                oSupplierTransportRegister.AmountOfDiscount = invIn_InvInDocum.SupplierTransportRegisterDTO.AmountOfDiscount;
-        //                oSupplierTransportRegister.Date = invIn_InvInDocum.SupplierTransportRegisterDTO.Date;
-        //                oSupplierTransportRegister.Updated = invIn_InvInDocum.SupplierTransportRegisterDTO.Updated;
-        //                oSupplierTransportRegister.Active = invIn_InvInDocum.SupplierTransportRegisterDTO.Active;
-        //                oSupplierTransportRegister.Locked = invIn_InvInDocum.SupplierTransportRegisterDTO.Locked;
-        //                oSupplierTransportRegister.Deleted = invIn_InvInDocum.SupplierTransportRegisterDTO.Deleted;
+        //                oSupplierTransportRegister.AmountPerFee = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerFee;
+        //                oSupplierTransportRegister.AmountPerCapacity = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerCapacity;
+        //                oSupplierTransportRegister.AmountPerUse = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerUse;
+        //                oSupplierTransportRegister.AmountPerVolume = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerVolume;
+        //                oSupplierTransportRegister.AmountPerService = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountPerService;
+        //                oSupplierTransportRegister.AmountOfDiscount = invInDoc_Invoiceum.SupplierTransportRegisterDTO.AmountOfDiscount;
+        //                oSupplierTransportRegister.Date = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Date;
+        //                oSupplierTransportRegister.Updated = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Updated;
+        //                oSupplierTransportRegister.Active = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Active;
+        //                oSupplierTransportRegister.Locked = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Locked;
+        //                oSupplierTransportRegister.Deleted = invInDoc_Invoiceum.SupplierTransportRegisterDTO.Deleted;
         //                oInventoryInDocument.SupplierTransportRegisterId = oSupplierTransportRegister.SupplierTransportRegisterId; //tabla atras
 
         //                context.SupplierTransportRegisters.Update(oSupplierTransportRegister);
@@ -609,20 +609,20 @@ namespace APIControlNet.Controllers
         //                Invoice oInvInvoice = new Invoice();
         //                oInvInvoice.InvoiceId = Guid.NewGuid();
         //                oInvInvoice.StoreId = storeId;
-        //                oInvInvoice.InvoiceSerieId = invIn_InvInDocum.InvoiceDTO.InvoiceSerieId;
-        //                oInvInvoice.Folio = invIn_InvInDocum.InvoiceDTO.Folio;
-        //                oInvInvoice.Date = invIn_InvInDocum.InvoiceDTO.Date;
-        //                oInvInvoice.CustomerId = invIn_InvInDocum.InvoiceDTO.CustomerId;
-        //                oInvInvoice.Amount = invIn_InvInDocum.InvoiceDTO.Amount; //precio
+        //                oInvInvoice.InvoiceSerieId = invInDoc_Invoiceum.InvoiceDTO.InvoiceSerieId;
+        //                oInvInvoice.Folio = invInDoc_Invoiceum.InvoiceDTO.Folio;
+        //                oInvInvoice.Date = invInDoc_Invoiceum.InvoiceDTO.Date;
+        //                oInvInvoice.CustomerId = invInDoc_Invoiceum.InvoiceDTO.CustomerId;
+        //                oInvInvoice.Amount = invInDoc_Invoiceum.InvoiceDTO.Amount; //precio
         //                oInvInvoice.Subtotal = ((oInvInvoice.Amount) / ((decimal)1.16));
         //                oInvInvoice.AmountTax = ((oInvInvoice.Subtotal) * ((decimal)0.16));
-        //                oInvInvoice.SatTipoComprobanteId = invIn_InvInDocum.InvoiceDTO.SatTipoComprobanteId;
-        //                oInvInvoice.Updated = invIn_InvInDocum.InvoiceDTO.Updated;
-        //                oInvInvoice.Active = invIn_InvInDocum.InvoiceDTO.Active;
-        //                oInvInvoice.Locked = invIn_InvInDocum.InvoiceDTO.Locked;
-        //                oInvInvoice.Deleted = invIn_InvInDocum.InvoiceDTO.Deleted;
-        //                oInvInvoice.Uuid = invIn_InvInDocum.InvoiceDTO.Uuid.ToString();
-        //                oInventoryInDocument.Uuid = invIn_InvInDocum.InvoiceDTO.Uuid;
+        //                oInvInvoice.SatTipoComprobanteId = invInDoc_Invoiceum.InvoiceDTO.SatTipoComprobanteId;
+        //                oInvInvoice.Updated = invInDoc_Invoiceum.InvoiceDTO.Updated;
+        //                oInvInvoice.Active = invInDoc_Invoiceum.InvoiceDTO.Active;
+        //                oInvInvoice.Locked = invInDoc_Invoiceum.InvoiceDTO.Locked;
+        //                oInvInvoice.Deleted = invInDoc_Invoiceum.InvoiceDTO.Deleted;
+        //                oInvInvoice.Uuid = invInDoc_Invoiceum.InvoiceDTO.Uuid.ToString();
+        //                oInventoryInDocument.Uuid = invInDoc_Invoiceum.InvoiceDTO.Uuid;
 
         //                context.Invoices.Update(oInvInvoice);
         //                context.SaveChanges();
@@ -650,12 +650,12 @@ namespace APIControlNet.Controllers
 
             listSO = await (from iI in context.InventoryIns
                             where iI.Active == true
-                            join pd in context.Products on iI.ProductId equals pd.ProductId
-                            join tk in context.Tanks on pd.ProductId equals tk.ProductId
-                            join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
-                            where iI.Date >= (dateIni) && iI.Date <= dateFin
+                            //join pd in context.Products on iI.ProductId equals pd.ProductId
+                            //join tk in context.Tanks on pd.ProductId equals tk.ProductId
+                            //join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
+                            && iI.Date >= (dateIni) && iI.Date <= dateFin
                             && iI.StoreId == storeId
-                            && tk.StoreId == storeId
+                            //&& tk.StoreId == storeId
                             orderby iI.InventoryInIdx descending
 
                             select new InventoryInDTO
@@ -663,6 +663,7 @@ namespace APIControlNet.Controllers
                                 InventoryInIdx = iI.InventoryInIdx,
                                 InventoryInId = iI.InventoryInId,
                                 StoreId = iI.StoreId,
+                                Date = iI.Date,
                                 StartDate = iI.StartDate,
                                 Volume = iI.Volume,
 

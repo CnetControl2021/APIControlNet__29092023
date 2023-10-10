@@ -171,6 +171,8 @@ namespace APIControlNet.Models
         public virtual DbSet<StoreHouseMovement> StoreHouseMovements { get; set; }
         public virtual DbSet<StoreHouseMovementDetail> StoreHouseMovementDetails { get; set; }
         public virtual DbSet<StoreInvoiceSerie> StoreInvoiceSeries { get; set; }
+        public virtual DbSet<StoreNetwork> StoreNetworks { get; set; }
+        public virtual DbSet<StoreNetworkDetail> StoreNetworkDetails { get; set; }
         public virtual DbSet<StoreSat> StoreSats { get; set; }
         public virtual DbSet<Supplier> Suppliers { get; set; }
         public virtual DbSet<SupplierAddress> SupplierAddresses { get; set; }
@@ -192,6 +194,7 @@ namespace APIControlNet.Models
         public virtual DbSet<Vehicle> Vehicles { get; set; }
         public virtual DbSet<Version> Versions { get; set; }
         public virtual DbSet<Volumetric> Volumetrics { get; set; }
+        public virtual DbSet<Voucher> Vouchers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -206,7 +209,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-           
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -3404,6 +3407,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Subtotal)
                     .HasColumnType("decimal(16, 3)")
                     .HasColumnName("subtotal");
+
+                entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -8868,6 +8873,78 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<StoreNetwork>(entity =>
+            {
+                entity.HasKey(e => e.StoreNetworkIdx)
+                    .HasName("PK_store_network_idx");
+
+                entity.ToTable("store_network");
+
+                entity.HasIndex(e => e.StoreNetworkId, "IX_store_network_id")
+                    .IsUnique();
+
+                entity.Property(e => e.StoreNetworkIdx).HasColumnName("store_network_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(80)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.StoreNetworkId).HasColumnName("store_network_id");
+
+                entity.Property(e => e.StoreNetworkNumber).HasColumnName("store_network_number");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<StoreNetworkDetail>(entity =>
+            {
+                entity.HasKey(e => e.StoreNetworkDetailIdx)
+                    .HasName("PK_store_network_detail_idx");
+
+                entity.ToTable("store_network_detail");
+
+                entity.HasIndex(e => new { e.StoreNetworkId, e.StoreId }, "IX_store_network_detail_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.StoreNetworkDetailIdx).HasColumnName("store_network_detail_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(80)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.StoreNetworkId).HasColumnName("store_network_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<StoreSat>(entity =>
             {
                 entity.HasKey(e => e.StoreSatIdx);
@@ -10176,6 +10253,65 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<Voucher>(entity =>
+            {
+                entity.HasKey(e => e.VoucherIdx)
+                    .HasName("PK_voucher_idx");
+
+                entity.ToTable("voucher");
+
+                entity.HasIndex(e => new { e.StoreNetworkId, e.VoucherId }, "IX_voucher_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.VoucherIdx).HasColumnName("voucher_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("amount");
+
+                entity.Property(e => e.AmountSpent)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("amount_spent");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.DateConsumed)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date_consumed");
+
+                entity.Property(e => e.DateExpiration)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date_expiration");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+
+                entity.Property(e => e.IsConsumed).HasColumnName("is_consumed");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
+
+                entity.Property(e => e.StoreNetworkId).HasColumnName("store_network_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+
+                entity.Property(e => e.UserName)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.VoucherId).HasColumnName("voucher_id");
+
+                entity.Property(e => e.VoucherNumber).HasColumnName("voucher_number");
             });
 
             OnModelCreatingPartial(modelBuilder);
