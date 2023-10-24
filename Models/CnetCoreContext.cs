@@ -208,10 +208,8 @@ namespace APIControlNet.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
-            
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -2912,14 +2910,14 @@ namespace APIControlNet.Models
                 entity.Property(e => e.InventoryInIdx).HasColumnName("inventory_in_idx");
 
                 entity.Property(e => e.AbsolutePressure)
-                    .HasColumnType("decimal(6, 3)")
+                    .HasColumnType("decimal(11, 4)")
                     .HasColumnName("absolute_pressure")
                     .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Active).HasColumnName("active");
 
                 entity.Property(e => e.CalorificPower)
-                    .HasColumnType("decimal(6, 3)")
+                    .HasColumnType("decimal(11, 4)")
                     .HasColumnName("calorific_power")
                     .HasDefaultValueSql("((0))");
 

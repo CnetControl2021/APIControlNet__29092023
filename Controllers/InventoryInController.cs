@@ -115,6 +115,11 @@ namespace APIControlNet.Controllers
                     context.InventoryIns.Add(oInventoryIn);
                     var id = oInventoryIn.InventoryInId;
 
+                    var findTk = await context.Tanks.FirstOrDefaultAsync
+                        (x => x.StoreId == storeId && x.TankIdi == invInDoc_Invoice.NInventoryInDTO.TankIdi);
+                    var uMedtank = findTk.SatDescriptionMeasurement;
+
+
                     InventoryInDocument oInventoryInDocument = new()
                     {
                         InventoryInId = id, //clase1
@@ -126,6 +131,7 @@ namespace APIControlNet.Controllers
                         Volume = oInventoryIn.Volume,              // clase1
                         Price = invInDoc_Invoice.NInventoryInDocumentDTO.Price,   
                         Amount = invInDoc_Invoice.NInventoryInDocumentDTO.Amount,
+                        JsonClaveUnidadMedidaId = uMedtank,
                         Updated = DateTime.Now,
                         Active = true,
                         Locked = false,
