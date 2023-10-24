@@ -1,15 +1,14 @@
 ﻿namespace APIControlNet.DTOs
 {
-    public class InvIn_InvInDoc
+    public class Invoice_InvInDoc
     {
-        public InventoryInDTO NInventoryInDTO { get; set; }
+        public InvoiceDTO NInvoiceDTO { get; set; }
         public InventoryInDocumentDTO NInventoryInDocumentDTO { get; set; }
 
-        public InvIn_InvInDoc()
+        public Invoice_InvInDoc()
         {
-            NInventoryInDTO = new InventoryInDTO();
+            NInvoiceDTO = new InvoiceDTO();
             NInventoryInDocumentDTO = new InventoryInDocumentDTO();
         }
-
     }
 }

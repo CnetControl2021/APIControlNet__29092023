@@ -29,9 +29,6 @@ namespace APIControlNet.Controllers
             this.servicioBinnacle = servicioBinnacle;
         }
 
-
-
-
         [HttpGet("byGuid/{idGuid}")]
         [AllowAnonymous]
         public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get3(Guid idGuid)
@@ -44,6 +41,46 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<SupplierTransportRegisterDTO>>(supTraReg);
         }
 
+        [HttpGet("{id2:int}", Name = "obtenerStr")]
+        //[AllowAnonymous]
+        public async Task<ActionResult<SupplierTransportRegisterDTO>> Get(int id2)
+        {
+            var data = await context.SupplierTransportRegisters.FirstOrDefaultAsync(x => x.SupplierTransportRegisterIdx == id2);
+            if (data == null)
+            {
+                return NotFound();
+            }
+            return mapper.Map<SupplierTransportRegisterDTO>(data);
+        }
+
+        [HttpPut("{storeId}")]
+        public async Task<ActionResult> Put(Guid storeId, SupplierTransportRegisterDTO str)
+        {
+            var dataDB = await context.SupplierTransportRegisters.FirstOrDefaultAsync
+                (c => c.SupplierTransportRegisterIdx == str.SupplierTransportRegisterIdx);
+
+            if (dataDB is null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                dataDB = mapper.Map(str, dataDB);
+
+                var storeId2 = storeId;
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var tableName = "SupplierTransportResgister";
+
+                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
+                await context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return BadRequest($"Ya existe isla {str.SupplierTransportRegisterIdx} en esa sucursal ");
+            }
+        }
 
 
         [HttpPost("{idGuid}")]
@@ -92,7 +129,6 @@ namespace APIControlNet.Controllers
             }
             return rpta;
         }
-
 
 
         [HttpDelete("logicDelete/{id}/{storeId?}")]

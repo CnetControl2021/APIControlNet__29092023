@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
-    public partial class InventoryInSaleOrder
+    public class InventoryInSaleOrderDTO
     {
         public int InventoryInSaleOrderIdx { get; set; }
         public Guid InventoryInSaleOrderId { get; set; }
@@ -20,9 +17,9 @@ namespace APIControlNet.Models
         public decimal? Volume { get; set; }
         public decimal? CalorificPower { get; set; }
         public decimal? AbsolutePressure { get; set; }
-        public DateTime? Updated { get; set; }
-        public bool? Active { get; set; }
-        public bool? Locked { get; set; }
-        public bool? Deleted { get; set; }
+        public DateTime? Updated { get; set; } = DateTime.UtcNow;
+        public bool? Active { get; set; } = true;
+        public bool? Locked { get; set; } = false;
+        public bool? Deleted { get; set; }=false;
     }
 }

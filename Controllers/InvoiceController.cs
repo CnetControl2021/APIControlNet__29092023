@@ -32,7 +32,7 @@ namespace APIControlNet.Controllers
         [HttpGet("Active")]
         [AllowAnonymous]
         public async Task<IEnumerable<InvoiceDTO>> Get2(Guid storeId, Guid idGuid, [FromQuery] string nombre)
-        {
+        { 
             var data = context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
             var uuid = data.Result.Uuid.ToString();
 
@@ -52,57 +52,108 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<InvoiceDTO>>(data2);
         }
 
+        //[HttpPost("{storeId}/{idGuid}")]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult> Post([FromBody] Invoice_InvInDoc invoice_InvInDoc, Guid storeId, Guid idGuid)
+        //{
+        //    try
+        //    {
+        //        using (var transaccion = await context.Database.BeginTransactionAsync())
+        //        {
+        //            Invoice oInvoiceDTO = new();
+        //            oInvoiceDTO.InvoiceId = Guid.NewGuid();
+        //            oInvoiceDTO.StoreId = storeId;
+        //            oInvoiceDTO.InvoiceSerieId = invoice_InvInDoc.NInvoiceDTO.InvoiceSerieId;
+        //            oInvoiceDTO.Folio = invoice_InvInDoc.NInvoiceDTO.Folio;
+        //            oInvoiceDTO.Date = invoice_InvInDoc.NInvoiceDTO.Date;
+        //            oInvoiceDTO.CustomerId = invoice_InvInDoc.NInvoiceDTO.CustomerId;
+        //            oInvoiceDTO.Amount = invoice_InvInDoc.NInvoiceDTO.Amount;
+        //            oInvoiceDTO.Subtotal = ((oInvoiceDTO.Amount) / ((decimal)1.16));
+        //            oInvoiceDTO.AmountTax = ((oInvoiceDTO.Subtotal) * ((decimal)0.16));
+        //            oInvoiceDTO.Uuid = invoice_InvInDoc.NInvoiceDTO.Uuid.ToString();
+        //            oInvoiceDTO.SatTipoComprobanteId = invoice_InvInDoc.NInvoiceDTO.SatTipoComprobanteId;
+        //            oInvoiceDTO.Updated = DateTime.Now;
+        //            oInvoiceDTO.Active = true;
+        //            oInvoiceDTO.Locked = false;
+        //            oInvoiceDTO.Deleted = false;
 
-        [HttpPost("{storeId}/{idGuid}")]
-        //[AllowAnonymous]
-        public async Task<ActionResult> Save([FromBody] InvoiceDTO invoiceDTO, Guid storeId, Guid idGuid)
-        {
-            var rpta = 0;
-            try
-            {
-                using (var transaccion = await context.Database.BeginTransactionAsync())
-                {
-                    Invoice oInvoiceDTO = new();
-                    oInvoiceDTO.InvoiceId = Guid.NewGuid();
-                    oInvoiceDTO.StoreId = storeId;
-                    oInvoiceDTO.InvoiceSerieId = invoiceDTO.InvoiceSerieId;
-                    oInvoiceDTO.Folio = invoiceDTO.Folio;
-                    oInvoiceDTO.Date = invoiceDTO.Date;
-                    oInvoiceDTO.CustomerId = invoiceDTO.CustomerId;
-                    oInvoiceDTO.Amount = invoiceDTO.Amount;
-                    oInvoiceDTO.Subtotal = ((oInvoiceDTO.Amount) / ((decimal)1.16));
-                    oInvoiceDTO.AmountTax = ((oInvoiceDTO.Subtotal) * ((decimal)0.16));
-                    oInvoiceDTO.Uuid = invoiceDTO.Uuid.ToString();
-                    oInvoiceDTO.SatTipoComprobanteId = invoiceDTO.SatTipoComprobanteId;
-                    oInvoiceDTO.Updated = DateTime.Now;
-                    oInvoiceDTO.Active = true;
-                    oInvoiceDTO.Locked = false;
-                    oInvoiceDTO.Deleted = false;
+        //            context.Invoices.Add(oInvoiceDTO);
 
-                    context.Invoices.Add(oInvoiceDTO);
+        //            InventoryInDocument oInvoiceDTODocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
+        //            Guid myGuid = new Guid(oInvoiceDTO.Uuid);
 
-                    InventoryInDocument oInvoiceDTODocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
-                    Guid myGuid = new Guid(oInvoiceDTO.Uuid);
+        //            if (oInvoiceDTODocument.Uuid is null || oInvoiceDTODocument.Uuid == Guid.Empty)
+        //            {
+        //                oInvoiceDTODocument.Uuid = myGuid;
+        //                oInvoiceDTODocument.InvoiceId = oInvoiceDTO.InvoiceId;
+        //                context.InventoryInDocuments.Update(oInvoiceDTODocument);
+        //                context.SaveChanges();
+        //                await transaccion.CommitAsync();
+        //                return Ok();
+        //            }
+        //            else
+        //            {
+        //                throw new NotImplementedException("Ya tiene factura esta compra");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //return  rpta = 0;
+        //        return BadRequest("Ya tiene factura esta compra");
+        //    }
+        //}
 
-                    if (oInvoiceDTODocument.Uuid is null || oInvoiceDTODocument.Uuid == Guid.Empty)
-                    {
-                        oInvoiceDTODocument.Uuid = myGuid;
-                        context.InventoryInDocuments.Update(oInvoiceDTODocument);
-                        context.SaveChanges();
-                        await transaccion.CommitAsync();
-                        return Ok();
-                    }
-                    else
-                    {
-                        throw new NotImplementedException("Ya tiene factura esta compra");
-                    }          
-                }
-            }
-            catch (Exception ex)
-            {
-                //return  rpta = 0;
-                return BadRequest("Ya tiene factura esta compra");
-            }
-        }
+
+        //[HttpPost("{storeId}/{idGuid}")]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult> Post([FromBody] InvoiceDTO invoiceDTO, Guid storeId, Guid idGuid)
+        //{
+        //    try
+        //    {
+        //        using (var transaccion = await context.Database.BeginTransactionAsync())
+        //        {
+        //            Invoice oInvoiceDTO = new();
+        //            oInvoiceDTO.InvoiceId = Guid.NewGuid();
+        //            oInvoiceDTO.StoreId = storeId;
+        //            oInvoiceDTO.InvoiceSerieId = invoiceDTO.InvoiceSerieId;
+        //            oInvoiceDTO.Folio = invoiceDTO.Folio;
+        //            oInvoiceDTO.Date = invoiceDTO.Date;
+        //            oInvoiceDTO.CustomerId = invoiceDTO.CustomerId;
+        //            oInvoiceDTO.Amount = invoiceDTO.Amount;
+        //            oInvoiceDTO.Subtotal = ((oInvoiceDTO.Amount) / ((decimal)1.16));
+        //            oInvoiceDTO.AmountTax = ((oInvoiceDTO.Subtotal) * ((decimal)0.16));
+        //            oInvoiceDTO.Uuid = invoiceDTO.Uuid.ToString();
+        //            oInvoiceDTO.SatTipoComprobanteId = invoiceDTO.SatTipoComprobanteId;
+        //            oInvoiceDTO.Updated = DateTime.Now;
+        //            oInvoiceDTO.Active = true;
+        //            oInvoiceDTO.Locked = false;
+        //            oInvoiceDTO.Deleted = false;
+
+        //            context.Invoices.Add(oInvoiceDTO);
+
+        //            InventoryInDocument oInvoiceDTODocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInId == idGuid);
+        //            Guid myGuid = new Guid(oInvoiceDTO.Uuid);
+
+        //            if (oInvoiceDTODocument.Uuid is null || oInvoiceDTODocument.Uuid == Guid.Empty)
+        //            {
+        //                oInvoiceDTODocument.Uuid = myGuid;
+        //                context.InventoryInDocuments.Update(oInvoiceDTODocument);
+        //                context.SaveChanges();
+        //                await transaccion.CommitAsync();
+        //                return Ok();
+        //            }
+        //            else
+        //            {
+        //                throw new NotImplementedException("Ya tiene factura esta compra");
+        //            }          
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //return  rpta = 0;
+        //        return BadRequest("Ya tiene factura esta compra");
+        //    }
+        //}
     }
 }

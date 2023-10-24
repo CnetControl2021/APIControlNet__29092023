@@ -128,6 +128,80 @@ namespace APIControlNet.Controllers
         }
 
 
+        [HttpPost("new/{storeId}")]
+        [AllowAnonymous]
+        public async Task<int> Save([FromBody] SoSsubDTO soSsub, Guid storeId, Guid inventoryinid)
+        {
+            //encontrar compra  // mandar idInvIn desde frontend ventana de venta dropdown
+            var dataDB = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == inventoryinid);
+            var starVolDB = dataDB.Volume;
+
+            int rpta = 0;
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    SaleOrder so = new();
+
+                    so.SaleOrderId = Guid.NewGuid();
+                    so.StoreId = storeId;
+                    so.StartDate = soSsub.saleOrderDTO.StartDate;
+                    so.Date = soSsub.saleOrderDTO.Date;
+                    so.Updated = so.Date;
+                    so.SaleOrderNumber = soSsub.saleOrderDTO.SaleOrderNumber;
+                    so.Name = so.SaleOrderNumber.ToString();
+                    so.TankIdi = soSsub.saleOrderDTO.TankIdi; //mandar tanlidi
+                    so.Active = true;
+                    so.Locked = false;
+                    so.Deleted = false;
+
+                    context.SaleOrders.Add(so);
+                    context.SaveChanges();
+                    //Guid isSaorderNumber = so.SaleOrderId;
+
+                    SaleSuborder sso = new();
+                    sso.SaleOrderId = so.SaleOrderId;
+                    sso.Name = so.SaleOrderNumber.ToString();
+                    sso.ProductId = soSsub.saleSuborderDTO.ProductId;
+                    sso.StartQuantity = soSsub.saleSuborderDTO.StartQuantity; //vol ini
+                    sso.Quantity = soSsub.saleSuborderDTO.Quantity;  //volumen entregado
+                    sso.EndQuantity = soSsub.saleSuborderDTO.EndQuantity; //vol fin 
+                    sso.Price = soSsub.saleSuborderDTO.Price;   //Precio
+                    sso.TotalAmount = soSsub.saleSuborderDTO.TotalAmount; //importe
+                    sso.Temperature = soSsub?.saleSuborderDTO?.Temperature;
+                    sso.AbsolutePressure = soSsub?.saleSuborderDTO?.AbsolutePressure;  //presion atmosferica
+                    sso.CalorificPower = soSsub?.saleSuborderDTO?.CalorificPower;
+                    sso.Date = so.Date;
+
+                    context.SaleSuborders.Add(sso);
+                    context.SaveChanges();
+
+                    InventoryInSaleOrder invInSaOrder = new ();
+                    invInSaOrder.InventoryInSaleOrderId = Guid.NewGuid();
+                    invInSaOrder.StoreId = storeId;
+                    invInSaOrder.Date = DateTime.Now;
+                    invInSaOrder.TankIdi = so.TankIdi;  //desde clase1
+                    invInSaOrder.ProductId = sso.ProductId;
+                    invInSaOrder.StartVolume = starVolDB; // desde compra
+                    invInSaOrder.StartDate = DateTime.Now;
+                    invInSaOrder.Volume = sso.Quantity; //desde clase 1
+                    invInSaOrder.EndVolume = starVolDB-sso.Quantity; // volumen desde compra menos volumen vemndido
+                    invInSaOrder.Updated = DateTime.Now;
+                    invInSaOrder.Active = true;
+                    invInSaOrder.Deleted = false;
+                    invInSaOrder.Locked = false;
+
+                    await transaccion.CommitAsync();
+                    rpta = 1;                  //Si respuesta 1 esta ok
+                }
+            }
+            catch (Exception)
+            {
+                rpta = 0;   // algo esta mal
+            }
+            return rpta;
+        }
+
 
         [HttpPost("{storeId}")]
         [AllowAnonymous]

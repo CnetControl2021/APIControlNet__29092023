@@ -208,8 +208,10 @@ namespace APIControlNet.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
+            
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -3158,15 +3160,12 @@ namespace APIControlNet.Models
 
             modelBuilder.Entity<InventoryInSaleOrder>(entity =>
             {
-                entity.HasKey(e => e.InventoryInIdx)
+                entity.HasKey(e => e.InventoryInSaleOrderIdx)
                     .HasName("PK_inventory_in_sale_order_idx");
 
                 entity.ToTable("inventory_in_sale_order");
 
-                entity.HasIndex(e => new { e.StoreId, e.InventoryInNumber, e.Date }, "IX_inventory_in_sale_order_compound")
-                    .IsUnique();
-
-                entity.Property(e => e.InventoryInIdx).HasColumnName("inventory_in_idx");
+                entity.Property(e => e.InventoryInSaleOrderIdx).HasColumnName("inventory_in_sale_order_idx");
 
                 entity.Property(e => e.AbsolutePressure)
                     .HasColumnType("decimal(6, 3)")
@@ -3190,10 +3189,6 @@ namespace APIControlNet.Models
                     .HasColumnType("datetime")
                     .HasColumnName("end_date");
 
-                entity.Property(e => e.EndHeight)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("end_height");
-
                 entity.Property(e => e.EndTemperature)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("end_temperature");
@@ -3202,50 +3197,15 @@ namespace APIControlNet.Models
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("end_volume");
 
-                entity.Property(e => e.EndVolumeTc)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("end_volume_tc");
-
-                entity.Property(e => e.EndVolumeWater)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("end_volume_water");
-
-                entity.Property(e => e.ImportPermissionId)
-                    .HasColumnName("import_permission_id")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.InventoryIn).HasColumnName("inventory_in");
-
-                entity.Property(e => e.InventoryInNumber).HasColumnName("inventory_in_number");
-
-                entity.Property(e => e.JsonTipoDistribucionId)
-                    .HasMaxLength(5)
-                    .IsUnicode(false)
-                    .HasColumnName("json_tipo_distribucion_id")
-                    .HasDefaultValueSql("('')");
+                entity.Property(e => e.InventoryInSaleOrderId).HasColumnName("inventory_in_sale_order_id");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.ProductCompositionId)
-                    .HasColumnName("product_composition_id")
-                    .HasDefaultValueSql("((0))");
-
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
-
-                entity.Property(e => e.ShiftHeadId).HasColumnName("shift_head_id");
 
                 entity.Property(e => e.StartDate)
                     .HasColumnType("datetime")
                     .HasColumnName("start_date");
-
-                entity.Property(e => e.StartHeight)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("start_height");
 
                 entity.Property(e => e.StartTemperature)
                     .HasColumnType("decimal(11, 4)")
@@ -3255,23 +3215,9 @@ namespace APIControlNet.Models
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("start_volume");
 
-                entity.Property(e => e.StartVolumeTc)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("start_volume_tc");
-
-                entity.Property(e => e.StartVolumeWater)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("start_volume_water");
-
-                entity.Property(e => e.StatusRx).HasColumnName("status_rx");
-
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.TankIdi).HasColumnName("tank_idi");
-
-                entity.Property(e => e.TransportPermissionId)
-                    .HasColumnName("transport_permission_id")
-                    .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -3280,14 +3226,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Volume)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("volume");
-
-                entity.Property(e => e.VolumeTc)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("volume_tc");
-
-                entity.Property(e => e.VolumeWater)
-                    .HasColumnType("decimal(11, 4)")
-                    .HasColumnName("volume_water");
             });
 
             modelBuilder.Entity<Invoice>(entity =>
@@ -6987,13 +6925,7 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.HoseIdi).HasColumnName("hose_idi");
 
-                entity.Property(e => e.InventoryInId).HasColumnName("inventory_in_id");
-
-                entity.Property(e => e.JsonTipoDistribucionId)
-                    .HasMaxLength(5)
-                    .IsUnicode(false)
-                    .HasColumnName("json_tipo_distribucion_id")
-                    .HasDefaultValueSql("('')");
+                entity.Property(e => e.InventoryInSaleOrderId).HasColumnName("inventory_in_sale_order_id");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
@@ -7001,12 +6933,6 @@ namespace APIControlNet.Models
                     .HasMaxLength(80)
                     .IsUnicode(false)
                     .HasColumnName("name");
-
-                entity.Property(e => e.PetitionCustomsId).HasColumnName("petition_customs_id");
-
-                entity.Property(e => e.ProductCompositionId)
-                    .HasColumnName("product_composition_id")
-                    .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
 
@@ -7026,8 +6952,6 @@ namespace APIControlNet.Models
                     .HasColumnName("status");
 
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
-
-                entity.Property(e => e.SupplierTransportRegisterId).HasColumnName("supplier_transport_register_id");
 
                 entity.Property(e => e.TankIdi).HasColumnName("tank_idi");
 

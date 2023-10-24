@@ -28,16 +28,12 @@ namespace APIControlNet.Models
         public DateTime? StartDate { get; set; }
         public int? TicketNumber { get; set; }
         public DateTime? Date { get; set; }
+        public int? TankIdi { get; set; }
         public DateTime? Updated { get; set; }
+        public Guid? InventoryInSaleOrderId { get; set; }
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-        public string JsonTipoDistribucionId { get; set; }
-        public Guid? SupplierTransportRegisterId { get; set; }
-        public int? ProductCompositionId { get; set; }
-        public Guid? PetitionCustomsId { get; set; }
-        public int? TankIdi { get; set; }
-        public Guid? InventoryInId { get; set; }
 
         public virtual Store Store { get; set; }
         public virtual ICollection<SaleSuborder> SaleSuborders { get; set; }

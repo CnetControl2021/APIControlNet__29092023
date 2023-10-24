@@ -26,7 +26,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("buscar/{textoBusqueda}")]
-        ////[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<List<SatClaveUnidadDTO>>> Get(string textoBusqueda)
         {
             if (string.IsNullOrWhiteSpace(textoBusqueda)) { return new List<SatClaveUnidadDTO>(); }

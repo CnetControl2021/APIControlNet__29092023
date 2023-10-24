@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Transactions;
-
+using System.Xml;
 
 namespace APIControlNet.Controllers
 {
@@ -36,115 +37,113 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPost("{storeId}")]
-        //[AllowAnonymous]
-        public async Task<ActionResult> Post([FromBody] InventoryIn oInventoryIn, Guid storeId, Guid idGuid)
-        {
-            if (idGuid != Guid.Empty)
-            {
-                var existeid = await context.InventoryIns.AnyAsync(x => x.InventoryInId == idGuid);
-            }
-
-            try
-            {
-                InventoryIn newIi = new InventoryIn();
-                newIi.InventoryInId = Guid.NewGuid();
-                newIi.StoreId = storeId;
-                newIi.InventoryInNumber = oInventoryIn.InventoryInNumber; //capturado
-                newIi.StartDate = oInventoryIn.StartDate;
-                newIi.EndDate = oInventoryIn.EndDate;
-                newIi.Date = DateTime.Now;
-                newIi.TankIdi = oInventoryIn.TankIdi;
-                newIi.ProductId = oInventoryIn.ProductId;
-                newIi.StartVolume = oInventoryIn.StartVolume;
-                newIi.Volume = oInventoryIn.Volume;
-                newIi.EndVolume = oInventoryIn.EndVolume;
-                newIi.StartTemperature = oInventoryIn.StartTemperature;
-                newIi.EndTemperature = oInventoryIn.StartTemperature;
-                newIi.AbsolutePressure = oInventoryIn.AbsolutePressure;
-                newIi.CalorificPower = oInventoryIn.CalorificPower;
-                newIi.Updated = DateTime.Now;
-                newIi.Active = true;
-                newIi.Locked = false;
-                newIi.Deleted = false;
-
-                context.InventoryIns.Add(newIi);
-                context.SaveChanges();
-
-                return Ok();
-                // }
-            }
-            catch (Exception)
-            {
-                return BadRequest("Revisar captura");
-            }
-        }
-
         //[HttpPost("{storeId}")]
         ////[AllowAnonymous]
-        //public async Task<int> Save([FromBody] invInDoc_Invoice invInDoc_Invoice, Guid storeId, Guid idGuid)
+        //public async Task<ActionResult> Post([FromBody] InventoryIn oInventoryIn, Guid storeId, Guid idGuid)
         //{
         //    if (idGuid != Guid.Empty)
         //    {
         //        var existeid = await context.InventoryIns.AnyAsync(x => x.InventoryInId == idGuid);
         //    }
 
-        //    int rpta = 0;
         //    try
         //    {
-        //        //using (var transaccion = new TransactionScope())
-        //        using (var transaccion = await context.Database.BeginTransactionAsync())
-        //        {
-        //            InventoryIn oInventoryIn = new InventoryIn();
-        //            oInventoryIn.InventoryInId = Guid.NewGuid();
-        //            oInventoryIn.StoreId = storeId;
-        //            oInventoryIn.InventoryInNumber = invInDoc_Invoice.inventoryInDTO.InventoryInNumber; //capturado
-        //            oInventoryIn.Date = DateTime.Now;
-        //            oInventoryIn.TankIdi = invInDoc_Invoice.inventoryInDTO.TankIdi;
-        //            oInventoryIn.ProductId = invInDoc_Invoice.inventoryInDTO.ProductId;
-        //            oInventoryIn.StartDate = invInDoc_Invoice.inventoryInDTO.StartDate;
-        //            oInventoryIn.EndDate = invInDoc_Invoice.inventoryInDTO.EndDate;
-        //            oInventoryIn.StartVolume = invInDoc_Invoice.inventoryInDTO.StartVolume;
-        //            oInventoryIn.Volume = invInDoc_Invoice.inventoryInDTO.Volume;
-        //            oInventoryIn.EndVolume = invInDoc_Invoice.inventoryInDTO.EndVolume;
-        //            oInventoryIn.StartTemperature = invInDoc_Invoice.inventoryInDTO.StartTemperature;
-        //            oInventoryIn.EndTemperature = oInventoryIn.StartTemperature;
-        //            oInventoryIn.AbsolutePressure = invInDoc_Invoice.inventoryInDTO.AbsolutePressure;
-        //            oInventoryIn.CalorificPower = invInDoc_Invoice.inventoryInDTO.CalorificPower;
-        //            oInventoryIn.Updated = invInDoc_Invoice.inventoryInDTO.Updated;
-        //            oInventoryIn.Active = invInDoc_Invoice.inventoryInDTO.Active;
-        //            oInventoryIn.Locked = invInDoc_Invoice.inventoryInDTO.Locked;
-        //            oInventoryIn.Deleted = invInDoc_Invoice.inventoryInDTO.Deleted;
+        //        InventoryIn newIi = new InventoryIn();
+        //        newIi.InventoryInId = Guid.NewGuid();
+        //        newIi.StoreId = storeId;
+        //        newIi.InventoryInNumber = oInventoryIn.InventoryInNumber; //capturado
+        //        newIi.StartDate = oInventoryIn.StartDate;
+        //        newIi.EndDate = oInventoryIn.EndDate;
+        //        newIi.TankIdi = oInventoryIn.TankIdi; 
+        //        newIi.Date = DateTime.Now;              
+        //        newIi.ProductId = oInventoryIn.ProductId;
+        //        newIi.StartVolume = oInventoryIn.StartVolume;
+        //        newIi.Volume = oInventoryIn.Volume;
+        //        newIi.EndVolume = oInventoryIn.EndVolume;
+        //        newIi.StartTemperature = oInventoryIn.StartTemperature;
+        //        newIi.EndTemperature = oInventoryIn.StartTemperature;
+        //        newIi.AbsolutePressure = oInventoryIn.AbsolutePressure;
+        //        newIi.CalorificPower = oInventoryIn.CalorificPower;
+        //        newIi.Updated = DateTime.Now;
+        //        newIi.Active = true;
+        //        newIi.Locked = false;
+        //        newIi.Deleted = false;
 
-        //            context.InventoryIns.Add(oInventoryIn);
+        //        context.InventoryIns.Add(newIi);
+        //        context.SaveChanges();
 
-        //            InventoryInDocument oInventoryInDocument = new InventoryInDocument();
-
-        //            oInventoryInDocument.InventoryInId = oInventoryIn.InventoryInId;
-        //            oInventoryInDocument.StoreId = oInventoryIn.StoreId;
-        //            oInventoryInDocument.InventoryInIdi = 1;
-        //            oInventoryInDocument.Date = DateTime.Now;
-        //            oInventoryInDocument.Type = "RPT";
-        //            oInventoryInDocument.Volume = oInventoryIn.Volume;
-        //            oInventoryInDocument.Price = invInDoc_Invoice.inventoryInDocumentDTO.Price;
-        //            oInventoryInDocument.Updated = invInDoc_Invoice.inventoryInDocumentDTO.Updated;
-        //            oInventoryInDocument.Active = invInDoc_Invoice.inventoryInDocumentDTO.Active;
-        //            oInventoryInDocument.Locked = invInDoc_Invoice.inventoryInDocumentDTO.Locked;
-        //            oInventoryInDocument.Deleted = invInDoc_Invoice.inventoryInDocumentDTO.Deleted;
-
-        //            context.InventoryInDocuments.Add(oInventoryInDocument);
-        //            context.SaveChanges();
-
-        //            await transaccion.CommitAsync();
-        //            rpta = 1;
-        //        }
+        //        return Ok();
+        //        // }
         //    }
         //    catch (Exception)
         //    {
-        //        rpta = 0;
+        //        return BadRequest("Revisar captura");
         //    }
-        //    return rpta; 
         //}
+
+        [HttpPost("{storeId}")]
+        //[AllowAnonymous]
+        public async Task<ActionResult> Save([FromBody] InvIn_InvInDoc invInDoc_Invoice, Guid storeId)
+
+        {
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    InventoryIn oInventoryIn = new()
+                    {
+                        InventoryInId = Guid.NewGuid(),
+                        StoreId = storeId,
+                        InventoryInNumber = invInDoc_Invoice.NInventoryInDTO.InventoryInNumber, //capturado
+                        TankIdi = invInDoc_Invoice.NInventoryInDTO.TankIdi,
+                        ProductId = invInDoc_Invoice.NInventoryInDTO.ProductId,
+                        StartVolume = invInDoc_Invoice.NInventoryInDTO.StartVolume,
+                        Volume = invInDoc_Invoice.NInventoryInDTO.Volume,
+                        EndVolume = invInDoc_Invoice.NInventoryInDTO.EndVolume,
+                        StartTemperature = invInDoc_Invoice.NInventoryInDTO.StartTemperature,
+                        AbsolutePressure = invInDoc_Invoice.NInventoryInDTO.AbsolutePressure,
+                        CalorificPower = invInDoc_Invoice.NInventoryInDTO.CalorificPower,
+                        StartDate = invInDoc_Invoice.NInventoryInDTO.StartDate,
+                        EndDate = invInDoc_Invoice.NInventoryInDTO.EndDate,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+
+                    context.InventoryIns.Add(oInventoryIn);
+                    var id = oInventoryIn.InventoryInId;
+
+                    InventoryInDocument oInventoryInDocument = new()
+                    {
+                        InventoryInId = id, //clase1
+                        StoreId = oInventoryIn.StoreId, //clase1
+                        InventoryInIdi = 1,
+                        Date = DateTime.Now,
+                        Type = "RPT",
+                        Folio = (int)oInventoryIn.InventoryInNumber, // de calse 1
+                        Volume = oInventoryIn.Volume,              // clase1
+                        Price = invInDoc_Invoice.NInventoryInDocumentDTO.Price,   
+                        Amount = invInDoc_Invoice.NInventoryInDocumentDTO.Amount,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+
+                    context.InventoryInDocuments.Add(oInventoryInDocument);
+                    context.SaveChanges();
+
+                    await transaccion.CommitAsync();
+                    return Ok($"Registro correcto {oInventoryIn.InventoryInNumber}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
 
         //[HttpPut("update")]
@@ -196,18 +195,29 @@ namespace APIControlNet.Controllers
 
         [HttpGet("byIdGuid/{idGuid}")] 
         [AllowAnonymous]
-        public async Task<ActionResult<InventoryInDTO>> Get([FromRoute] Guid idGuid)
+        public async Task<ActionResult<InvIn_InvInDoc>> Get([FromRoute] Guid idGuid)
         {
             if (idGuid == Guid.Empty) {  return BadRequest("Id no valido"); }
             var resp = await context.InventoryIns.FirstAsync(e => e.InventoryInId.Equals(idGuid));
             if (resp == null) { return NotFound("No encontrado"); }
-            return mapper.Map<InventoryInDTO>(resp);
+            var resp2 = await context.InventoryInDocuments.FirstAsync(e => e.InventoryInId.Equals(idGuid));
+            if (resp2 == null) { return NotFound("No encontrado"); }
+
+            var empaquetada = new InvIn_InvInDoc
+            {
+                NInventoryInDTO = mapper.Map<InventoryInDTO>(resp),
+                NInventoryInDocumentDTO = mapper.Map<InventoryInDocumentDTO>(resp2)
+                
+            };
+            return Ok(empaquetada);
         }
 
+
         [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(InventoryInDTO inventoryInDTO, Guid storeId)
+        public async Task<IActionResult> Put(InvIn_InvInDoc invInDoc_Invoice, Guid storeId)
         {
-            var db = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == inventoryInDTO.InventoryInId);
+            var db = await context.InventoryIns.FirstOrDefaultAsync(c => c.InventoryInId == invInDoc_Invoice.NInventoryInDTO.InventoryInId);
+            var db2 = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
 
             if (db is null)
             {
@@ -215,8 +225,11 @@ namespace APIControlNet.Controllers
             }
             try
             {
-                db = mapper.Map(inventoryInDTO, db);
+                db = mapper.Map(invInDoc_Invoice.NInventoryInDTO, db);            
                 db.Updated = DateTime.Now;
+                db2 = mapper.Map(invInDoc_Invoice.NInventoryInDocumentDTO, db2);
+                db2.Updated = DateTime.Now; 
+
 
                 var storeId2 = storeId;
                 var usuarioId = obtenerUsuarioId();
@@ -224,14 +237,19 @@ namespace APIControlNet.Controllers
                 var tableName = db.Name;
                 await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
                 await context.SaveChangesAsync();
-                return Ok(db);
+                //return Ok(db);
+                var empaquetada = new InvIn_InvInDoc
+                {
+                    NInventoryInDTO = mapper.Map<InventoryInDTO>(db),
+                    NInventoryInDocumentDTO = mapper.Map<InventoryInDocumentDTO>(db2)
 
+                };
+                return Ok(empaquetada);
             }
             catch
             {
                 return BadRequest($"Revisar datos");
             }
-
         }
 
 
@@ -648,6 +666,14 @@ namespace APIControlNet.Controllers
         {
             List<InventoryInDTO> listSO = new List<InventoryInDTO>();
 
+            if (dateIni.ToString() is null || dateIni.ToString() is "" || dateIni <= DateTime.MinValue)
+            { dateIni = DateTime.Now.AddDays(-30); }
+
+            if (dateFin.ToString() is null || dateFin.ToString() is "" || dateFin <= DateTime.MinValue) 
+            { dateFin = DateTime.Now; }
+
+            if (storeId == Guid.Empty) { return BadRequest("Sucursal no valida"); }
+
             listSO = await (from iI in context.InventoryIns
                             where iI.Active == true
                             //join pd in context.Products on iI.ProductId equals pd.ProductId
@@ -662,10 +688,11 @@ namespace APIControlNet.Controllers
                             {
                                 InventoryInIdx = iI.InventoryInIdx,
                                 InventoryInId = iI.InventoryInId,
+                                InventoryInNumber = iI.InventoryInNumber,
                                 StoreId = iI.StoreId,
                                 Date = iI.Date,
                                 StartDate = iI.StartDate,
-                                Volume = iI.Volume,
+                                Volume = iI.Volume
 
                                 //ProductName = pd.Name,
                                 //TankName = tk.Name,
@@ -676,6 +703,64 @@ namespace APIControlNet.Controllers
                             }).AsNoTracking().ToListAsync();
             return Ok(listSO);
         }
+
+
+        //[HttpGet("takeLast")]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult<List<InventoryInDTO>>> Get3( Guid storeId)
+        //{
+        //    if (storeId == Guid.Empty) { return BadRequest("Sucursal no valida"); }
+
+        //    var list = await context.InventoryIns.Where(x => x.StoreId == storeId )
+        //        .OrderByDescending(x => x.InventoryInIdx)
+        //        .ToListAsync();
+        //    var lisTake = list.Take(25);
+        //    return mapper.Map<List<InventoryInDTO>>(lisTake);
+        //}
+
+        //[HttpGet("takeLast")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<List<InvInDoc_InvoiceDTO>>> Get3(Guid storeId)
+        //{
+        //    if (storeId == Guid.Empty) { return BadRequest("Sucursal no valida"); }
+
+        //    var list = await context.InventoryIns.Where(x => x.StoreId == storeId)
+        //        .OrderByDescending(x => x.InventoryInIdx)
+        //        .ToListAsync();
+        //    var lisTake = list.Take(3);
+
+        //    var list2 = await context.InventoryInDocuments.Where(x => x.StoreId == storeId)
+        //        .OrderByDescending(x => x.InventoryInDocumentIdx)
+        //        .ToListAsync();
+        //    var lisTake2 = list.Take(3);
+
+        //    //var claseEmpaquetada = new InvInDoc_InvoiceDTO
+        //    //{
+        //    //    inventoryInDTO = mapper.Map<InventoryInDTO>(lisTake),
+
+        //    //    inventoryInDocumentDTO = mapper.Map<InventoryInDocumentDTO>(lisTake2)
+        //    //};
+        //    //return Ok( new { claseEmpaquetada } );
+
+        //    return Ok( new { lisTake, lisTake2 } );
+
+        //}
+
+
+        //[HttpGet("empaquetada/{id2}/{storeId}")]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult<InvInDoc_InvoiceDTO>> GetId(int id2, Guid storeId)
+        //{
+        //    var iIDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInDocumentIdx == id2 && c.StoreId == storeId);
+        //    var invoice2 = await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == iIDoc.InvoiceId);
+        //    //chema
+        //    var claseEmpaquetada = new InvInDoc_InvoiceDTO
+        //    {
+        //        inventoryInDocumentDTO = mapper.Map<InventoryInDocumentDTO>(iIDoc),
+        //        invoiceDTO = mapper.Map<InvoiceDTO>(invoice2)
+        //    };
+        //    return claseEmpaquetada;
+        //}
 
 
         //[HttpGet("{idGuid}/{storeId}")]

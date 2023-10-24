@@ -19,7 +19,9 @@ namespace APIControlNet.DTOs
         public decimal? AmountIeps { get; set; }
         public decimal? AmountIsr { get; set; }
         public decimal? Amount { get; set; }
-        public Guid? Uuid { get; set; }
+        [Required]
+        [ValidateNonZeroGuid]
+        public string Uuid { get; set; } = null!;
         public string InvoiceApplicationTypeId { get; set; }
         public bool? IsCancelled { get; set; }
         public bool? IsStamped { get; set; }
@@ -36,12 +38,12 @@ namespace APIControlNet.DTOs
         public string SatMesesId { get; set; }
         public int? ClosingYear { get; set; }
         public int? PacId { get; set; }
-        public DateTime? Updated { get; set; } = DateTime.Now;
-        public bool? Active { get; set; } = true;
-        public bool? Locked { get; set; } = false;
-        public bool? Deleted { get; set; }=false;
+        public DateTime? Updated { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
         public int? IsIssued { get; set; }
 
-        public virtual StoreDTO Store { get; set; }
+        //1 public virtual Store Store { get; set; }
     }
 }

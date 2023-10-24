@@ -8,15 +8,21 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<InventoryInSaleOrderDTO, InventoryInSaleOrder>();
+            CreateMap<InventoryInSaleOrder, InventoryInSaleOrderDTO>();
+
+            CreateMap<PetitionCustomDTO, PetitionCustom>();
+            CreateMap<PetitionCustom, PetitionCustomDTO>();
+
             CreateMap<InventoryInDocumentDTO, InventoryInDocument>();
             CreateMap<InventoryInDocument, InventoryInDocumentDTO>();
             CreateMap<InvoiceDTO, Invoice>();
             CreateMap<Invoice, InvoiceDTO>();
             //CreateMap<InvInDoc_InvoiceDTO, InvInDoc_InvoiceDTO>();  //empaquetada
 
-
             CreateMap<CompanyDTO, Company>();
             CreateMap<Company, CompanyDTO>();   
+
             CreateMap<Store, StoreDTO>();
             CreateMap<StoreDTO, Store>();
 

@@ -9,11 +9,8 @@ namespace APIControlNet.DTOs
         public int InventoryInDocumentIdx { get; set; }
         public Guid StoreId { get; set; }
         public Guid InventoryInId { get; set; }
-        //[Required(ErrorMessage = "El campo {0} es requerio")]
-        public int? InventoryInIdi { get; set; }
-        //[Required(ErrorMessage = "El campo {0} es requerio")]
-        public DateTime Date { get; set; } = DateTime.Now;
-        //[Required(ErrorMessage = "El campo {0} es requerio")]
+        public int? InventoryInIdi { get; set; } = 1;
+        public DateTime Date { get; set; }
         public string Type { get; set; }
         public int Folio { get; set; }
         public string Vehicle { get; set; }
@@ -26,23 +23,22 @@ namespace APIControlNet.DTOs
         public decimal? SalePrice { get; set; }
         public decimal? PublicSalePrice { get; set; }
         public string SatTipoComprobanteId { get; set; }
-        
         public Guid? InvoiceId { get; set; }
-
-        [Required(ErrorMessage = "El campo GuidValue es obligatorio.")]
-        //[RegularExpression(@"^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$", ErrorMessage = "El campo GuidValue debe ser un GUID válido.")]
-        [ValidateNonZeroGuid]
-        //[RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")]
+        //[Required(ErrorMessage = "El campo GuidValue es obligatorio.")]
+        //[ValidateNonZeroGuid]
         public Guid? Uuid { get; set; }
         public string JsonTipoComplementoId { get; set; }
         public string JsonClaveUnidadMedidaId { get; set; }
         public string SatAclaracion { get; set; }
-        public DateTime? Updated { get; set; } = DateTime.Now;
-        public bool? Active { get; set; } = true; 
-        public bool? Locked { get; set; } = false;
-        public bool? Deleted { get; set; } = false;
+        public DateTime? Updated { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
+        public Guid? SupplierTransportRegisterId { get; set; }
+        public Guid? PetitionCustomsId { get; set; }
 
-        public virtual InventoryInDTO InventoryIn { get; set; }
+        //public virtual InventoryInDTO InventoryIn { get; set; }
+        //public virtual SupplierTransportDTO S { get; set; }
 
     }
 }
