@@ -104,14 +104,14 @@ namespace APIControlNet.Controllers
 
             var wrapeerClass = new SoSsubDTO
             {
-                saleOrderDTO = new SaleOrderDTO
+                NSaleOrderDTO = new SaleOrderDTO
                 {
                     SaleOrderId = so.SaleOrderId,
                     SaleOrderNumber= so.SaleOrderNumber,
                     StartDate = so.StartDate,
                     Date = so.Date,
                 },
-                saleSuborderDTO = new SaleSuborderDTO
+                NSaleSuborderDTO = new SaleSuborderDTO
                 { 
                     ProductId = ssub.ProductId,
                     StartQuantity = ssub.StartQuantity,
@@ -128,79 +128,79 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPost("new/{storeId}")]
-        [AllowAnonymous]
-        public async Task<int> Save([FromBody] SoSsubDTO soSsub, Guid storeId, Guid inventoryinid)
-        {
-            //encontrar compra  // mandar idInvIn desde frontend ventana de venta dropdown
-            var dataDB = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == inventoryinid);
-            var starVolDB = dataDB.Volume;
+        //[HttpPost("new/{storeId}")]
+        //[AllowAnonymous]
+        //public async Task<int> Save([FromBody] SoSsubDTO soSsub, Guid storeId, Guid inventoryinid)
+        //{
+        //    //encontrar compra  // mandar idInvIn desde frontend ventana de venta dropdown
+        //    var dataDB = await context.InventoryIns.FirstOrDefaultAsync(x => x.InventoryInId == inventoryinid);
+        //    var starVolDB = dataDB.Volume;
 
-            int rpta = 0;
-            try
-            {
-                using (var transaccion = await context.Database.BeginTransactionAsync())
-                {
-                    SaleOrder so = new();
+        //    int rpta = 0;
+        //    try
+        //    {
+        //        using (var transaccion = await context.Database.BeginTransactionAsync())
+        //        {
+        //            SaleOrder so = new();
 
-                    so.SaleOrderId = Guid.NewGuid();
-                    so.StoreId = storeId;
-                    so.StartDate = soSsub.saleOrderDTO.StartDate;
-                    so.Date = soSsub.saleOrderDTO.Date;
-                    so.Updated = so.Date;
-                    so.SaleOrderNumber = soSsub.saleOrderDTO.SaleOrderNumber;
-                    so.Name = so.SaleOrderNumber.ToString();
-                    so.TankIdi = soSsub.saleOrderDTO.TankIdi; //mandar tanlidi
-                    so.Active = true;
-                    so.Locked = false;
-                    so.Deleted = false;
+        //            so.SaleOrderId = Guid.NewGuid();
+        //            so.StoreId = storeId;
+        //            so.StartDate = soSsub.NSaleOrderDTO.StartDate;
+        //            so.Date = soSsub.NSaleOrderDTO.Date;
+        //            so.Updated = so.Date;
+        //            so.SaleOrderNumber = soSsub.NSaleOrderDTO.SaleOrderNumber;
+        //            so.Name = so.SaleOrderNumber.ToString();
+        //            so.TankIdi = soSsub.NSaleOrderDTO.TankIdi; //mandar tanlidi
+        //            so.Active = true;
+        //            so.Locked = false;
+        //            so.Deleted = false;
 
-                    context.SaleOrders.Add(so);
-                    context.SaveChanges();
-                    //Guid isSaorderNumber = so.SaleOrderId;
+        //            context.SaleOrders.Add(so);
+        //            context.SaveChanges();
+        //            //Guid isSaorderNumber = so.SaleOrderId;
 
-                    SaleSuborder sso = new();
-                    sso.SaleOrderId = so.SaleOrderId;
-                    sso.Name = so.SaleOrderNumber.ToString();
-                    sso.ProductId = soSsub.saleSuborderDTO.ProductId;
-                    sso.StartQuantity = soSsub.saleSuborderDTO.StartQuantity; //vol ini
-                    sso.Quantity = soSsub.saleSuborderDTO.Quantity;  //volumen entregado
-                    sso.EndQuantity = soSsub.saleSuborderDTO.EndQuantity; //vol fin 
-                    sso.Price = soSsub.saleSuborderDTO.Price;   //Precio
-                    sso.TotalAmount = soSsub.saleSuborderDTO.TotalAmount; //importe
-                    sso.Temperature = soSsub?.saleSuborderDTO?.Temperature;
-                    sso.AbsolutePressure = soSsub?.saleSuborderDTO?.AbsolutePressure;  //presion atmosferica
-                    sso.CalorificPower = soSsub?.saleSuborderDTO?.CalorificPower;
-                    sso.Date = so.Date;
+        //            SaleSuborder sso = new();
+        //            sso.SaleOrderId = so.SaleOrderId;
+        //            sso.Name = so.SaleOrderNumber.ToString();
+        //            sso.ProductId = soSsub.NSaleSuborderDTO.ProductId;
+        //            sso.StartQuantity = soSsub.NSaleSuborderDTO.StartQuantity; //vol ini
+        //            sso.Quantity = soSsub.NSaleSuborderDTO.Quantity;  //volumen entregado
+        //            sso.EndQuantity = soSsub.NSaleSuborderDTO.EndQuantity; //vol fin 
+        //            sso.Price = soSsub.NSaleSuborderDTO.Price;   //Precio
+        //            sso.TotalAmount = soSsub.NSaleSuborderDTO.TotalAmount; //importe
+        //            sso.Temperature = soSsub?.NSaleSuborderDTO?.Temperature;
+        //            sso.AbsolutePressure = soSsub?.NSaleSuborderDTO?.AbsolutePressure;  //presion atmosferica
+        //            sso.CalorificPower = soSsub?.NSaleSuborderDTO?.CalorificPower;
+        //            sso.Date = so.Date;
 
-                    context.SaleSuborders.Add(sso);
-                    context.SaveChanges();
+        //            context.SaleSuborders.Add(sso);
+        //            context.SaveChanges();
 
-                    InventoryInSaleOrder invInSaOrder = new ();
-                    invInSaOrder.InventoryInSaleOrderId = Guid.NewGuid();
-                    invInSaOrder.StoreId = storeId;
-                    invInSaOrder.Date = DateTime.Now;
-                    invInSaOrder.TankIdi = so.TankIdi;  //desde clase1
-                    invInSaOrder.ProductId = sso.ProductId;
-                    invInSaOrder.StartVolume = starVolDB; // desde compra
-                    invInSaOrder.StartDate = DateTime.Now;
-                    invInSaOrder.Volume = sso.Quantity; //desde clase 1
-                    invInSaOrder.EndVolume = starVolDB-sso.Quantity; // volumen desde compra menos volumen vemndido
-                    invInSaOrder.Updated = DateTime.Now;
-                    invInSaOrder.Active = true;
-                    invInSaOrder.Deleted = false;
-                    invInSaOrder.Locked = false;
+        //            InventoryInSaleOrder invInSaOrder = new ();
+        //            invInSaOrder.InventoryInSaleOrderId = Guid.NewGuid();
+        //            invInSaOrder.StoreId = storeId;
+        //            invInSaOrder.Date = DateTime.Now;
+        //            invInSaOrder.TankIdi = so.TankIdi;  //desde clase1
+        //            invInSaOrder.ProductId = sso.ProductId;
+        //            invInSaOrder.StartVolume = starVolDB; // desde compra
+        //            invInSaOrder.StartDate = DateTime.Now;
+        //            invInSaOrder.Volume = sso.Quantity; //desde clase 1
+        //            invInSaOrder.EndVolume = starVolDB-sso.Quantity; // volumen desde compra menos volumen vemndido
+        //            invInSaOrder.Updated = DateTime.Now;
+        //            invInSaOrder.Active = true;
+        //            invInSaOrder.Deleted = false;
+        //            invInSaOrder.Locked = false;
 
-                    await transaccion.CommitAsync();
-                    rpta = 1;                  //Si respuesta 1 esta ok
-                }
-            }
-            catch (Exception)
-            {
-                rpta = 0;   // algo esta mal
-            }
-            return rpta;
-        }
+        //            await transaccion.CommitAsync();
+        //            rpta = 1;                  //Si respuesta 1 esta ok
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //        rpta = 0;   // algo esta mal
+        //    }
+        //    return rpta;
+        //}
 
 
         [HttpPost("{storeId}")]
@@ -216,10 +216,10 @@ namespace APIControlNet.Controllers
                     
                     so.SaleOrderId = Guid.NewGuid();
                     so.StoreId = storeId;
-                    so.StartDate = soSsub.saleOrderDTO.StartDate;
-                    so.Date = soSsub.saleOrderDTO.Date;
+                    so.StartDate = soSsub.NSaleOrderDTO.StartDate;
+                    so.Date = soSsub.NSaleOrderDTO.Date;
                     so.Updated = so.Date;
-                    so.SaleOrderNumber = soSsub.saleOrderDTO.SaleOrderNumber;
+                    so.SaleOrderNumber = soSsub.NSaleOrderDTO.SaleOrderNumber;
                     so.Name = so.SaleOrderNumber.ToString();
                     so.Active = true;
                     so.Locked = false;
@@ -232,15 +232,15 @@ namespace APIControlNet.Controllers
                     SaleSuborder sso = new();
                     sso.SaleOrderId = so.SaleOrderId;
                     sso.Name = so.SaleOrderNumber.ToString(); 
-                    sso.ProductId = soSsub.saleSuborderDTO.ProductId;
-                    sso.StartQuantity = soSsub.saleSuborderDTO.StartQuantity; //vol ini
-                    sso.Quantity = soSsub.saleSuborderDTO.Quantity;  //volumen entregado
-                    sso.EndQuantity = soSsub.saleSuborderDTO.EndQuantity; //vol fin 
-                    sso.Price = soSsub.saleSuborderDTO.Price;   //Precio
-                    sso.TotalAmount = soSsub.saleSuborderDTO.TotalAmount; //importe
-                    sso.Temperature = soSsub?.saleSuborderDTO?.Temperature;
-                    sso.AbsolutePressure = soSsub?.saleSuborderDTO?.AbsolutePressure;  //presion atmosferica
-                    sso.CalorificPower = soSsub?.saleSuborderDTO?.CalorificPower;
+                    sso.ProductId = soSsub.NSaleSuborderDTO.ProductId;
+                    sso.StartQuantity = soSsub.NSaleSuborderDTO.StartQuantity; //vol ini
+                    sso.Quantity = soSsub.NSaleSuborderDTO.Quantity;  //volumen entregado
+                    sso.EndQuantity = soSsub.NSaleSuborderDTO.EndQuantity; //vol fin 
+                    sso.Price = soSsub.NSaleSuborderDTO.Price;   //Precio
+                    sso.TotalAmount = soSsub.NSaleSuborderDTO.TotalAmount; //importe
+                    sso.Temperature = soSsub?.NSaleSuborderDTO?.Temperature;
+                    sso.AbsolutePressure = soSsub?.NSaleSuborderDTO?.AbsolutePressure;  //presion atmosferica
+                    sso.CalorificPower = soSsub?.NSaleSuborderDTO?.CalorificPower;
                     sso.Date = so.Date;
 
                     context.SaleSuborders.Add(sso);
@@ -274,23 +274,23 @@ namespace APIControlNet.Controllers
             }
 
             so.SaleOrderId = idGuid;
-            so.SaleOrderNumber = so_SsubDTO.saleOrderDTO.SaleOrderNumber;
-            so.StartDate = so_SsubDTO.saleOrderDTO.StartDate;
+            so.SaleOrderNumber = so_SsubDTO.NSaleOrderDTO.SaleOrderNumber;
+            so.StartDate = so_SsubDTO.NSaleOrderDTO.StartDate;
             so.Date = so.Date;
             so.Updated = DateTime.Now;
 
             ////
             ssub.SaleOrderId = idGuid;
-            ssub.ProductId = so_SsubDTO.saleSuborderDTO.ProductId;
-            ssub.StartQuantity = so_SsubDTO.saleSuborderDTO.StartQuantity;
-            ssub.Quantity = so_SsubDTO.saleSuborderDTO.Quantity;
-            ssub.EndQuantity = so_SsubDTO.saleSuborderDTO.EndQuantity;
-            ssub.Price = so_SsubDTO.saleSuborderDTO.Price;
-            ssub.TotalAmount = so_SsubDTO.saleSuborderDTO.TotalAmount;
-            ssub.Date = so_SsubDTO.saleSuborderDTO.Date;
-            ssub.Temperature = so_SsubDTO.saleSuborderDTO.Temperature;
-            ssub.AbsolutePressure = so_SsubDTO.saleSuborderDTO.AbsolutePressure;
-            ssub.CalorificPower = so_SsubDTO.saleSuborderDTO.CalorificPower;
+            ssub.ProductId = so_SsubDTO.NSaleSuborderDTO.ProductId;
+            ssub.StartQuantity = so_SsubDTO.NSaleSuborderDTO.StartQuantity;
+            ssub.Quantity = so_SsubDTO.NSaleSuborderDTO.Quantity;
+            ssub.EndQuantity = so_SsubDTO.NSaleSuborderDTO.EndQuantity;
+            ssub.Price = so_SsubDTO.NSaleSuborderDTO.Price;
+            ssub.TotalAmount = so_SsubDTO.NSaleSuborderDTO.TotalAmount;
+            ssub.Date = so_SsubDTO.NSaleSuborderDTO.Date;
+            ssub.Temperature = so_SsubDTO.NSaleSuborderDTO.Temperature;
+            ssub.AbsolutePressure = so_SsubDTO.NSaleSuborderDTO.AbsolutePressure;
+            ssub.CalorificPower = so_SsubDTO.NSaleSuborderDTO.CalorificPower;
             ssub.Updated = DateTime.Now;
 
             await context.SaveChangesAsync();
