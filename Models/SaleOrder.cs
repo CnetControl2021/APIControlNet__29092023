@@ -5,11 +5,6 @@ namespace APIControlNet.Models
 {
     public partial class SaleOrder
     {
-        public SaleOrder()
-        {
-            SaleSuborders = new HashSet<SaleSuborder>();
-        }
-
         public int SaleOrderIdx { get; set; }
         public Guid SaleOrderId { get; set; }
         public Guid StoreId { get; set; }
@@ -36,6 +31,5 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
 
         public virtual Store Store { get; set; }
-        public virtual ICollection<SaleSuborder> SaleSuborders { get; set; }
     }
 }

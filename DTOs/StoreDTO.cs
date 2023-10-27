@@ -41,6 +41,7 @@ namespace APIControlNet.DTOs
         public int? Send { get; set; }
         public DateTime? Date { get; set; }=DateTime.Now;
         public DateTime? Updated { get; set; }=DateTime.Now;
+        public bool? Carrier { get; set; }
         public bool? Active { get; set; } = true;
         public bool? Locked { get; set; }=false;
         public bool? Deleted { get; set; } = false;

@@ -29,17 +29,27 @@ namespace APIControlNet.Controllers
             this.servicioBinnacle = servicioBinnacle;
         }
 
-        [HttpGet("byGuid/{idGuid}")]
+        [HttpGet("byGuid/Sale/{idGuid?}")]
         [AllowAnonymous]
         public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get3(Guid idGuid)
         {
-            var data = await context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
-            var uuid = data.SupplierTransportRegisterId;
+            var findDB = await context.SaleSuborders.Where(x => x.SaleOrderId == idGuid).FirstOrDefaultAsync();
+            var data = await context.SupplierTransportRegisters.Where(x => x.SupplierTransportRegisterId == findDB.SupplierTransportRegisterId).ToListAsync();
 
-            var supTraReg = await context.SupplierTransportRegisters.Where(x => x.SupplierTransportRegisterId == (uuid)).ToListAsync();
-
-            return mapper.Map<List<SupplierTransportRegisterDTO>>(supTraReg);
+            return mapper.Map<List<SupplierTransportRegisterDTO>>(data);
         }
+
+
+        [HttpGet("byGuid/{idGuid?}")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<SupplierTransportRegisterDTO>> Get4(Guid idGuid)
+        {
+            var findDB = await context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
+            var data = await context.SupplierTransportRegisters.Where(x => x.SupplierTransportRegisterId == findDB.SupplierTransportRegisterId).ToListAsync();
+
+            return mapper.Map<List<SupplierTransportRegisterDTO>>(data);
+        }
+
 
         [HttpGet("{id2:int}", Name = "obtenerStr")]
         //[AllowAnonymous]
@@ -78,7 +88,7 @@ namespace APIControlNet.Controllers
             }
             catch (Exception)
             {
-                return BadRequest($"Ya existe isla {str.SupplierTransportRegisterIdx} en esa sucursal ");
+                return BadRequest($"Ya existe {str.SupplierTransportRegisterIdx} en esa sucursal ");
             }
         }
 
@@ -109,11 +119,11 @@ namespace APIControlNet.Controllers
                     str.Deleted = 0;
 
                     context.SupplierTransportRegisters.Add(str);
-                    context.SaveChanges();
+                    //context.SaveChanges();
 
                     InventoryInDocument iiDoc = await context.InventoryInDocuments.Where(x => x.InventoryInId == idGuid).FirstOrDefaultAsync();
 
-                    iiDoc.InventoryInId = idGuid;
+                    //iiDoc.InventoryInId = idGuid;
                     iiDoc.SupplierTransportRegisterId = str.SupplierTransportRegisterId;
 
                     context.InventoryInDocuments.Update(iiDoc);
@@ -126,6 +136,52 @@ namespace APIControlNet.Controllers
             catch (Exception)
             {
                 rpta = 0;   
+            }
+            return rpta;
+        }
+
+        [HttpPost("sale/{idGuid}")]
+        [AllowAnonymous]
+        public async Task<int> PostSale([FromBody] SupplierTransportRegisterDTO supplierTR, Guid idGuid)
+        {
+            int rpta = 0;
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    SupplierTransportRegister str = new();
+
+                    str.SupplierTransportRegisterId = Guid.NewGuid();
+                    str.SupplierId = supplierTR.SupplierId;
+                    str.AmountPerFee = supplierTR.AmountPerFee; //importe por tarifa
+                    str.AmountPerCapacity = supplierTR.AmountPerCapacity;
+                    str.AmountPerUse = supplierTR.AmountPerUse;
+                    str.AmountPerVolume = supplierTR.AmountPerVolume;
+                    str.AmountPerService = supplierTR.AmountPerService;
+                    str.AmountOfDiscount = supplierTR.AmountOfDiscount;
+                    str.Date = DateTime.Now;
+                    str.Updated = DateTime.Now;
+                    str.Active = 1;
+                    str.Locked = 0;
+                    str.Deleted = 0;
+
+                    context.SupplierTransportRegisters.Add(str);
+                    //context.SaveChanges();
+
+                    SaleSuborder saSub = await context.SaleSuborders.Where(x => x.SaleOrderId == idGuid).FirstOrDefaultAsync();
+
+                    saSub.SupplierTransportRegisterId = str.SupplierTransportRegisterId;
+
+                    context.SaleSuborders.Update(saSub);
+                    context.SaveChanges();
+
+                    await transaccion.CommitAsync();
+                    rpta = 1;
+                }
+            }
+            catch (Exception)
+            {
+                rpta = 0;
             }
             return rpta;
         }

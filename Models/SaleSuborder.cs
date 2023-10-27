@@ -23,6 +23,9 @@ namespace APIControlNet.Models
         public decimal? PresetQuantity { get; set; }
         public decimal? PresetValue { get; set; }
         public DateTime? Date { get; set; }
+        public Guid? InvoiceId { get; set; }
+        public Guid? SupplierTransportRegisterId { get; set; }
+        public Guid? PetitionCustomsId { get; set; }
         public DateTime? Updated { get; set; }
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
@@ -37,7 +40,5 @@ namespace APIControlNet.Models
         public int? ProductCompositionId { get; set; }
         public decimal? StartQuantity { get; set; }
         public decimal? EndQuantity { get; set; }
-
-        public virtual SaleOrder SaleOrder { get; set; }
     }
 }

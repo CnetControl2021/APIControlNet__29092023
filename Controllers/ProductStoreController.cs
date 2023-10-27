@@ -52,7 +52,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("active/{storeId?}")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<ProductStoreDTO>> Get2(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
         {
             var queryable = context.ProductStores.Where(x => x.Active == true).AsQueryable();

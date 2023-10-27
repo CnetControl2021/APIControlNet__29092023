@@ -103,6 +103,7 @@ namespace APIControlNet.Models
         public virtual DbSet<License> Licenses { get; set; }
         public virtual DbSet<LoadPosition> LoadPositions { get; set; }
         public virtual DbSet<LoadPositionResponse> LoadPositionResponses { get; set; }
+        public virtual DbSet<Menu> Menus { get; set; }
         public virtual DbSet<Monitor> Monitors { get; set; }
         public virtual DbSet<MonthlySummary> MonthlySummaries { get; set; }
         public virtual DbSet<MovementType> MovementTypes { get; set; }
@@ -209,7 +210,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
+          
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -5296,6 +5297,30 @@ namespace APIControlNet.Models
                     .HasConstraintName("FK_load_position_response_load_position");
             });
 
+            modelBuilder.Entity<Menu>(entity =>
+            {
+                entity.ToTable("menu");
+
+                entity.Property(e => e.MenuId).HasColumnName("menu_id");
+
+                entity.Property(e => e.IconName)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("icon_name");
+
+                entity.Property(e => e.MenuName)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("menu_name");
+
+                entity.Property(e => e.PageMenu)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("page_menu");
+
+                entity.Property(e => e.ParentMenuId).HasColumnName("parent_menu_id");
+            });
+
             modelBuilder.Entity<Monitor>(entity =>
             {
                 entity.HasKey(e => e.MonitorIdx)
@@ -7078,7 +7103,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.SaleSuborderIdx).HasColumnName("sale_suborder_idx");
 
                 entity.Property(e => e.AbsolutePressure)
-                    .HasColumnType("decimal(6, 3)")
+                    .HasColumnType("decimal(11, 4)")
                     .HasColumnName("absolute_pressure")
                     .HasDefaultValueSql("((0))");
 
@@ -7089,7 +7114,7 @@ namespace APIControlNet.Models
                     .HasColumnName("amount");
 
                 entity.Property(e => e.CalorificPower)
-                    .HasColumnType("decimal(6, 3)")
+                    .HasColumnType("decimal(11, 4)")
                     .HasColumnName("calorific_power")
                     .HasDefaultValueSql("((0))");
 
@@ -7114,12 +7139,16 @@ namespace APIControlNet.Models
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("ieps");
 
+                entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.Name)
                     .HasMaxLength(80)
                     .IsUnicode(false)
                     .HasColumnName("name");
+
+                entity.Property(e => e.PetitionCustomsId).HasColumnName("petition_customs_id");
 
                 entity.Property(e => e.PresetQuantity)
                     .HasColumnType("decimal(11, 4)")
@@ -7162,6 +7191,8 @@ namespace APIControlNet.Models
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("subtotal");
 
+                entity.Property(e => e.SupplierTransportRegisterId).HasColumnName("supplier_transport_register_id");
+
                 entity.Property(e => e.Tax)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("tax");
@@ -7189,13 +7220,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
-
-                entity.HasOne(d => d.SaleOrder)
-                    .WithMany(p => p.SaleSuborders)
-                    .HasPrincipalKey(p => p.SaleOrderId)
-                    .HasForeignKey(d => d.SaleOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_sale_suborder_sale_order");
             });
 
             modelBuilder.Entity<SatClaveProductoServicio>(entity =>

@@ -60,7 +60,7 @@ namespace APIControlNet.Controllers
                                join pd in context.Products on ds.ProductId equals pd.ProductId
                                join pds in context.ProductStores on pd.ProductId equals pds.ProductId
                                where pds.StoreId == storeId
-                               && ds.Date <= dateFin && ds.Date >= dateIni
+                               && ds.Date >= (dateIni) && ds.Date <= dateFin
                                
                               select new DailySummaryDTO
                               {
@@ -79,7 +79,6 @@ namespace APIControlNet.Controllers
                                   SaleQuantity = ds.SaleQuantity,
                                   ProductColor = pds.Color
                               }).AsNoTracking().ToListAsync();
-
             return list;
         }
 

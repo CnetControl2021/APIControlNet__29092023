@@ -106,6 +106,7 @@ namespace APIControlNet.Controllers
             {
                 NSaleOrderDTO = new SaleOrderDTO
                 {
+                    TankIdi = so.TankIdi,
                     SaleOrderId = so.SaleOrderId,
                     SaleOrderNumber= so.SaleOrderNumber,
                     StartDate = so.StartDate,
@@ -205,9 +206,8 @@ namespace APIControlNet.Controllers
 
         [HttpPost("{storeId}")]
         [AllowAnonymous]
-        public async Task<int> Save([FromBody] SoSsubDTO soSsub, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] SoSsubDTO soSsub, Guid storeId)
         {
-            int rpta = 0;
             try
             {
                 using (var transaccion = await context.Database.BeginTransactionAsync())
@@ -216,10 +216,11 @@ namespace APIControlNet.Controllers
                     
                     so.SaleOrderId = Guid.NewGuid();
                     so.StoreId = storeId;
+                    so.TankIdi = soSsub.NSaleOrderDTO.TankIdi;          //tanque o ducto
                     so.StartDate = soSsub.NSaleOrderDTO.StartDate;
                     so.Date = soSsub.NSaleOrderDTO.Date;
-                    so.Updated = so.Date;
-                    so.SaleOrderNumber = soSsub.NSaleOrderDTO.SaleOrderNumber;
+                    so.Updated = DateTime.Now;
+                    so.SaleOrderNumber = soSsub.NSaleOrderDTO.SaleOrderNumber; //numfila
                     so.Name = so.SaleOrderNumber.ToString();
                     so.Active = true;
                     so.Locked = false;
@@ -247,14 +248,13 @@ namespace APIControlNet.Controllers
                     context.SaveChanges();
 
                     await transaccion.CommitAsync();
-                    rpta = 1;                  //Si respuesta 1 esta ok
+                    return Ok($"Registro correcto {so.SaleOrderNumber}");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                rpta = 0;   // algo esta mal
+                return BadRequest(ex.Message);
             }
-            return rpta;
         }
 
 

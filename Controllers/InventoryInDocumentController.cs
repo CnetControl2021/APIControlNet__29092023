@@ -238,8 +238,8 @@ namespace APIControlNet.Controllers
                     else
                     {
                         var oIvoice = await context.Invoices.FirstOrDefaultAsync (x => x.InvoiceId == invInDoc_Invoice.NInvoiceDTO.InvoiceId);
-                        oIvoice.InvoiceId = Guid.NewGuid();
-                        oIvoice.StoreId = storeId;
+                        //oIvoice.InvoiceId = Guid.NewGuid();
+                        //oIvoice.StoreId = storeId;
                         oIvoice.InvoiceSerieId = invInDoc_Invoice.NInvoiceDTO.InvoiceSerieId;
                         oIvoice.Folio = invInDoc_Invoice.NInvoiceDTO.Folio;
                         oIvoice.Date = invInDoc_Invoice.NInvoiceDTO.Date;

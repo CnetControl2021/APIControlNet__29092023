@@ -118,12 +118,18 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("{nombre}")]
-        public async Task<ActionResult<List<CustomerDTO>>> Get([FromRoute] string nombre)
+        [HttpGet("byName/{textSearch}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<CustomerDTO>>> Get(string textSearch)
         {
-            var RSs = await context.Customers.Where(Customerdb => Customerdb.Name.Contains(nombre)).ToListAsync();
-
-            return mapper.Map<List<CustomerDTO>>(RSs);
+            var queryable = context.Customers.OrderByDescending(x => x.CustomerIdx).AsQueryable();
+            if (!string.IsNullOrEmpty(textSearch))
+            {
+                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch.ToLower()));
+            }
+            var customers = await queryable
+               .AsNoTracking().ToListAsync();
+            return mapper.Map<List<CustomerDTO>> (customers);
         }
 
 

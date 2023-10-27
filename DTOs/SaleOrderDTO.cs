@@ -39,10 +39,14 @@ namespace APIControlNet.DTOs
         public virtual StoreDTO Store { get; set; }
         public virtual ICollection<SaleSuborderDTO> SaleSuborders { get; set; }
 
-        public decimal? Price { get; set; } //agrege
+        public decimal? Price { get; set; } //agrege estos
         public decimal? Quantity { get; set; }
+        public decimal? QuantityTC { get; set; }
+        public string? ProductName { get; set; }
         public decimal? TotalQuantity { get; set; }
         public decimal? TotalAmount { get; set; }
+
+
     }
    
 }

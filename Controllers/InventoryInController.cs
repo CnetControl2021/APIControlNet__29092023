@@ -84,7 +84,6 @@ namespace APIControlNet.Controllers
         [HttpPost("{storeId}")]
         //[AllowAnonymous]
         public async Task<ActionResult> Save([FromBody] InvIn_InvInDoc invInDoc_Invoice, Guid storeId)
-
         {
             try
             {
