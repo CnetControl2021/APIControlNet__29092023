@@ -35,6 +35,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Excel">
+      <HintPath>..\..\..\Desktop\ControlNet Web VS2019\packages\ExcelDataReader.2.1.2.3\lib\net20\Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\..\..\Desktop\ControlNet Web VS2019\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

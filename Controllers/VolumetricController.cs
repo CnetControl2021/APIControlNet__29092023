@@ -15,6 +15,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 
+using Excel;
 using System.Data;
 using System.Net;
 using System.Net.Http;
@@ -5348,6 +5349,638 @@ namespace APIControlNet.Controllers
         }
         #endregion
 
+        #region Carga Masiva: Excel.
+        /// <summary>
+        /// Lectura de Archivo de Excel para guardar Recepciones y Entregas.
+        /// </summary>
+        /// <param name="viNCompania">ID Compañia</param>
+        /// <param name="viNEstacion">ID Estación.</param>
+        /// <param name="viTipoArchivo">Tipo de Registros "RECEPCION | ENTREGA"</param>
+        /// <param name="viArchivo">Archivo Excel</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost("Importar Excel")]
+        public IActionResult CargaExcel(Guid? viNCompania, Guid? viNEstacion, String viTipoArchivo, IFormFile viArchivo)
+        {
+            #region Código Ejemplo.
+            //#region Variable Declaration
+            //string message = "";
+            //HttpResponseMessage ResponseMessage = null;
+            //var httpRequest = HttpContext.Request;
+            //DataSet dsexcelRecords = new DataSet();
+            //IExcelDataReader reader = null;
+            //HttpPostedFile Inputfile = null;
+            //Stream FileStream = null;
+            //#endregion
 
+            //#region Save Student Detail From Excel
+            //using (dbCodingvilaEntities objEntity = new dbCodingvilaEntities())
+            //{
+            //    if (httpRequest.Files.Count > 0)
+            //    {
+            //        Inputfile = httpRequest.Files[0];
+            //        FileStream = Inputfile.InputStream;
+
+            //        if (Inputfile != null && FileStream != null)
+            //        {
+            //            if (Inputfile.FileName.EndsWith(".xls"))
+            //                reader = ExcelReaderFactory.CreateBinaryReader(FileStream);
+            //            else if (Inputfile.FileName.EndsWith(".xlsx"))
+            //                reader = ExcelReaderFactory.CreateOpenXmlReader(FileStream);
+            //            else
+            //                message = "The file format is not supported.";
+
+            //            dsexcelRecords = reader.AsDataSet();
+            //            reader.Close();
+
+            //            if (dsexcelRecords != null && dsexcelRecords.Tables.Count > 0)
+            //            {
+            //                DataTable dtStudentRecords = dsexcelRecords.Tables[0];
+            //                for (int i = 0; i < dtStudentRecords.Rows.Count; i++)
+            //                {
+            //                    Student objStudent = new Student();
+            //                    objStudent.RollNo = Convert.ToInt32(dtStudentRecords.Rows[i][0]);
+            //                    objStudent.EnrollmentNo = Convert.ToString(dtStudentRecords.Rows[i][1]);
+            //                    objStudent.Name = Convert.ToString(dtStudentRecords.Rows[i][2]);
+            //                    objStudent.Branch = Convert.ToString(dtStudentRecords.Rows[i][3]);
+            //                    objStudent.University = Convert.ToString(dtStudentRecords.Rows[i][4]);
+            //                    objEntity.Students.Add(objStudent);
+            //                }
+
+            //                int output = objEntity.SaveChanges();
+            //                if (output > 0)
+            //                    message = "The Excel file has been successfully uploaded.";
+            //                else
+            //                    message = "Something Went Wrong!, The Excel file uploaded has fiald.";
+            //            }
+            //            else
+            //                message = "Selected file is empty.";
+            //        }
+            //        else
+            //            message = "Invalid File.";
+            //    }
+            //    else
+            //        ResponseMessage = Request.CreateResponse(HttpStatusCode.BadRequest);
+            //}
+            //return message;
+            //#endregion
+            #endregion
+
+            #region Constantes.
+            const String TIPO_ARCHIVO_RECEPCION = "RECEPCION";
+            const String TIPO_ARCHIVO_ENTREGA = "ENTREGA";
+
+            #region Hojas.
+            const String HOJA_GENERAL = "GENERAL";
+            const String HOJA_CFDI = "CFDI";
+            const String HOJA_PEDIMENTO = "PEDIMENTO";
+            const String HOJA_TRANSPORTE = "TRANSPORTE";
+            #endregion
+
+            #region Columnas.
+            #region Generales.
+            const int COLUMNA_GENERAL_NUMERO_FILA = 0;
+            const int COLUMNA_GENERAL_NUMERO_DUCTO = 1;
+            const int COLUMNA_GENERAL_NUMERO_PRODUCTO = 2;
+            const int COLUMNA_GENERAL_UNIDAD_MEDIDA = 3;
+            const int COLUMNA_GENERAL_VOLUMEN_INICIAL = 4;
+            const int COLUMNA_GENERAL_VOLUMEN_FINAL = 5;
+            const int COLUMNA_GENERAL_VOLUMEN = 6;
+            const int COLUMNA_GENERAL_TEMPERATURA = 7;
+            const int COLUMNA_GENERAL_PRESION_ABSOLUTA = 8;
+            const int COLUMNA_GENERAL_PODER_CALORIFICO = 9;
+            const int COLUMNA_GENERAL_FECHA_INICIAL = 10;
+            const int COLUMNA_GENERAL_FECHA_FINAL = 11;
+            const int COLUMNA_GENERAL_PRECIO = 12;
+            const int COLUMNA_GENERAL_IMPORTE = 13;
+            #endregion
+
+            #region CFDI.
+            const int COLUMNA_CFDI_NUMERO_FILA = 0;
+            const int COLUMNA_CFDI_RFC = 1;
+            const int COLUMNA_CFDI_NOMBRE = 2;
+            const int COLUMNA_CFDI_SERIE = 3;
+            const int COLUMNA_CFDI_NUMERO_FACTURA = 4;
+            const int COLUMNA_CFDI_TIPO_CFDI = 5;
+            const int COLUMNA_CFDI_CFDI = 6;
+            const int COLUMNA_CFDI_PRECIO = 7;
+            const int COLUMNA_CFDI_IMPORTE = 8;
+            const int COLUMNA_CFDI_FECHA_HORA = 9;
+            const int COLUMNA_CFDI_VOLUMEN = 10;
+            const int COLUMNA_CFDI_UNIDAD_MEDIDA = 11;
+            const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 12;
+            #endregion
+
+            #region Pedimento.
+            const int COLUMNA_PEDIMENTO_NUMERO_FILA = 0;
+            const int COLUMNA_PEDIMENTO_CLAVE_PERMISO = 1;
+            const int COLUMNA_PEDIMENTO_PUNTO_INTERNACION = 2;
+            const int COLUMNA_PEDIMENTO_PAIS = 3;
+            const int COLUMNA_PEDIMENTO_MEDIO = 4;
+            const int COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO = 5;
+            const int COLUMNA_PEDIMENTO_INCOTERMS = 6;
+            const int COLUMNA_PEDIMENTO_PRECIO = 7;
+            const int COLUMNA_PEDIMENTO_VOLUMEN = 8;
+            const int COLUMNA_PEDIMENTO_UNIDAD_MEDIDA = 9;
+            #endregion
+
+            #region Transporte.
+            const int COLUMNA_TRANSPORTE_NUMERO_FILA = 0;
+            const int COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE = 1;
+            const int COLUMNA_TRANSPORTE_CLAVE_VEHICULO = 2;
+            const int COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE = 3;
+            const int COLUMNA_TRANSPORTE_CARGO_CAPACIDAD = 4;
+            const int COLUMNA_TRANSPORTE_CARGO_USO = 5;
+            const int COLUMNA_TRANSPORTE_CARGO_VOLUMEN = 6;
+            const int COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO = 7;
+            const int COLUMNA_TRANSPORTE_CONTRAPRESTACION = 8;
+            const int COLUMNA_TRANSPORTE_DESCUENTO = 9;
+            #endregion
+            #endregion
+            #endregion
+
+            IExcelDataReader objReader = null;
+            Stream objStream = new MemoryStream();
+            DataSet dsArchivo = null;
+            int iNFilaActual = 0;
+
+            if (viArchivo != null && viArchivo.Length > 0)
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                viArchivo.CopyTo(objStream);
+                objStream.Position = 0;
+                objReader = null;
+
+                #region Validaciones Principales.
+                if (viArchivo.FileName.EndsWith(".xls"))
+                    objReader = ExcelReaderFactory.CreateBinaryReader(objStream);
+                else if (viArchivo.FileName.EndsWith(".xlsx"))
+                    objReader = ExcelReaderFactory.CreateOpenXmlReader(objStream);
+                else
+                    return BadRequest("El Formato del Archivo no es valido.");
+
+                if (!String.IsNullOrEmpty(objReader.ExceptionMessage))
+                    return BadRequest(objReader.ExceptionMessage);
+
+                objReader.IsFirstRowAsColumnNames = true;
+                dsArchivo = objReader.AsDataSet();
+
+                if (!dsArchivo.Tables.Contains(HOJA_GENERAL))
+                    return BadRequest("No se encontro la hoja 'GENERAL' en el documento de Excel.");
+                #endregion
+
+                #region Lectura y Llenado de Estructuras.
+                DataTable dtCfdi = new DataTable(),
+                          dtPedimento = new DataTable(),
+                          dtTransporte = new DataTable();
+
+                if (dsArchivo.Tables.Contains(HOJA_CFDI))
+                    dtCfdi = dsArchivo.Tables[HOJA_CFDI];
+
+                if (dsArchivo.Tables.Contains(HOJA_PEDIMENTO))
+                    dtPedimento = dsArchivo.Tables[HOJA_PEDIMENTO];
+
+                if (dsArchivo.Tables.Contains(HOJA_TRANSPORTE))
+                    dtTransporte = dsArchivo.Tables[HOJA_TRANSPORTE];
+
+                foreach (DataRow drGeneral in dsArchivo.Tables[HOJA_GENERAL].Rows)
+                {
+                    InventoryIn objRecepcionDato = null;
+                    SaleOrder objEntregDatos = null;
+
+                    Guid gRecepcionID = Guid.Empty,
+                         gEntregaID = Guid.Empty,
+                         gCfdiID = Guid.Empty,
+                         gPedimentoID = Guid.Empty,
+                         gTransporteID = Guid.Empty;
+
+                    #region Conversion.
+                    int iNFila = 0;
+                    int.TryParse(drGeneral[COLUMNA_GENERAL_NUMERO_FILA].ToString().Trim(), out iNFila);
+
+                    if (iNFila <= 0)
+                        continue;
+
+                    iNFilaActual = iNFila;
+                    int iNDucto = 0;
+                    Decimal dVolInicial = 0, dVolFinal = 0, dVolumen = 0, dTemperatura = 0, dPresionAbs = 0, dPrecio = 0, dImporte = 0, dPoderCalor = 0;
+                    String sNProducto = drGeneral[COLUMNA_GENERAL_NUMERO_PRODUCTO].ToString().Trim(),
+                           sUnidadMedida = String.Empty;
+                    DateTime dtFInicial = Convert.ToDateTime(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim()),
+                             dtFFinal = Convert.ToDateTime(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim()),
+                             dtUpdate = DateTime.Now;
+
+                    int iCNFactura = 0;
+                    Decimal dCPrecio = 0, dCImporte = 0, dCVolumen = 0;
+                    int iPMedIngOSal = 0;
+                    Decimal dPPrecio = 0, dPVolumen = 0, dPPuntoInterOExt = 0;
+                    Decimal dTTarifa = 0, dTCargoCap = 0, dTCargoUso = 0, dTCargoVol = 0, dTTarifaSum = 0, dTContraPrest = 0, dTDescuento = 0;
+
+                    #region Fecha Inicial.
+                    if (drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].GetType().Equals(typeof(Double)))
+                    {
+                        Double dFInicial = 0;
+                        Double.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dFInicial);
+                        dtFInicial = DateTime.FromOADate(dFInicial);
+                    }
+                    else
+                        DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dtFInicial);
+                    #endregion
+
+                    #region Fecha Final.
+                    if (drGeneral[COLUMNA_GENERAL_FECHA_FINAL].GetType().Equals(typeof(Double)))
+                    {
+                        Double dFFinal = 0;
+                        Double.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dFFinal);
+                        dtFFinal = DateTime.FromOADate(dFFinal);
+                    }
+                    else
+                        DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dtFFinal);
+                    #endregion
+
+                    int.TryParse(drGeneral[COLUMNA_GENERAL_NUMERO_FILA].ToString().Trim(), out iNFila);
+                    int.TryParse(drGeneral[COLUMNA_GENERAL_NUMERO_DUCTO].ToString().Trim(), out iNDucto);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_INICIAL].ToString().Trim(), out dVolInicial);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_FINAL].ToString().Trim(), out dVolFinal);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN].ToString().Trim(), out dVolumen);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_TEMPERATURA].ToString().Trim(), out dTemperatura);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_PRESION_ABSOLUTA].ToString().Trim(), out dPresionAbs);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_PRECIO].ToString().Trim(), out dPrecio);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_IMPORTE].ToString().Trim(), out dImporte);
+                    Decimal.TryParse(drGeneral[COLUMNA_GENERAL_PODER_CALORIFICO].ToString().Trim(), out dPoderCalor);
+
+                    // CFDI
+                    Guid gCfdiPersonaID = Guid.Empty;
+                    String sCfdiRfc = String.Empty, sCfdiTipoComprobante = String.Empty;
+                    #endregion
+
+                    #region Validaciones.
+                    #region Validacion: Hoja "General".
+                    String sMnsGeneral = "Fila No. " + iNFila.ToString();
+
+                    if (String.IsNullOrEmpty(sNProducto))
+                        sMnsGeneral += ": No se encontro el Número de Producto";
+
+                    if ((from p in objContext.Products where p.ProductCode == sNProducto select p).Count() <= 0)
+                        sMnsGeneral += ": No se encontro información del Producto '" + sNProducto + "'";
+                    else
+                        sUnidadMedida = (from p in objContext.Products where p.ProductCode == sNProducto select p).First().JsonClaveUnidadMedidaId;
+
+                    if (sMnsGeneral != "Fila No. " + iNFila.ToString())
+                        return BadRequest(sMnsGeneral);
+                    #endregion
+
+                    #region Validación: Hoja "CFDI".
+                    DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+
+                    if (drConsultaCfdi.Length > 0)
+                    {
+                        String sCFDIMnsInicial = "Fila: '" + iNFila.ToString() + "'. ";
+
+                        String sCFDI_Nombre = drConsultaCfdi[0][COLUMNA_CFDI_NOMBRE].ToString();
+                        if (String.IsNullOrEmpty(sCFDI_Nombre))
+                            return BadRequest(sCFDIMnsInicial + "Ingresa el Nombre del Cliente (CFDI).");
+
+                        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
+                            return BadRequest(sCFDIMnsInicial + "Ingresa el CFDI de la Factura (CFDI).");
+
+                        if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
+                            return BadRequest(sCFDIMnsInicial + "El CFDI capturado no tiene el formato correcto.");
+
+                        //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
+                        //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
+
+                        // RFC
+                        sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
+
+                        switch (viTipoArchivo)
+                        {
+                            #region Recepcion.
+                            case TIPO_ARCHIVO_RECEPCION:
+                                if ((from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).Count() <= 0)
+                                    return BadRequest(sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.");
+                                else
+                                    gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
+                                break;
+                            #endregion
+
+                            #region Entrega.
+                            case TIPO_ARCHIVO_ENTREGA:
+                                if ((from c in objContext.Customers where c.Rfc == sCfdiRfc select c).Count() <= 0)
+                                    return BadRequest(sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.");
+                                else
+                                    gCfdiPersonaID = (from c in objContext.Customers where c.Rfc == sCfdiRfc select c).First().CustomerId;
+                                break;
+                                #endregion
+                        }
+
+                        // Tipo Comprobante
+                        sCfdiTipoComprobante = drConsultaCfdi[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
+                        if ((from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).Count() <= 0)
+                            return BadRequest(sCFDIMnsInicial + "(CFDI) No se encontro el tipo de comprobante '" + sCfdiTipoComprobante + "'.");
+                        else
+                            sCfdiTipoComprobante = (from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).First().SatTipoComprobanteId;
+                    }
+                    #endregion
+
+                    #region Validación: Hoja "Pedimento".
+                    DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+
+                    if (drConsultaPedimento.Length > 0)
+                    {
+                        String sPediMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
+
+                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString()))
+                            return BadRequest(sPediMnsInicial + " No se encontro la Clave de Permiso.");
+
+                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString()))
+                            return BadRequest(sPediMnsInicial + " No se encontro el Pais.");
+
+                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString()))
+                            return BadRequest(sPediMnsInicial + " No se encontro la Clave de Pedimento.");
+
+                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
+                            return BadRequest(sPediMnsInicial + " No se encontro la Incoterms");
+
+                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_UNIDAD_MEDIDA].ToString()))
+                            return BadRequest(sPediMnsInicial + " No se ha capturado la Unidad de Medida.");
+                    }
+                    #endregion
+
+                    #region Validación: Hoja "Transporte".
+                    DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    #endregion
+                    #endregion
+
+                    #region Llenado.
+                    switch (viTipoArchivo)
+                    {
+                        #region Recepcion Datos.
+                        case TIPO_ARCHIVO_RECEPCION:
+
+                            objRecepcionDato = new InventoryIn();
+                            objRecepcionDato.StoreId = viNEstacion.GetValueOrDefault();
+                            objRecepcionDato.InventoryInNumber = iNFila;
+                            objRecepcionDato.TankIdi = iNDucto;
+                            objRecepcionDato.ProductId = (from p in objContext.Products where p.ProductCode == sNProducto select p).First().ProductId;
+                            objRecepcionDato.Date = dtFInicial;
+                            objRecepcionDato.StartVolume = dVolInicial;
+                            objRecepcionDato.Volume = dVolumen;
+                            objRecepcionDato.EndVolume = dVolFinal;
+                            objRecepcionDato.StartTemperature = dTemperatura;
+                            objRecepcionDato.AbsolutePressure = dPresionAbs;
+                            objRecepcionDato.CalorificPower = dPoderCalor;
+                            objRecepcionDato.StartDate = dtFInicial;
+                            objRecepcionDato.EndDate = dtFFinal;
+
+                            objRecepcionDato.Active = true;
+                            objRecepcionDato.Updated = dtUpdate;
+
+                            objContext.InventoryIns.Add(objRecepcionDato);
+                            objContext.SaveChanges();
+
+                            gRecepcionID = (from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.Date == dtFInicial select i).First().InventoryInId;
+                            break;
+                        #endregion
+
+                        #region Entrega Datos.
+                        case TIPO_ARCHIVO_ENTREGA:
+                            objEntregDatos = new SaleOrder();
+                            objEntregDatos.StoreId = viNEstacion.GetValueOrDefault();
+                            objEntregDatos.SaleOrderNumber = iNFila;
+                            objEntregDatos.Name = String.Empty;
+                            //objEntregDatos.EmployeeId = Guid.Empty;
+                            objEntregDatos.SaleOrderNumberStart = iNFila;
+                            //objEntregDatos.CustomerControlId = Guid.Empty;
+                            //objEntregDatos.HoseIdi = 0;
+                            //objEntregDatos.ShiftId = Guid.Empty;
+                            //objEntregDatos.VehicleId = Guid.Empty;
+                            //objEntregDatos.CardEmployeeId = String.Empty;
+                            objEntregDatos.Amount = dImporte;
+                            objEntregDatos.StartDate = dtFInicial;
+                            objEntregDatos.Date = dtFInicial;
+                            objEntregDatos.TankIdi = iNDucto;
+
+                            objEntregDatos.Updated = dtUpdate;
+                            objEntregDatos.Active = true;
+
+                            // <DUDA> GUARDAR Entrega (SaleOrder)
+                            objContext.SaleOrders.Add(objEntregDatos);
+                            objContext.SaveChanges();
+
+                            gEntregaID = (from e in objContext.SaleOrders where e.StoreId == viNEstacion.GetValueOrDefault() && e.Date == dtFInicial select e).First().SaleOrderId;
+                            break;
+                            #endregion
+                    }
+
+                    #region CFDI Datos.
+                    if (drConsultaCfdi.Length > 0)
+                    {
+                        int.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_FACTURA].ToString().Trim(), out iCNFactura);
+                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_PRECIO].ToString().Trim(), out dCPrecio);
+                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_IMPORTE].ToString().Trim(), out dCImporte);
+                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_VOLUMEN].ToString().Trim(), out dCVolumen);
+
+                        #region Factura: Invoice.
+                        Invoice objFacturaHdrDato = new Invoice();
+                        objFacturaHdrDato.StoreId = viNEstacion.GetValueOrDefault();
+                        switch (viTipoArchivo)
+                        {
+                            case TIPO_ARCHIVO_RECEPCION: objFacturaHdrDato.SupplierId = gCfdiPersonaID; break;
+                            case TIPO_ARCHIVO_ENTREGA: objFacturaHdrDato.CustomerId = gCfdiPersonaID; break;
+                        }
+                        objFacturaHdrDato.InvoiceSerieId = drConsultaCfdi[0][COLUMNA_CFDI_SERIE].ToString().Trim();
+                        objFacturaHdrDato.Folio = iCNFactura.ToString().Trim();
+                        objFacturaHdrDato.SatTipoComprobanteId = sCfdiTipoComprobante;
+                        objFacturaHdrDato.Uuid = drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString().Trim();
+                        objFacturaHdrDato.Subtotal = dCImporte; //<DUDA>
+                        objFacturaHdrDato.AmountTax = 0; //<DUDA>
+                        objFacturaHdrDato.Amount = dCImporte; //<DUDA>
+
+                        objFacturaHdrDato.Active = true;
+                        objFacturaHdrDato.Updated = dtUpdate;
+
+                        if (drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                        {
+                            Double dCfdiFecha = 0;
+                            Double.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha);
+                            objFacturaHdrDato.Date = DateTime.FromOADate(dCfdiFecha);
+                        }
+                        else
+                            objFacturaHdrDato.Date = Convert.ToDateTime(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim());
+
+                        // <DUDA> GUARDAR Invoice
+                        objContext.Invoices.Add(objFacturaHdrDato);
+                        objContext.SaveChanges();
+
+                        gCfdiID = (from i in objContext.Invoices
+                                   where i.StoreId == objFacturaHdrDato.StoreId &&
+                                         i.InvoiceSerieId == objFacturaHdrDato.InvoiceSerieId &&
+                                         i.Folio == objFacturaHdrDato.Folio &&
+                                         i.Date == objFacturaHdrDato.Date
+                                   select i).First().InvoiceId;
+                        #endregion
+
+                        #region Factura Detalle: Invoice Detail.
+                        InvoiceDetail objFacturaDtlDato = new InvoiceDetail();
+                        objFacturaDtlDato.InvoiceId = gCfdiID;
+                        objFacturaDtlDato.ProductId = (from p in objContext.Products where p.ProductCode == sNProducto select p).First().ProductId;
+                        objFacturaDtlDato.Date = objFacturaHdrDato.Date;
+                        objFacturaDtlDato.Quantity = dCVolumen;
+                        objFacturaDtlDato.Price = dCPrecio;
+                        objFacturaDtlDato.Subtotal = objFacturaHdrDato.Subtotal;
+                        objFacturaDtlDato.AmountTax = objFacturaHdrDato.AmountTax;
+                        objFacturaDtlDato.Amount = dCImporte;
+                        objFacturaHdrDato.Active = true;
+
+                        // <DUDA> GUARDAR Invoice Detail
+                        objContext.InvoiceDetails.Add(objFacturaDtlDato);
+                        objContext.SaveChanges();
+                        #endregion
+                    }
+                    #endregion
+
+                    #region Pedimento Datos.
+                    if (drConsultaPedimento.Length > 0)
+                    {
+                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PUNTO_INTERNACION].ToString().Trim(), out dPPuntoInterOExt);
+                        int.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_MEDIO].ToString().Trim(), out iPMedIngOSal);
+                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PRECIO].ToString().Trim(), out dPPrecio);
+                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_VOLUMEN].ToString().Trim(), out dPVolumen);
+
+                        PetitionCustom objPedimentoDatos = new PetitionCustom();
+                        objPedimentoDatos.KeyOfImportationExportation = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString().Trim();
+                        objPedimentoDatos.KeyPointOfInletOrOulet = dPPuntoInterOExt;
+                        objPedimentoDatos.SatPaisId = drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString().Trim();
+                        objPedimentoDatos.TransportMediumnCustomsId = iPMedIngOSal;
+                        objPedimentoDatos.NumberCustomsDeclaration = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString().Trim();
+                        objPedimentoDatos.Incoterms = drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString().Trim();
+                        objPedimentoDatos.QuantityDocumented = dPVolumen;
+                        objPedimentoDatos.AmountOfImportationExportation = dPPrecio;
+                        objPedimentoDatos.JsonClaveUnidadMedidadId = sUnidadMedida;
+
+                        objPedimentoDatos.Active = 1;
+                        objPedimentoDatos.Date = dtUpdate;
+                        objPedimentoDatos.Updated = objPedimentoDatos.Date;
+
+                        // <DUDA> Guardar Pedimento.
+                        objContext.PetitionCustoms.Add(objPedimentoDatos);
+                        objContext.SaveChanges();
+
+                        gPedimentoID = (from p in objContext.PetitionCustoms
+                                        where p.KeyOfImportationExportation == objPedimentoDatos.KeyOfImportationExportation &&
+                                              p.Date == objPedimentoDatos.Date
+                                        select p).First().PetitionCustomsId;
+                    }
+                    #endregion
+
+                    #region Transporte Datos.
+                    DataRow[] drConsultaTransporte = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    if (drConsultaTransporte.Length > 0)
+                    {
+                        String sTPermisoTransporte = drConsultaTransporte[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE].ToString().Trim(), out dTTarifa);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_CAPACIDAD].ToString().Trim(), out dTCargoCap);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_USO].ToString().Trim(), out dTCargoUso);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_VOLUMEN].ToString().Trim(), out dTCargoVol);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO].ToString().Trim(), out dTTarifaSum);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CONTRAPRESTACION].ToString().Trim(), out dTContraPrest);
+                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_DESCUENTO].ToString().Trim(), out dTDescuento);
+
+                        SupplierTransportRegister objTransporteDatos = new SupplierTransportRegister();
+                        objTransporteDatos.SupplierId = (from s in objContext.SupplierTransports
+                                                         where s.TransportPermission == sTPermisoTransporte
+                                                         select s).First().SupplierId; // *<DUDA>
+                        objTransporteDatos.AmountPerFee = dTTarifa;
+                        objTransporteDatos.AmountPerCapacity = dTCargoCap;
+                        objTransporteDatos.AmountPerUse = dTCargoUso;
+                        objTransporteDatos.AmountPerVolume = dTCargoVol;
+                        objTransporteDatos.AmountPerService = dTContraPrest;
+                        objTransporteDatos.AmountOfDiscount = dTDescuento;
+
+                        objTransporteDatos.Active = 1;
+                        objTransporteDatos.Date = DateTime.Now;
+                        objTransporteDatos.Updated = objTransporteDatos.Date;
+
+                        // GUARDAR Transporte
+                        objContext.SupplierTransportRegisters.Add(objTransporteDatos);
+                        objContext.SaveChanges();
+
+                        gTransporteID = (from t in objContext.SupplierTransportRegisters
+                                         where t.Date == objTransporteDatos.Date
+                                         select t).First().SupplierTransportRegisterId;
+                    }
+                    #endregion
+
+                    switch (viTipoArchivo)
+                    {
+                        #region Recepción.
+                        case TIPO_ARCHIVO_RECEPCION:
+                            InventoryInDocument objRecepcionDocument = new InventoryInDocument();
+                            objRecepcionDocument.StoreId = viNEstacion.GetValueOrDefault();
+                            objRecepcionDocument.InventoryInId = gRecepcionID;
+                            objRecepcionDocument.Folio = objRecepcionDato.InventoryInNumber.GetValueOrDefault();
+                            objRecepcionDocument.Price = dPrecio;
+                            objRecepcionDocument.Amount = dImporte;
+                            objRecepcionDocument.Active = true;
+                            objRecepcionDocument.Date = dtUpdate;
+
+                            objRecepcionDocument.InvoiceId = gCfdiID;
+                            objRecepcionDocument.PetitionCustomsId = gPedimentoID;
+                            objRecepcionDocument.SupplierTransportRegisterId = gTransporteID;
+
+                            // <DUDA> Guardar Recepcion Documento.
+                            objContext.InventoryInDocuments.Add(objRecepcionDocument);
+                            objContext.SaveChanges();
+                            break;
+                        #endregion
+
+                        #region Entrega.
+                        case TIPO_ARCHIVO_ENTREGA:
+                            SaleSuborder objEntregaDetalle = new SaleSuborder();
+                            objEntregaDetalle.SaleOrderId = gEntregaID;
+                            objEntregaDetalle.Name = String.Empty;
+                            objEntregaDetalle.ProductId = (from p in objContext.Products where p.ProductCode == sNProducto select p).First().ProductId;
+                            objEntregaDetalle.Quantity = dVolumen;
+                            objEntregaDetalle.Amount = dImporte;
+                            objEntregaDetalle.Price = dPrecio;
+                            objEntregaDetalle.Discount = 0;
+                            objEntregaDetalle.Subtotal = 0;
+                            objEntregaDetalle.TotalAmount = dImporte;
+                            objEntregaDetalle.TotalQuantity = dVolumen;
+                            objEntregaDetalle.TotalAmountElectronic = 0;
+                            objEntregaDetalle.TotalQuantityElectronic = 0;
+                            objEntregaDetalle.PresetType = 0;
+                            objEntregaDetalle.PresetQuantity = 0;
+                            objEntregaDetalle.PresetValue = 0;
+                            objEntregaDetalle.Temperature = dTemperatura;
+                            objEntregaDetalle.QuantityTc = 0;
+                            objEntregaDetalle.AbsolutePressure = dPresionAbs;
+                            objEntregaDetalle.CalorificPower = dPoderCalor;
+                            objEntregaDetalle.ProductCompositionId = 0;
+                            objEntregaDetalle.StartQuantity = dVolInicial;
+                            objEntregaDetalle.EndQuantity = dVolFinal;
+
+                            objEntregaDetalle.InvoiceId = gCfdiID;
+                            objEntregaDetalle.SupplierTransportRegisterId = gTransporteID;
+                            objEntregaDetalle.PetitionCustomsId = gPedimentoID;
+
+                            objEntregaDetalle.Updated = dtUpdate;
+                            objEntregaDetalle.Active = true;
+
+                            // Guardar Entrega
+                            objContext.SaleSuborders.Add(objEntregaDetalle);
+                            objContext.SaveChanges();
+                            break;
+                            #endregion
+                    }
+                    #endregion
+                }
+                #endregion
+            }
+
+            return Ok(dsArchivo);
+        }
+        #endregion
     }
 }
