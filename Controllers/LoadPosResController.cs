@@ -16,7 +16,6 @@ namespace APIControlNet.Controllers
     public class LoadPosResController : CustomBaseController
     {
         private readonly CnetCoreContext context;
-
         private readonly IMapper mapper;
 
         public LoadPosResController(CnetCoreContext context, IMapper mapper)
@@ -75,7 +74,7 @@ namespace APIControlNet.Controllers
         //}
 
         [HttpGet]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<LoadPositionResponseDTO>> Get5(Guid storeId)
         {
             List<LoadPositionResponseDTO> list = new List<LoadPositionResponseDTO>();
@@ -96,7 +95,8 @@ namespace APIControlNet.Controllers
                                   Price = lpr.Price,
                                   Description = sd.Description,
                                   ColorStatus = sd.ColorStatus,
-                                  Productname = pd.Name
+                                  Productname = pd.Name,
+                                  LastStatusDispenser = lpr.LastStatusDispenser
                               }).AsNoTracking().ToListAsync();
             }
             else
@@ -115,7 +115,8 @@ namespace APIControlNet.Controllers
                                   Price = lpr.Price,
                                   Description = sd.Description,
                                   ColorStatus = sd.ColorStatus,
-                                  Productname = pd.Name
+                                  Productname = pd.Name,
+                                  LastStatusDispenser = lpr.LastStatusDispenser
                               }).AsNoTracking().ToListAsync();
             }
             return list;

@@ -53,8 +53,6 @@ namespace APIControlNet.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<DailySummaryDTO>>> Get5(Guid storeId, DateTime dateIni, DateTime dateFin)
         {
-            //List<DailySummaryDTO> list = new List<DailySummaryDTO>();
-
              var list = await (from ds in context.DailySummaries
                                where ds.StoreId == storeId
                                join pd in context.Products on ds.ProductId equals pd.ProductId

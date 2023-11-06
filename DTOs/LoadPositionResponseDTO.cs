@@ -45,7 +45,7 @@ namespace APIControlNet.DTOs
         //public int? CommPercentage { get; set; }
         //public int? TicketNumber { get; set; }
         //public int? CpuAddressHoseAuthorized { get; set; }
-        //public int? LastStatusDispenser { get; set; }
+        public int? LastStatusDispenser { get; set; }
 
         //public virtual LoadPositionDTO LoadPosition { get; set; }
 
