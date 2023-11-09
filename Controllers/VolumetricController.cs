@@ -68,9 +68,8 @@ namespace APIControlNet.Controllers
             Boolean bCompRecep = viGenCompRecepcion, bCompEntregas = viGenComEntrega;
             #endregion
 
-            switch (viTipoReporte)
-            {
-                #region Reporte: Diario.
+            switch (viTipoReporte) {
+                #region TipoReporte: Diario.
                 case CVolJSonDTO.eTipoReporte.Dia:
                     objCVolDatos.Version = "1.0";
                     dictDailySummary = new Dictionary<Guid, DailySummary>();
@@ -86,7 +85,7 @@ namespace APIControlNet.Controllers
                     break;
                 #endregion
 
-                #region Reporte: Mensual.
+                #region TipoReporte: Mensual.
                 case CVolJSonDTO.eTipoReporte.Mes:
                     objCVolDatos.Version = "4.1";
                     dictMonthlySummary = new Dictionary<Guid, MonthlySummary>();
@@ -104,22 +103,24 @@ namespace APIControlNet.Controllers
             }
 
             #region Ruta Carpeta Archivo.
-            var vQSPath = (from s in objContext.Settings
-                           where s.StoreId == viNEstacion &&
-                                 s.Field == "setting_volumetric_path"
-                           select new { Path = (s.Value ?? "") }
-                           );
-
-            if (vQSPath != null)
+            if (viProcesoArchivo == CVolJSonDTO.eProcesoArchivo.Guardar)
             {
-                foreach (var vPathDato in vQSPath)
-                    sRutaCarpetaRaiz = vPathDato.Path;
+                var vQSPath = (from s in objContext.Settings
+                               where s.StoreId == viNEstacion &&
+                                     s.Field == "setting_volumetric_path"
+                               select new { Path = (s.Value ?? "") });
 
-                if (String.IsNullOrEmpty(sRutaCarpetaRaiz))
+                if (vQSPath != null)
+                {
+                    foreach (var vPathDato in vQSPath)
+                        sRutaCarpetaRaiz = vPathDato.Path;
+
+                    if (String.IsNullOrEmpty(sRutaCarpetaRaiz))
+                        return BadRequest("No se encontro la ruta de la carpeta de alojamiento en la configuración.");
+                }
+                else
                     return BadRequest("No se encontro la ruta de la carpeta de alojamiento en la configuración.");
             }
-            else
-                return BadRequest("No se encontro la ruta de la carpeta de alojamiento en la configuración.");
             #endregion
 
             #region Datos: Compañia.
@@ -311,21 +312,6 @@ namespace APIControlNet.Controllers
             objCVolDatos.NumeroDuctosTransporteDistribucion = 0;
 
             #region Datos: Productos.
-            #region Productos que llevan clave de Producto.
-            List<String> lstProductosConClave = new List<String>();
-            lstProductosConClave.Add("PR03");
-            lstProductosConClave.Add("PR07");
-            lstProductosConClave.Add("PR08");
-            lstProductosConClave.Add("PR09");
-            lstProductosConClave.Add("PR11");
-            lstProductosConClave.Add("PR13");
-            lstProductosConClave.Add("PR15");
-            lstProductosConClave.Add("PR16");
-            lstProductosConClave.Add("PR17");
-            lstProductosConClave.Add("PR18");
-            lstProductosConClave.Add("PR19");
-            #endregion
-
             Dictionary<String, String> dictProductosExis = new Dictionary<string, string>();
             dictProductosExis.Clear();
 
@@ -384,15 +370,19 @@ namespace APIControlNet.Controllers
                 #endregion
 
                 #region Producto: Validamos datos.
-                // Validamos que la Clave contenga SubClaveProducto.
-                if (lstProductosConClave.Exists(p => p.Equals(sClaveProducto)))
-                    oSubClaveProducto = vProd.ClaveSubProducto.ToString();
-
                 if (String.IsNullOrEmpty(sClaveProducto))
                     return BadRequest("El producto '" + sNProducto + "' no contiene la Clave (Prod_SAT)");
 
-                if (oSubClaveProducto == null)
-                    return BadRequest("El producto '" + sNProducto + "' no contiene la SubClave (Prod_SAT)");
+                if (String.IsNullOrEmpty(vProd.ClaveSubProducto))
+                    return BadRequest("El producto '" + sNProducto + "' no contiene SubClave (Prod_SAT)");
+
+                if ((from c in objContext.JsonClaveProductos where c.JsonClaveProductoId == sClaveProducto.Trim() select c.JsonClaveProductoId).Count() <= 0)
+                    return BadRequest("La ClaveSat '" + sClaveProducto + "' del Producto '" + sNProducto + "' no es valida.");
+
+                if ((from sc in objContext.JsonSubclaveProductos where sc.JsonSubclaveProductoId == vProd.ClaveSubProducto.Trim() select sc.JsonSubclaveProductoId).Count() <= 0)
+                    return BadRequest("La SubClaveSat '" + vProd.ClaveSubProducto + "' del Producto '" + sNProducto + "' no es valida.");
+
+                oSubClaveProducto = vProd.ClaveSubProducto.ToString();
                 #endregion
 
                 // DATOS DEL PRODUCTO
@@ -476,7 +466,7 @@ namespace APIControlNet.Controllers
 
                     #region Consulta: Composición del Producto.
                     var vQComposicionProd = (from c in objContext.ProductCompositions
-                                             where c.ProductId == Guid.Parse("7ECC6829-BDEA-4882-8939-DF65EFE9B6C2")
+                                             where c.ProductId == vProd.ProductoID//Guid.Parse("7ECC6829-BDEA-4882-8939-DF65EFE9B6C2")
                                              select new
                                              {
                                                  TipoCompuesto = c.JsonTipoComposicionId,
@@ -5056,8 +5046,8 @@ namespace APIControlNet.Controllers
             #region Bitacora.
             List<CVolJSonDTO.stBitacoraDato> lstBitacora = new List<CVolJSonDTO.stBitacoraDato>();
 
-            switch (viTipoReporte)
-            {
+            switch (viTipoReporte) {
+                #region TipoReporte: Día.
                 case CVolJSonDTO.eTipoReporte.Dia:
                     lstBitacora.Add(new CVolJSonDTO.stBitacoraDato
                     {
@@ -5071,7 +5061,9 @@ namespace APIControlNet.Controllers
 
                     objCVolDatos.Bitacora = lstBitacora;
                     break;
+                #endregion
 
+                #region TipoReporte: Mes.
                 case CVolJSonDTO.eTipoReporte.Mes:
                     lstBitacora.Add(new CVolJSonDTO.stBitacoraDato
                     {
@@ -5085,6 +5077,7 @@ namespace APIControlNet.Controllers
 
                     objCVolDatos.BitacoraMensual = lstBitacora;
                     break;
+                #endregion
             }
 
             if (lstBitacora.Count <= 0)
@@ -5557,6 +5550,13 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     #region Validaciones.
+                    DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+
+                    if (drConsultaCfdi.Length == 0 && drConsultaPedimento.Length == 0 && drConsultaTrans.Length == 0)
+                        continue;
+
                     #region Validacion: Hoja "General".
                     String sMnsGeneral = "Fila No. " + iNFila.ToString();
 
@@ -5582,8 +5582,6 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     #region Validación: Hoja "CFDI".
-                    DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-
                     if (drConsultaCfdi.Length > 0)
                     {
                         String sCFDIMnsInicial = "Fila: '" + iNFila.ToString() + "'. ";
@@ -5634,9 +5632,7 @@ namespace APIControlNet.Controllers
                     }
                     #endregion
 
-                    #region Validación: Hoja "Pedimento".
-                    DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-
+                    #region Validación: Hoja "Pedimento".                    
                     if (drConsultaPedimento.Length > 0)
                     {
                         String sPediMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
@@ -5656,7 +5652,6 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     #region Validación: Hoja "Transporte".
-                    DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
                     #endregion
                     #endregion
 
@@ -5719,6 +5714,8 @@ namespace APIControlNet.Controllers
 
                                 objEntregDatos.Updated = dtUpdate;
                                 objEntregDatos.Active = true;
+                                objEntregDatos.Locked = false;
+                                objEntregDatos.Deleted = false;
 
                                 // <DUDA> GUARDAR Entrega (SaleOrder)
                                 objContext.SaleOrders.Add(objEntregDatos);
@@ -5761,7 +5758,10 @@ namespace APIControlNet.Controllers
                             objFacturaHdrDato.Amount = dCImporte;
 
                             objFacturaHdrDato.Active = true;
+                            objFacturaHdrDato.Date = dtUpdate;
                             objFacturaHdrDato.Updated = dtUpdate;
+                            objFacturaHdrDato.Locked = false;
+                            objFacturaHdrDato.Deleted = false;
 
                             if (drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
                             {
@@ -5802,6 +5802,8 @@ namespace APIControlNet.Controllers
 
                             objFacturaDtlDato.Active = 1;
                             objFacturaDtlDato.Updated = dtUpdate;
+                            objFacturaDtlDato.Locked = 0;
+                            objFacturaDtlDato.Deleted = 0;
 
                             // <DUDA> GUARDAR Invoice Detail
                             objContext.InvoiceDetails.Add(objFacturaDtlDato);
@@ -5837,6 +5839,8 @@ namespace APIControlNet.Controllers
                             objPedimentoDatos.Active = 1;
                             objPedimentoDatos.Date = dtFInicial;
                             objPedimentoDatos.Updated = dtUpdate;
+                            objPedimentoDatos.Locked = 0;
+                            objPedimentoDatos.Deleted = 0;
 
                             // <DUDA> Guardar Pedimento.
                             objContext.PetitionCustoms.Add(objPedimentoDatos);
@@ -5880,6 +5884,8 @@ namespace APIControlNet.Controllers
                             objTransporteDatos.Active = 1;
                             objTransporteDatos.Date = DateTime.Now;
                             objTransporteDatos.Updated = objTransporteDatos.Date;
+                            objTransporteDatos.Deleted = 0;
+                            objTransporteDatos.Locked = 0;
 
                             // GUARDAR Transporte
                             objContext.SupplierTransportRegisters.Add(objTransporteDatos);
@@ -5908,9 +5914,13 @@ namespace APIControlNet.Controllers
                                 objRecepcionDocument.Price = dPrecio;
                                 objRecepcionDocument.Amount = dImporte;
                                 objRecepcionDocument.JsonClaveUnidadMedidaId = sUnidadMedida;
+                                objRecepcionDocument.Volume = dVolumen;
+
                                 objRecepcionDocument.Active = true;
                                 objRecepcionDocument.Date = dtUpdate;
                                 objRecepcionDocument.Updated = dtUpdate;
+                                objRecepcionDocument.Deleted = false;
+                                objRecepcionDocument.Locked = false;
 
                                 objRecepcionDocument.InvoiceId = gCfdiID;
                                 objRecepcionDocument.PetitionCustomsId = gPedimentoID;
@@ -5954,11 +5964,13 @@ namespace APIControlNet.Controllers
                                 objEntregaDetalle.SupplierTransportRegisterId = gTransporteID;
                                 objEntregaDetalle.PetitionCustomsId = gPedimentoID;
 
+                                objEntregaDetalle.Date = dtUpdate;
                                 objEntregaDetalle.Updated = dtUpdate;
                                 objEntregaDetalle.Active = true;
+                                objEntregaDetalle.Locked = false;
+                                objEntregaDetalle.Deleted = false;
 
                                 // Guardar Entrega
-
                                 objContext.SaleSuborders.Add(objEntregaDetalle);
                                 objContext.SaveChanges();
                             }
