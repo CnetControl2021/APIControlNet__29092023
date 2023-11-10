@@ -28,7 +28,8 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("{storeId?}")]
-        public async Task<IEnumerable<ProductSatDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+        [AllowAnonymous]
+        public async Task<IEnumerable<ProductSatDTO>> Get5(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
         {
             var queryable = context.ProductSats.AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
@@ -49,7 +50,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("Active")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<ProductSatDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
         {
             var queryable = context.ProductSats.Where(x => x.Active == true).AsQueryable();
@@ -78,10 +79,26 @@ namespace APIControlNet.Controllers
         //}
 
 
-        [HttpGet("{id:int}", Name = "obtenerProductSat")]
-        public async Task<ActionResult<ProductSatDTO>> Get(int id)
+        [HttpGet("byid/{idx}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ProductSatDTO>> Get4(int idx)
         {
-            var productSats = await context.ProductSats.FirstOrDefaultAsync(x => x.ProductSatIdx == id);
+            var productSats = await context.ProductSats.FirstOrDefaultAsync(x => x.ProductSatIdx == idx);
+
+            if (productSats == null)
+            {
+                return NotFound();
+            }
+            return mapper.Map<ProductSatDTO>(productSats);
+        }
+
+
+        [HttpGet("byGuid/{idGuid}", Name = "obtenerProductSat")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ProductSatDTO>> Get(Guid idGuid)
+        {
+            //var productSats = await context.ProductSats.FirstOrDefaultAsync(x => x.ProductId == idGuid);
+            var productSats = await context.ProductSats.Include(p => p.Product).FirstOrDefaultAsync(x => x.ProductId == idGuid);
 
             if (productSats == null)
             {
@@ -105,6 +122,7 @@ namespace APIControlNet.Controllers
             var existeid = await context.ProductSats.AnyAsync(x => x.ProductId == ProductSatDTO.ProductId && x.StoreId == ProductSatDTO.StoreId);
 
             var productSatMap = mapper.Map<ProductSat>(ProductSatDTO);
+            productSatMap.StoreId = storeId;
 
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
@@ -134,30 +152,41 @@ namespace APIControlNet.Controllers
                 //}
             }
             var ProductSatDTO2 = mapper.Map<ProductSat>(productSatMap);
-            return CreatedAtRoute("obtenerProductSat", new { id = productSatMap.ProductSatIdx }, ProductSatDTO2);
+            //return CreatedAtRoute("obtenerProductSat", new { id = productSatMap.ProductId }, ProductSatDTO2);
+            return Ok(ProductSatDTO2);
         }
 
 
         [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(ProductSatDTO ProductSatDTO, Guid storeId)
+        [AllowAnonymous]
+        public async Task<IActionResult> Put(ProductSatDTO productSat, Guid storeId)
         {
-            var productSatDB = await context.ProductSats.FirstOrDefaultAsync(c => c.ProductSatIdx == ProductSatDTO.ProductSatIdx);
+            var db = await context.ProductSats.FirstOrDefaultAsync(c => c.ProductSatIdx == productSat.ProductSatIdx);
 
-            if (productSatDB is not null)
+            if (db is null)
             {
-                productSatDB = mapper.Map(ProductSatDTO, productSatDB);
+                return NotFound();
+            }
+            try
+            {
+                db = mapper.Map(productSat, db);
+                db.Updated = DateTime.Now;
 
                 var storeId2 = storeId;
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
-                var tableName = productSatDB.ClaveProducto.ToString();
+                var tableName = db.SatProductKey;
                 await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
+
                 await context.SaveChangesAsync();
                 return Ok();
-                
             }
-            return NotFound();
+            catch
+            {
+                return BadRequest($"Revisar datos");
+            }
         }
+
 
 
 
@@ -208,5 +237,28 @@ namespace APIControlNet.Controllers
             }
 
         }
+
+        [HttpGet("JsonClaveProducto/ActiveNotPage")]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<JsonClaveProductoDTO>> Get3()
+        {
+            var queryable = context.JsonClaveProductos.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+            var data = await queryable
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<JsonClaveProductoDTO>>(data);
+        }
+
+        [HttpGet("JsonSubClaveProducto/ActiveNotPage")]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<JsonSubclaveProductoDTO>> Get6()
+        {
+            var queryable = context.JsonSubclaveProductos.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+            var data = await queryable
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<JsonSubclaveProductoDTO>>(data);
+        }
+
     }
 }

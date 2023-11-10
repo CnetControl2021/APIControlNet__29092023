@@ -38,6 +38,6 @@ namespace APIControlNet.DTOs
         public int? SatWithFossil { get; set; }
         public int? SatPercentageWithFossil { get; set; }
 
-        public virtual ProductDTO Product { get; set; }
+       public virtual ProductDTO Product { get; set; }
     }
 }

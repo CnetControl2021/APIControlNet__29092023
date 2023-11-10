@@ -47,6 +47,11 @@ namespace APIControlNet.DTOs
         public int? ImportPermissionId { get; set; }
         public int? TransportPermissionId { get; set; }
 
+
+        public string? ProductName {  get; set; }
+        public string? TankName { get; set; }
+        public decimal? Price  { get; set; }
+
         //public virtual StoreDTO Store { get; set; }
         //public virtual ICollection<InventoryInDocumentDTO> InventoryInDocuments { get; set; }
     }

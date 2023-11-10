@@ -22,7 +22,7 @@ namespace APIControlNet.DTOs
         public byte? Active { get; set; }
         public byte? Locked { get; set; }
         public byte? Deleted { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         public virtual InvoiceDTO Invoice { get; set; }
     }

@@ -681,12 +681,13 @@ namespace APIControlNet.Controllers
 
             listSO = await (from iI in context.InventoryIns
                             where iI.Active == true
-                            //join pd in context.Products on iI.ProductId equals pd.ProductId
-                            //join tk in context.Tanks on pd.ProductId equals tk.ProductId
-                            //join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
                             && iI.Date >= (dateIni) && iI.Date <= dateFin
                             && iI.StoreId == storeId
-                            //&& tk.StoreId == storeId
+                            join pd in context.Products on iI.ProductId equals pd.ProductId
+                            join tk in context.Tanks on pd.ProductId equals tk.ProductId
+                            where iI.StoreId == tk.StoreId
+                            join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
+                            where iI.StoreId == iIdoc.StoreId
                             orderby iI.InventoryInIdx descending
 
                             select new InventoryInDTO
@@ -697,13 +698,11 @@ namespace APIControlNet.Controllers
                                 StoreId = iI.StoreId,
                                 Date = iI.Date,
                                 StartDate = iI.StartDate,
-                                Volume = iI.Volume
+                                Volume = iI.Volume,
 
-                                //ProductName = pd.Name,
-                                //TankName = tk.Name,
-                                //Volume = iI.Volume,
-
-                                //Price = iIdoc.Price
+                                ProductName = pd.Name,
+                                TankName = tk.Name,
+                                Price = iIdoc.Price
 
                             }).AsNoTracking().ToListAsync();
             return Ok(listSO);

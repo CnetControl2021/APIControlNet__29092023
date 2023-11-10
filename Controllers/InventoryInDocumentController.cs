@@ -112,14 +112,17 @@ namespace APIControlNet.Controllers
         {
             var iIDoc = await context.InventoryInDocuments.FirstOrDefaultAsync(c => c.InventoryInDocumentIdx == id2 && c.StoreId == storeId);
             //var paramUuid = iIDoc.Uuid.ToString();
-            var invoice = await context.Invoices.FirstOrDefaultAsync(x => x.Uuid == iIDoc.Uuid.ToString());
+            var invoice = await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == iIDoc.InvoiceId);
+            var invdet = await context.InvoiceDetails.FirstOrDefaultAsync(x => x.InvoiceId == iIDoc.InvoiceId);
             //chema
             var claseEmpaquetada = new InvInDoc_Invoice
             {
                 NInventoryInDocumentDTO = mapper.Map<InventoryInDocumentDTO>(iIDoc),
-                NInvoiceDTO = mapper.Map<InvoiceDTO>(invoice)
+                NInvoiceDTO = mapper.Map<InvoiceDTO>(invoice),
+                NInvoiceDetailDTO = mapper.Map<InvoiceDetailDTO>(invdet)  
             };
             return Ok(claseEmpaquetada);
+
 
             //if (paramUuid != null)
             //{

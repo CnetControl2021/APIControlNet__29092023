@@ -10263,6 +10263,11 @@ namespace APIControlNet.Models
             OnModelCreatingPartial(modelBuilder);
         }
 
+        internal Task Update()
+        {
+            throw new NotImplementedException();
+        }
+
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

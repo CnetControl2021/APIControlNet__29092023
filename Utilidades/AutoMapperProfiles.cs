@@ -8,6 +8,12 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<JsonSubclaveProductoDTO, JsonSubclaveProducto>();
+            CreateMap<JsonSubclaveProducto, JsonSubclaveProductoDTO>();
+
+            CreateMap<JsonClaveProductoDTO, JsonClaveProducto>();
+            CreateMap<JsonClaveProducto, JsonClaveProductoDTO>();
+
             CreateMap<InventoryInSaleOrderDTO, InventoryInSaleOrder>();
             CreateMap<InventoryInSaleOrder, InventoryInSaleOrderDTO>();
 
@@ -18,6 +24,8 @@ namespace APIControlNet.Utilidades
             CreateMap<InventoryInDocument, InventoryInDocumentDTO>();
             CreateMap<InvoiceDTO, Invoice>();
             CreateMap<Invoice, InvoiceDTO>();
+            CreateMap<InvoiceDetailDTO, InvoiceDetail>();
+            CreateMap<InvoiceDetail, InvoiceDetailDTO>();
             //CreateMap<InvInDoc_InvoiceDTO, InvInDoc_InvoiceDTO>();  //empaquetada
 
             CreateMap<CompanyDTO, Company>();

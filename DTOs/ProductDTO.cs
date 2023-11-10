@@ -7,10 +7,10 @@ namespace APIControlNet.DTOs
     {
         public ProductDTO()
         {
-            DailySummaries = new HashSet<DailySummaryDTO>();
-            MonthlySummaries = new HashSet<MonthlySummaryDTO>();
+            //DailySummaries = new HashSet<DailySummaryDTO>();
+            //MonthlySummaries = new HashSet<MonthlySummaryDTO>();
             ProductSats = new HashSet<ProductSatDTO>();
-            ProductStores = new HashSet<ProductStoreDTO>();
+            //ProductStores = new HashSet<ProductStoreDTO>();
         }
 
         public int ProductIdx { get; set; }
@@ -19,7 +19,7 @@ namespace APIControlNet.DTOs
         public string SatClaveProductoServicioId { get; set; }
         public string SatClaveUnidadId { get; set; }
         public bool? IsFuel { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         public Guid ProductCategoryId { get; set; }
         public string Barcode { get; set; }
         public DateTime? Date { get; set; }= DateTime.Now;
@@ -29,13 +29,14 @@ namespace APIControlNet.DTOs
         public bool? Deleted { get; set; }=false;
         public string AppName { get; set; }
         public string Color { get; set; }
+        public string JsonClaveUnidadMedidaId { get; set; }
 
-        public virtual ProductCategoryDTO ProductCategory { get; set; }
-        public virtual SatClaveProductoServicioDTO SatClaveProductoServicio { get; set; }
-        public virtual SatClaveUnidadDTO SatClaveUnidad { get; set; }
-        public virtual ICollection<DailySummaryDTO> DailySummaries { get; set; }
-        public virtual ICollection<MonthlySummaryDTO> MonthlySummaries { get; set; }
+        //public virtual ProductCategoryDTO ProductCategory { get; set; }
+        //public virtual SatClaveProductoServicioDTO SatClaveProductoServicio { get; set; }
+        //public virtual SatClaveUnidadDTO SatClaveUnidad { get; set; }
+        //public virtual ICollection<DailySummaryDTO> DailySummaries { get; set; }
+        //public virtual ICollection<MonthlySummaryDTO> MonthlySummaries { get; set; }
         public virtual ICollection<ProductSatDTO> ProductSats { get; set; }
-        public virtual ICollection<ProductStoreDTO> ProductStores { get; set; }
+        //public virtual ICollection<ProductStoreDTO> ProductStores { get; set; }
     }
 }
