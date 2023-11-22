@@ -28,7 +28,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("byGuid/{idGuid}")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<SaleSuborderDTO>> Get2(Guid idGuid)
         {
             List<SaleSuborderDTO> list = new();

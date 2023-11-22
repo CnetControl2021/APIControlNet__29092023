@@ -84,7 +84,7 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<ActionResult> Post([FromBody] SupplierFuelDTO SupplierFuelDTO, Guid id2, Guid storeId)
         {
-            var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierFuelIdi == SupplierFuelDTO.SupplierFuelIdi);
+            var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId && SupplierFuelDTO.StoreId == storeId);
 
             var suppFuel = mapper.Map<SupplierFuel>(SupplierFuelDTO);
             suppFuel.SupplierId = id2;

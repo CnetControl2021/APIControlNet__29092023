@@ -33,50 +33,42 @@ namespace APIControlNet.Controllers
         }
 
 
-        //[HttpGet]
-        ////[AllowAnonymous]
-        //public async Task<IEnumerable<InventoryInDocumentDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
-        //{
-        //    var queryable = context.InventoryInDocuments.AsQueryable();
-        //    //if (!string.IsNullOrEmpty(nombre))
-        //    //{
-        //    //    queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-        //    //}
-        //    if (storeId != Guid.Empty)
-        //    {
-        //        queryable = queryable.Where(x => x.StoreId == storeId);
-        //    }
-        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-        //    var invindocument = await queryable.OrderByDescending(x => x.InventoryInDocumentIdx).Paginar(paginacionDTO)
-        //        .AsNoTracking()
-        //        .ToListAsync();
-        //    return mapper.Map<List<InventoryInDocumentDTO>>(invindocument);
-        //}
+        [HttpGet]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<InventoryInDocumentDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO)
+        {
+            var queryable = context.InventoryInDocuments.AsQueryable();
+            if (storeId != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.StoreId == storeId);
+            }
+            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+            var invindocument = await queryable.OrderByDescending(x => x.InventoryInDocumentIdx).Paginar(paginacionDTO)
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<InventoryInDocumentDTO>>(invindocument);
+        }
 
 
-        //[HttpGet("Active")]
-        ////[AllowAnonymous]
-        //public async Task<IEnumerable<InventoryInDocumentDTO>> Get2(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, Guid inventoryInId)
-        //{
-        //    var queryable = context.InventoryInDocuments.Where(x => x.Active == true).AsQueryable();
-        //    //if (!string.IsNullOrEmpty(nombre))
-        //    //{
-        //    //    queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-        //    //}
-        //    if (storeId != Guid.Empty)
-        //    {
-        //        queryable = queryable.Where(x => x.StoreId == storeId);
-        //    }
-        //    if (inventoryInId != Guid.Empty)
-        //    {
-        //        queryable = queryable.Where(x => x.InventoryInId == inventoryInId);
-        //    }
-        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-        //    var invindocument = await queryable.OrderByDescending(x => x.InventoryInDocumentIdx).Paginar(paginacionDTO)
-        //        .AsNoTracking()
-        //        .ToListAsync();
-        //    return mapper.Map<List<InventoryInDocumentDTO>>(invindocument);
-        //}
+        [HttpGet("Active")]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<InventoryInDocumentDTO>> Get2(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, Guid inventoryInId)
+        {
+            var queryable = context.InventoryInDocuments.Where(x => x.Active == true).AsQueryable();
+            if (storeId != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.StoreId == storeId);
+            }
+            if (inventoryInId != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.InventoryInId == inventoryInId);
+            }
+            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+            var invindocument = await queryable.OrderByDescending(x => x.InventoryInDocumentIdx).Paginar(paginacionDTO)
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<InventoryInDocumentDTO>>(invindocument);
+        }
 
 
         //[HttpGet("sinPag/{nombre}")]
@@ -91,19 +83,19 @@ namespace APIControlNet.Controllers
         //}
 
 
-        //[HttpGet("{id2:int}", Name = "getInventoryInDocument")]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<InventoryInDocumentDTO>> Get(int id2)
-        //{
-        //    var invindocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInDocumentIdx == id2);
+        [HttpGet("{id2:int}", Name = "getInventoryInDocument")]
+        [AllowAnonymous]
+        public async Task<ActionResult<InventoryInDocumentDTO>> Get(int id2)
+        {
+            var invindocument = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInDocumentIdx == id2);
 
-        //    if (invindocument == null)
-        //    {
-        //        return NotFound();
-        //    }
+            if (invindocument == null)
+            {
+                return NotFound();
+            }
 
-        //    return mapper.Map<InventoryInDocumentDTO>(invindocument);
-        //}
+            return mapper.Map<InventoryInDocumentDTO>(invindocument);
+        }
 
 
         [HttpGet("package/{id2}/{storeId}")]
@@ -166,7 +158,8 @@ namespace APIControlNet.Controllers
                                 Folio = iID.Folio,
                                 Volume = iID.Volume,
                                 Price = iID.Price,
-                                Amount = iID.Amount
+                                Amount = iID.Amount,
+                                Uuid = iID.Uuid,
 
                             }).AsNoTracking().ToListAsync();
             return Ok(list);
@@ -204,6 +197,12 @@ namespace APIControlNet.Controllers
 
                     if (invInDoc_Invoice.NInvoiceDTO.InvoiceId == Guid.Empty)
                     {
+                        var invIn = await context.InventoryIns.FirstOrDefaultAsync  //inventory_in  COMPRA
+                        (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDTO.InventoryInId);
+
+                        var iiDoc = await context.InventoryInDocuments.FirstOrDefaultAsync  //inventory_in_document  COMPRAdetalle
+                        (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
+
                         Invoice oIvoice = new();
                         oIvoice.InvoiceId = Guid.NewGuid();
                         oIvoice.StoreId = storeId;
@@ -211,7 +210,7 @@ namespace APIControlNet.Controllers
                         oIvoice.Folio = invInDoc_Invoice.NInvoiceDTO.Folio;
                         oIvoice.Date = invInDoc_Invoice.NInvoiceDTO.Date;
                         oIvoice.SupplierId = invInDoc_Invoice.NInvoiceDTO.SupplierId;
-                        oIvoice.Amount = invInDoc_Invoice.NInvoiceDTO.Amount;
+                        oIvoice.Amount = iiDoc.Amount;
                         oIvoice.Subtotal = ((oIvoice.Amount) / ((decimal)1.16));
                         oIvoice.AmountTax = ((oIvoice.Subtotal) * ((decimal)0.16));
                         oIvoice.Uuid = invInDoc_Invoice.NInvoiceDTO.Uuid;
@@ -220,16 +219,28 @@ namespace APIControlNet.Controllers
                         oIvoice.Active = true;
                         oIvoice.Locked = false;
                         oIvoice.Deleted = false;
-
                         context.Invoices.Add(oIvoice);
-                        var iiDoc = await context.InventoryInDocuments.FirstOrDefaultAsync
-                        (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
+
+                        InvoiceDetail invoiceDetail = new();
+                        invoiceDetail.InvoiceId = oIvoice.InvoiceId;
+                        invoiceDetail.ProductId = invIn.ProductId;
+                        invoiceDetail.Quantity = invIn.Volume;
+                        invoiceDetail.Price = iiDoc?.Price;
+                        invoiceDetail.Subtotal = oIvoice.Subtotal;
+                        invoiceDetail.Tax = oIvoice.AmountTax;
+                        invoiceDetail.AmountTax = oIvoice.AmountTax;
+                        invoiceDetail.Amount = iiDoc.Amount;
+                        invoiceDetail.Date = oIvoice.Date;
+                        invoiceDetail.Updated = DateTime.Now;
+                        invoiceDetail.Active = 1;
+                        invoiceDetail.Locked = 0;
+                        invoiceDetail.Deleted = 0;
+                        context.InvoiceDetails.Add(invoiceDetail);
+
 
                         iiDoc.InvoiceId = oIvoice.InvoiceId;
-
                         Guid strToGuid = new Guid(oIvoice.Uuid);
                         iiDoc.Uuid = strToGuid;
-
                         iiDoc.Updated = DateTime.Now;
                         iiDoc.Active = true;
                         iiDoc.Deleted = false;

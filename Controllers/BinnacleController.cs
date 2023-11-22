@@ -42,7 +42,7 @@ namespace APIControlNet.Controllers
                 list = await (from bn in context.Binnacles
                               join btp in context.BinnacleTypes on bn.BinnacleTypeId equals btp.BinnacleTypeId
                               where (btp.IsVolumetric == 1 && bn.Date >= dateIni && bn.Date <= dateFin)
-                              orderby bn.BinnacleIdx descending
+                              orderby bn.Date descending
 
                               select new BinnacleDTO
                               {

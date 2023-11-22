@@ -95,6 +95,16 @@ namespace APIControlNet.Controllers
                 {"98f518677af7e918bcbc36d31de6a6790c5f71548c4f33e82341e125effd623ca8d07f22a9621c0ba7441d8b576439e3e5e4dc90e0d2a6e94d5e43207e0aec17"},
                 {"2023-07-11"}, {"2023-07-11"}, {true}, {false}, {false})");
             }
+            var db6 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.3");
+            if (db6 is null)
+            {
+                await context.Database.ExecuteSqlInterpolatedAsync
+                ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
+                VALUES({"3"}, {"2.3"}, {"2.2"}, {"Control Volumetrico"}, {"ControlNet"}, 
+                {"Se mejoro el sistema de notificaciones de alarmas. Se adiciono modulo de compras y ventas transportistas"}, 
+                {"b4fcdf5d1de14dae27f7cdefbd14e1ec9dfd068a0be0ff2250e5e695699d16eb195221f446bcbc0d5db8b55b5b9e56e986cb5e9a5a60ab85a7c3a456bd68ed72"},
+                {"2023-11-14"}, {"2023-11-14"}, {true}, {false}, {false})");
+            }
 
 
             if (hashdb == null)
