@@ -5485,7 +5485,8 @@ namespace APIControlNet.Controllers
                          gProductoID = Guid.Empty,
                          gCfdiID = Guid.Empty,
                          gPedimentoID = Guid.Empty,
-                         gTransporteID = Guid.Empty;
+                         gTransporteID = Guid.Empty,
+                         gTransSupplierID = Guid.Empty;
 
                     #region Conversion.
                     int iNFila = 0;
@@ -5652,6 +5653,21 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     #region Validación: Hoja "Transporte".
+                    //(from s in objContext.SupplierTransports
+                    // where s.TransportPermission == sTPermisoTransporte
+                    // select s).First().SupplierId
+                    if(drConsultaTrans.Length > 0)
+                    {
+                        String sTransMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
+                        String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+
+                        if ((from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).Count() <= 0)
+                            return BadRequest(sTransMnsInicial + "(Transporte) No se encontro el Supplier '" + sTPermisoTransporte + "'.");
+                        else
+                            gTransSupplierID = (from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).First().SupplierId;
+
+                    }
+
                     #endregion
                     #endregion
 
@@ -5789,7 +5805,7 @@ namespace APIControlNet.Controllers
 
                         #region Factura Detalle: Invoice Detail.
                         InvoiceDetail objFacturaDtlDato = new InvoiceDetail();
-                        if ((from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID && d.ProductId == gProductoID && d.Date == objFacturaHdrDato.Date select d).Count() <= 0)
+                        if ((from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID && d.ProductId == gProductoID && d.Date == dtFFactura select d).Count() <= 0)
                         {
                             objFacturaDtlDato.InvoiceId = gCfdiID;
                             objFacturaDtlDato.ProductId = gProductoID;
@@ -5855,25 +5871,22 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     #region Transporte Datos.
-                    DataRow[] drConsultaTransporte = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-                    if (drConsultaTransporte.Length > 0)
+                    if (drConsultaTrans.Length > 0)
                     {
-                        String sTPermisoTransporte = drConsultaTransporte[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE].ToString().Trim(), out dTTarifa);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_CAPACIDAD].ToString().Trim(), out dTCargoCap);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_USO].ToString().Trim(), out dTCargoUso);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CARGO_VOLUMEN].ToString().Trim(), out dTCargoVol);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO].ToString().Trim(), out dTTarifaSum);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_CONTRAPRESTACION].ToString().Trim(), out dTContraPrest);
-                        Decimal.TryParse(drConsultaTransporte[0][COLUMNA_TRANSPORTE_DESCUENTO].ToString().Trim(), out dTDescuento);
+                        //String sTPermisoTransporte = drConsultaTransporte[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE].ToString().Trim(), out dTTarifa);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_CAPACIDAD].ToString().Trim(), out dTCargoCap);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_USO].ToString().Trim(), out dTCargoUso);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_VOLUMEN].ToString().Trim(), out dTCargoVol);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO].ToString().Trim(), out dTTarifaSum);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CONTRAPRESTACION].ToString().Trim(), out dTContraPrest);
+                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_DESCUENTO].ToString().Trim(), out dTDescuento);
 
                         SupplierTransportRegister objTransporteDatos = new SupplierTransportRegister();
-                        if ((from t in objContext.SupplierTransportRegisters where t.Date == objTransporteDatos.Date select t).Count() <= 0)
+                        if ((from t in objContext.SupplierTransportRegisters where t.Date == dtFInicial select t).Count() <= 0)
                         {
                             objTransporteDatos.SupplierTransportRegisterId = Guid.NewGuid();
-                            objTransporteDatos.SupplierId = (from s in objContext.SupplierTransports
-                                                             where s.TransportPermission == sTPermisoTransporte
-                                                             select s).First().SupplierId; // *<DUDA>
+                            objTransporteDatos.SupplierId = gTransSupplierID; // *<DUDA>
                             objTransporteDatos.AmountPerFee = dTTarifa;
                             objTransporteDatos.AmountPerCapacity = dTCargoCap;
                             objTransporteDatos.AmountPerUse = dTCargoUso;
@@ -5882,7 +5895,7 @@ namespace APIControlNet.Controllers
                             objTransporteDatos.AmountOfDiscount = dTDescuento;
 
                             objTransporteDatos.Active = 1;
-                            objTransporteDatos.Date = DateTime.Now;
+                            objTransporteDatos.Date = dtFInicial;
                             objTransporteDatos.Updated = objTransporteDatos.Date;
                             objTransporteDatos.Deleted = 0;
                             objTransporteDatos.Locked = 0;
