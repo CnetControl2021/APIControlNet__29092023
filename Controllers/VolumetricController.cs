@@ -5356,7 +5356,7 @@ namespace APIControlNet.Controllers
         /// <param name="viArchivo">Archivo Excel</param>
         /// <returns></returns>
         [AllowAnonymous]
-        [HttpPost("Importar Excel")]
+        [HttpPost("Importación de Recepciones y Entregas (Excel)")]
         public IActionResult CargaExcel(Guid? viNCompania, Guid? viNEstacion, String viTipoArchivo, IFormFile viArchivo)
         {
             #region Constantes.
@@ -5443,7 +5443,7 @@ namespace APIControlNet.Controllers
                 objStream.Position = 0;
                 objReader = null;
 
-                #region Validaciones Principales.
+                #region Validación: Principales.
                 if (viArchivo.FileName.EndsWith(".xls"))
                     objReader = ExcelReaderFactory.CreateBinaryReader(objStream);
                 else if (viArchivo.FileName.EndsWith(".xlsx"))
@@ -5993,6 +5993,350 @@ namespace APIControlNet.Controllers
                     #endregion
 
                     iCantRegisSave++;
+                }
+                #endregion
+            }
+
+            return Ok("Registros Guardados: " + iCantRegisSave);
+        }
+        #endregion
+
+        #region Carga Tanques: Excel.
+        [AllowAnonymous]
+        [HttpPost("Importación de Tanques (Excel)")]
+        public IActionResult ImportarTanquesXlsx(IFormFile viArchivo)
+        {
+            #region Constantes.
+            string COLUMNA_NUMERO_FILA = "tank_idx",
+                    COLUMNA_STORE_ID = "store_id",
+                    COLUMNA_TANK_IDI = "tank_idi",
+                    COLUMNA_PRODUCT_ID = "product_id",
+                    COLUMNA_TANK_CPU_ADDRESS = "tank_cpu_address",
+                    COLUMNA_PORT_IDI = "port_idi",
+                    COLUMNA_TANK_BRAND_ID = "tank_brand_id",
+                    COLUMNA_NAME = "name",
+                    COLUMNA_CAPACITY_TOTAL = "capacity_total",
+                    COLUMNA_CAPACITY_OPERATIONAL = "capacity_operational",
+                    COLUMNA_CAPACITY_MINIMUM_OPERATING = "capacity_minimum_operating",
+                    COLUMNA_CAPACITY_USEFUL = "capacity_useful",
+                    COLUMNA_FONDAGE = "fondage",
+                    COLUMNA_SAT_DATE_CALIBRATION = "sat_date_calibration",
+                    COLUMNA_SAT_TYPE_MEASUREMENT = "sat_type_measurement",
+                    COLUMNA_SAT_TANK_TYPE = "sat_tank_type",
+                    COLUMNA_SAT_TYPE_MEDIUM_STORAGE = "sat_type_medium_storage",
+                    COLUMNA_SAT_DESCRIPTION_MEASUREMENT = "sat_description_measurement";
+            #endregion
+
+            IExcelDataReader objReader = null;
+            Stream objStream = new MemoryStream();
+            DataSet dsArchivo = null;
+            int iCantRegisSave = 0;
+
+            if (viArchivo != null && viArchivo.Length > 0)
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                viArchivo.CopyTo(objStream);
+                objStream.Position = 0;
+                objReader = null;
+
+                #region Validación: Principales.
+                if (viArchivo.FileName.EndsWith(".xls"))
+                    objReader = ExcelReaderFactory.CreateBinaryReader(objStream);
+                else if (viArchivo.FileName.EndsWith(".xlsx"))
+                    objReader = ExcelReaderFactory.CreateOpenXmlReader(objStream);
+                else
+                    return BadRequest("El Formato del Archivo no es valido.");
+
+                if (!String.IsNullOrEmpty(objReader.ExceptionMessage))
+                    return BadRequest(objReader.ExceptionMessage);
+
+                objReader.IsFirstRowAsColumnNames = true;
+                dsArchivo = objReader.AsDataSet();
+
+                if (dsArchivo.Tables.Count <= 0)
+                    return BadRequest("No se encontro alguna hoja en el documento de Excel.");
+                #endregion
+
+                #region Lectura: Archivo.
+                foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows)
+                {
+                    #region Asignación de valores.
+                    int iNFila = 0, iTankIdi = 0, iTankCpuAddress = 0, iPortIdi = 0, iTankBrandId = 0,
+                        iCapacityTotal = 0, iCapacityOperational = 0, iCapacityMinimumOperating = 0, iCapacityUseful = 0, iFondage = 0;
+                    Guid gStoreID = Guid.Empty, gProductId = Guid.Empty;
+                    String sName = String.Empty, sSatTypeMeasurement = String.Empty, sSatTankType = String.Empty, sSatTypeMediumStorage = String.Empty, sSatDescriptionMeasurement = String.Empty;
+                    //Decimal dCapacityTotal = , dCapacityOperational = 0, dCapacityMinimumOperating = 0, dCapacityUseful = 0, dFondage = 0;
+                    DateTime dtSatDateCalibration;
+
+                    #region Número de Fila.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_NUMERO_FILA))
+                        int.TryParse(drGeneral[COLUMNA_NUMERO_FILA].ToString().Trim(), out iNFila);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_NUMERO_FILA + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+
+                    if (iNFila <= 0)
+                        continue;
+                    #endregion
+
+                    String sNFilaActual = "Fila: " + iNFila.ToString() + " - ";
+
+                    #region StoreID.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_STORE_ID))
+                    {
+                        if (String.IsNullOrEmpty(drGeneral[COLUMNA_STORE_ID].ToString().Trim()))
+                            return BadRequest(sNFilaActual + "Captura el dato '" + COLUMNA_STORE_ID + "' del documento '" + viArchivo.FileName + "'.");
+
+                        gStoreID = Guid.Parse(drGeneral[COLUMNA_STORE_ID].ToString().Trim());
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_STORE_ID + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region TankIdi.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_TANK_IDI))
+                    {
+                        int.TryParse(drGeneral[COLUMNA_TANK_IDI].ToString().Trim(), out iTankIdi);
+
+                        if (iTankIdi <= 0)
+                            return BadRequest(sNFilaActual + "Captura el dato '" + COLUMNA_TANK_IDI + "' del documento '" + viArchivo.FileName + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_TANK_IDI + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region ProductId.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_PRODUCT_ID))
+                    {
+                        if (String.IsNullOrEmpty(drGeneral[COLUMNA_PRODUCT_ID].ToString().Trim()))
+                            return BadRequest(sNFilaActual + "Captura el dato '" + gProductId.ToString() + "' del documento '" + viArchivo.FileName + "'.");
+
+                        gProductId = Guid.Parse(drGeneral[COLUMNA_PRODUCT_ID].ToString().Trim());
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_PRODUCT_ID + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Tank CPU Address.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_TANK_CPU_ADDRESS))
+                        int.TryParse(drGeneral[COLUMNA_TANK_CPU_ADDRESS].ToString().Trim(), out iTankCpuAddress);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_TANK_CPU_ADDRESS + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region PortIdi.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_PORT_IDI))
+                    {
+                        int.TryParse(drGeneral[COLUMNA_PORT_IDI].ToString().Trim(), out iPortIdi);
+
+                        if (iPortIdi <= 0)
+                            return BadRequest(sNFilaActual + "Captura el dato '" + iPortIdi + "' del documento '" + viArchivo.FileName + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_PORT_IDI + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region TankBrandId.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_TANK_BRAND_ID))
+                    {
+                        int.TryParse(drGeneral[COLUMNA_TANK_BRAND_ID].ToString().Trim(), out iTankBrandId);
+
+                        if (iTankBrandId <= 0)
+                            return BadRequest(sNFilaActual + "Captura el dato '" + iTankBrandId + "' del documento '" + viArchivo.FileName + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_TANK_BRAND_ID + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Name.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_NAME))
+                        sName = drGeneral[COLUMNA_NAME].ToString().Trim();
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_NAME + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Capacity Total.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_CAPACITY_TOTAL))
+                        int.TryParse(drGeneral[COLUMNA_CAPACITY_TOTAL].ToString().Trim(), out iCapacityTotal);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_CAPACITY_TOTAL + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Capacity Operational.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_CAPACITY_OPERATIONAL))
+                        int.TryParse(drGeneral[COLUMNA_CAPACITY_OPERATIONAL].ToString().Trim(), out iCapacityOperational);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_CAPACITY_OPERATIONAL + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Capacity Minimum Operating.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_CAPACITY_MINIMUM_OPERATING))
+                        int.TryParse(drGeneral[COLUMNA_CAPACITY_MINIMUM_OPERATING].ToString().Trim(), out iCapacityMinimumOperating);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_CAPACITY_MINIMUM_OPERATING + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Capacity Useful.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_CAPACITY_USEFUL))
+                        int.TryParse(drGeneral[COLUMNA_CAPACITY_USEFUL].ToString().Trim(), out iCapacityUseful);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_CAPACITY_USEFUL + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Fondage.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_FONDAGE))
+                        int.TryParse(drGeneral[COLUMNA_FONDAGE].ToString().Trim(), out iFondage);
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_FONDAGE + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Sat Date Calibration.
+                    if (!dsArchivo.Tables[0].Columns.Contains(COLUMNA_SAT_DATE_CALIBRATION))
+                        return BadRequest("No se encontro la columna '" + COLUMNA_SAT_DATE_CALIBRATION + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    else
+                    {
+                        if (drGeneral[COLUMNA_SAT_DATE_CALIBRATION].GetType().Equals(typeof(Double)))
+                        {
+                            Double dFCalibracion = 0;
+                            Double.TryParse(drGeneral[COLUMNA_SAT_DATE_CALIBRATION].ToString().Trim(), out dFCalibracion);
+                            dtSatDateCalibration = DateTime.FromOADate(dFCalibracion);
+                        }
+                        else
+                            DateTime.TryParse(drGeneral[COLUMNA_SAT_DATE_CALIBRATION].ToString().Trim(), out dtSatDateCalibration);
+                    }
+                    #endregion
+
+                    #region Sat Type Measurement.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_SAT_TYPE_MEASUREMENT))
+                    {
+                        sSatTypeMeasurement = drGeneral[COLUMNA_SAT_TYPE_MEASUREMENT].ToString().Trim();
+
+                        if (String.IsNullOrEmpty(sSatTypeMeasurement))
+                            return BadRequest(sNFilaActual + "Captura el dato '" + COLUMNA_SAT_TYPE_MEASUREMENT + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_SAT_TYPE_MEASUREMENT + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Sat Tank Type.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_SAT_TANK_TYPE))
+                    {
+                        sSatTankType = drGeneral[COLUMNA_SAT_TANK_TYPE].ToString().Trim();
+
+                        if (String.IsNullOrEmpty(sSatTankType))
+                            return BadRequest(sNFilaActual + "Captura el dato '" + COLUMNA_SAT_TANK_TYPE + "' del documento '" + viArchivo.FileName + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_SAT_TANK_TYPE + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Sat Type Medium Storage.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_SAT_TYPE_MEDIUM_STORAGE))
+                    {
+                        sSatTypeMediumStorage = drGeneral[COLUMNA_SAT_TYPE_MEDIUM_STORAGE].ToString().Trim();
+
+                        if (String.IsNullOrEmpty(sSatTypeMediumStorage))
+                            return BadRequest(sNFilaActual + "Captura el dato '" + COLUMNA_SAT_TYPE_MEDIUM_STORAGE + "' del documento '" + viArchivo.FileName + "'.");
+                    }
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_SAT_TYPE_MEDIUM_STORAGE + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+
+                    #region Sat Description Measurement.
+                    if (dsArchivo.Tables[0].Columns.Contains(COLUMNA_SAT_DESCRIPTION_MEASUREMENT))
+                        sSatDescriptionMeasurement = drGeneral[COLUMNA_SAT_DESCRIPTION_MEASUREMENT].ToString().Trim();
+                    else
+                        return BadRequest("No se encontro la columna '" + COLUMNA_SAT_DESCRIPTION_MEASUREMENT + "' en la hoja '" + dsArchivo.Tables[0].TableName + "' del documento '" + viArchivo.FileName + "'.");
+                    #endregion
+                    #endregion
+
+                    #region Validacion de Datos.
+                    #region StoreID.
+                    if ((from s in objContext.Stores where s.StoreId == gStoreID select s).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro la Estación '" + gStoreID.ToString() + "'.");
+                    #endregion
+
+                    #region TankIdi.
+                    //if ((from t in objContext.Tanks where t.StoreId == gStoreID && t.TankIdi == iTankIdi select t).Count() <= 0)
+                    //    return BadRequest(sNFilaActual + "No se encontro Tanque '" + iTankIdi.ToString() + "'.");
+                    #endregion
+
+                    #region ProductID.
+                    if ((from p in objContext.Products where p.ProductId == gProductId select p).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro el Producto '" + gProductId.ToString() + "'.");
+                    #endregion
+
+                    #region Port Idi.
+                    if ((from p in objContext.Ports where p.StoreId == gStoreID && p.PortIdi == iPortIdi select p).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro el Puerto '" + iPortIdi.ToString() + "'.");
+                    #endregion
+
+                    #region Tank Brand Id.
+                    if ((from b in objContext.TankBrands where b.TankBrandId == iTankBrandId select b).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro TankBrand '" + iTankBrandId.ToString() + "'.");
+                    #endregion
+
+                    #region Sat Type Measurement.
+                    if ((from s in objContext.JsonTipoSistemaMedicions where s.JsonTipoSistemaMedicionId == sSatTypeMeasurement select s).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro " + COLUMNA_SAT_TYPE_MEASUREMENT + " '" + sSatTypeMeasurement + "'.");
+                    #endregion
+
+                    #region Sat Tank Type.
+                    if ((from s in objContext.JsonTipoTanques where s.JsonTipoTanqueId == sSatTankType select s).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro " + COLUMNA_SAT_TANK_TYPE + " '" + sSatTankType + "'.");
+                    #endregion
+
+                    #region Sat Type Medium Storage.
+                    if ((from s in objContext.JsonTipoMedioAlmacenamientos where s.JsonTipoMedioAlmacenamientoId == sSatTypeMediumStorage select s).Count() <= 0)
+                        return BadRequest(sNFilaActual + "No se encontro " + COLUMNA_SAT_TYPE_MEDIUM_STORAGE + " '" + sSatTypeMediumStorage + "'.");
+                    #endregion
+                    #endregion
+
+                    #region Llenado.
+                    Tank objTanqueDatos = new Tank();
+                    Boolean bTankNuevo = false;
+
+                    if((from t in objContext.Tanks where t.StoreId == gStoreID && t.TankIdi == iTankIdi select t).Count() <= 0)
+                    {
+                        objTanqueDatos.StoreId = gStoreID;
+                        objTanqueDatos.TankIdi = iTankIdi;
+
+                        objTanqueDatos.Date = DateTime.Now;
+                        objTanqueDatos.Updated = objTanqueDatos.Date;
+                        objTanqueDatos.Active = true;
+                        objTanqueDatos.Locked = false;
+                        objTanqueDatos.Deleted = false;
+                        bTankNuevo = true;
+                    }
+                    else
+                    {
+                        objTanqueDatos = (from t in objContext.Tanks where t.StoreId == gStoreID && t.TankIdi == iTankIdi select t).First();
+                        objTanqueDatos.Updated = DateTime.Now;
+                    }
+
+                    objTanqueDatos.ProductId = gProductId;
+                    objTanqueDatos.TankCpuAddress = iTankCpuAddress;
+                    objTanqueDatos.PortIdi = iPortIdi;
+                    objTanqueDatos.TankBrandId = iTankBrandId;
+                    objTanqueDatos.Name = sName;
+                    objTanqueDatos.CapacityTotal = iCapacityTotal;
+                    objTanqueDatos.CapacityOperational = iCapacityOperational;
+                    objTanqueDatos.CapacityMinimumOperating = iCapacityMinimumOperating;
+                    objTanqueDatos.CapacityUseful = iCapacityUseful;
+                    objTanqueDatos.Fondage = iFondage;
+                    objTanqueDatos.SatDateCalibration = dtSatDateCalibration;
+                    objTanqueDatos.SatTypeMeasurement = sSatTypeMeasurement;
+                    objTanqueDatos.SatTankType = sSatTankType;
+                    objTanqueDatos.SatTypeMediumStorage = sSatTypeMediumStorage;
+                    objTanqueDatos.SatDescriptionMeasurement = sSatDescriptionMeasurement;
+
+                    if (bTankNuevo)
+                        objContext.Tanks.Add(objTanqueDatos);
+                    else
+                        objContext.Tanks.Update(objTanqueDatos);
+
+                    objContext.SaveChanges();
+                    iCantRegisSave++;
+                    #endregion
                 }
                 #endregion
             }
