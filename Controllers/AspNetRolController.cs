@@ -12,7 +12,7 @@ namespace APIControlNet.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class AspNetRolController : ControllerBase
     {
         private readonly UserManager<IdentityUser> userManager;
@@ -117,13 +117,29 @@ namespace APIControlNet.Controllers
 
 
 
+        //[HttpGet]
+        //public async Task<ActionResult<List<AspNetRolesDTO>>> ListadoRoles([FromQuery] PaginacionDTO paginacionDTO)
+        //{
+        //    var queryable = roleManager.Roles.AsQueryable();
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    var roles = await queryable.Paginar(paginacionDTO).ToListAsync();
+        //    return Ok(roles);
+        //}
+
         [HttpGet]
-        public async Task<ActionResult<List<AspNetRolesDTO>>> ListadoRoles([FromQuery] PaginacionDTO paginacionDTO)
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<AspNetRolesDTO>>> Get5()
         {
-            var queryable = roleManager.Roles.AsQueryable();
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var roles = await queryable.Paginar(paginacionDTO).ToListAsync();
-            return Ok(roles);
+            var data = await (from rol in roleManager.Roles        
+                              join rolPer in context.RolePermissions on rol.Id equals rolPer.RoleId
+                              select new AspNetRolesDTO
+                              {
+                                  Id = rol.Id,
+                                  Name = rol.Name,
+                                  RoleId = rolPer.RoleId,
+                                  Description = rolPer.Description
+                              }).AsNoTracking().ToListAsync();
+            return data;
         }
 
 

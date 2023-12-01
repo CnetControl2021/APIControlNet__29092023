@@ -10,6 +10,5 @@ namespace APIControlNet.DTOs
         public bool EmailConfirmed { get; set; }
         //[Required]
         public string Password { get; set; }
-
     }
 }

@@ -46,6 +46,7 @@ namespace APIControlNet.Models
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
         public string Rfc { get; set; }
+        public string ShortName { get; set; }
 
         public virtual Company Company { get; set; }
         public virtual StoreSat StoreSat { get; set; }

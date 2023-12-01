@@ -26,6 +26,7 @@ namespace APIControlNet.Models
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
         public int? Subtype { get; set; }
+        public string UniqueId { get; set; }
 
         public virtual DispensaryBrand DispensaryBrand { get; set; }
         public virtual Store Store { get; set; }

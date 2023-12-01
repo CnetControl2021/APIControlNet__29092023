@@ -4,9 +4,9 @@
     {
         public string Id  { get; set; } 
         public string Name { get; set; }
-        //public List<ChPageRolDTO> LISTchPageRolDTOs { get; set; }  //va a la tabla relacion
-        //public List<int> ChPagesIds { get; set; }
 
+        public string Description { get; set; } //Tabla RolesPermission
+        public string RoleId { get; set; }  //Tabla RolesPermission
 
     }
 }

@@ -45,7 +45,9 @@ namespace APIControlNet.Controllers
                 .Include(x => x.Product)
                 .AsNoTracking()
                 .ToListAsync();
+            //return Ok(productsat);
             return mapper.Map<List<ProductSatDTO>>(productsat);
+            //return Ok(productsat);
         }
 
 
@@ -92,13 +94,12 @@ namespace APIControlNet.Controllers
             return mapper.Map<ProductSatDTO>(productSats);
         }
 
-
         [HttpGet("byGuid/{idGuid}", Name = "obtenerProductSat")]
         [AllowAnonymous]
         public async Task<ActionResult<ProductSatDTO>> Get(Guid idGuid)
         {
-            //var productSats = await context.ProductSats.FirstOrDefaultAsync(x => x.ProductId == idGuid);
-            var productSats = await context.ProductSats.Include(p => p.Product).FirstOrDefaultAsync(x => x.ProductId == idGuid);
+            var productSats = await context.ProductSats.FirstOrDefaultAsync(x => x.ProductId == idGuid);
+            //var productSats = await context.ProductSats.Include(p => p.Product).FirstOrDefaultAsync(x => x.ProductId == idGuid);
 
             if (productSats == null)
             {
@@ -157,11 +158,12 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPut("{storeId?}")]
+        [HttpPut("{storeId}")]
         [AllowAnonymous]
         public async Task<IActionResult> Put(ProductSatDTO productSat, Guid storeId)
         {
-            var db = await context.ProductSats.FirstOrDefaultAsync(c => c.ProductSatIdx == productSat.ProductSatIdx);
+            var db = await context.ProductSats.FirstOrDefaultAsync(c => c.ProductSatIdx == productSat.ProductSatIdx
+            && storeId == c.StoreId);
 
             if (db is null)
             {
@@ -170,13 +172,13 @@ namespace APIControlNet.Controllers
             try
             {
                 db = mapper.Map(productSat, db);
-                db.Updated = DateTime.Now;
+                //db.Updated = DateTime.Now;
 
-                var storeId2 = storeId;
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var tableName = db.SatProductKey;
-                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
+                //var storeId2 = storeId;
+                //var usuarioId = obtenerUsuarioId();
+                //var ipUser = obtenetIP();
+                //var tableName = db.SatProductKey;
+                //await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
 
                 await context.SaveChangesAsync();
                 return Ok();

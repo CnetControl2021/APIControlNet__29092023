@@ -29,15 +29,15 @@ namespace APIControlNet.DTOs
         public decimal? FraccionMolar { get; set; }
         public decimal? PoderCalorifico { get; set; }
         public DateTime? Date { get; set; } = DateTime.Now;
-        public DateTime? Updated { get; set; }=DateTime.Now;
-        public bool? Active { get; set; }=true;
-        public bool? Locked { get; set; }=false;
+        public DateTime? Updated { get; set; }= DateTime.Now;
+        public bool? Active { get; set; } = true;
+        public bool? Locked { get; set; }= false;
         public bool? Deleted { get; set; } = false;
         public string SatProductKey { get; set; }
         public string SatProductSubkey { get; set; }
         public int? SatWithFossil { get; set; }
         public int? SatPercentageWithFossil { get; set; }
 
-       public virtual ProductDTO Product { get; set; }
+        public virtual ProductDTO Product { get; set; }
     }
 }

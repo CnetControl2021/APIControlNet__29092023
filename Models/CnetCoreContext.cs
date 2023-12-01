@@ -16,7 +16,6 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
-
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -108,7 +107,9 @@ namespace APIControlNet.Models
         public virtual DbSet<MonthlySummary> MonthlySummaries { get; set; }
         public virtual DbSet<MovementType> MovementTypes { get; set; }
         public virtual DbSet<Netgroup> Netgroups { get; set; }
+        public virtual DbSet<NetgroupBalance> NetgroupBalances { get; set; }
         public virtual DbSet<NetgroupPrice> NetgroupPrices { get; set; }
+        public virtual DbSet<NetgroupReward> NetgroupRewards { get; set; }
         public virtual DbSet<NetgroupStore> NetgroupStores { get; set; }
         public virtual DbSet<NetgroupUser> NetgroupUsers { get; set; }
         public virtual DbSet<Odr> Odrs { get; set; }
@@ -135,6 +136,7 @@ namespace APIControlNet.Models
         public virtual DbSet<ReportInput> ReportInputs { get; set; }
         public virtual DbSet<ReportModule> ReportModules { get; set; }
         public virtual DbSet<ReportModuleDetail> ReportModuleDetails { get; set; }
+        public virtual DbSet<RolePermission> RolePermissions { get; set; }
         public virtual DbSet<SaleOrder> SaleOrders { get; set; }
         public virtual DbSet<SaleOrderPayment> SaleOrderPayments { get; set; }
         public virtual DbSet<SaleOrderPhoto> SaleOrderPhotos { get; set; }
@@ -191,6 +193,7 @@ namespace APIControlNet.Models
         public virtual DbSet<TypeMovement> TypeMovements { get; set; }
         public virtual DbSet<UserDateCreate> UserDateCreates { get; set; }
         public virtual DbSet<UserDateCreate1> UserDateCreates1 { get; set; }
+        public virtual DbSet<UserStore> UserStores { get; set; }
         public virtual DbSet<ValidateType> ValidateTypes { get; set; }
         public virtual DbSet<Vehicle> Vehicles { get; set; }
         public virtual DbSet<Version> Versions { get; set; }
@@ -202,7 +205,7 @@ namespace APIControlNet.Models
             if (!optionsBuilder.IsConfigured)
             {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-//                optionsBuilder.UseSqlServer("server=www.controlnet.com.mx,14334\\SQLEXPRESS;Database=CnetCore;User ID=AdminCnet;Password=Control2207074rd;Trusted_Connection=false;MultipleActiveResultSets=true");
+  //              optionsBuilder.UseSqlServer("server=www.controlnet.com.mx,14334\\SQLEXPRESS;Database=CnetCore;User ID=AdminCnet;Password=Control2207074rd;Trusted_Connection=false;MultipleActiveResultSets=true");
             }
         }
 
@@ -210,7 +213,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-          
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -1938,6 +1941,9 @@ namespace APIControlNet.Models
                 entity.HasIndex(e => new { e.StoreId, e.DispensaryIdi }, "IX_dispensary_compound")
                     .IsUnique();
 
+                entity.HasIndex(e => e.UniqueId, "IX_dispensary_unique_id")
+                    .IsUnique();
+
                 entity.Property(e => e.DispensaryIdx).HasColumnName("dispensary_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
@@ -1985,6 +1991,13 @@ namespace APIControlNet.Models
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.Subtype).HasColumnName("subtype");
+
+                entity.Property(e => e.UniqueId)
+                    .IsRequired()
+                    .HasMaxLength(80)
+                    .IsUnicode(false)
+                    .HasColumnName("unique_id")
+                    .HasDefaultValueSql("(CONVERT([varchar](80),newid()))");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -5313,10 +5326,10 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("menu_name");
 
-                entity.Property(e => e.PageMenu)
+                entity.Property(e => e.PageName)
                     .HasMaxLength(50)
                     .IsUnicode(false)
-                    .HasColumnName("page_menu");
+                    .HasColumnName("page_name");
 
                 entity.Property(e => e.ParentMenuId).HasColumnName("parent_menu_id");
             });
@@ -5541,6 +5554,49 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<NetgroupBalance>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupBalanceIdx)
+                    .HasName("PK_netgroup_balance_idx");
+
+                entity.ToTable("netgroup_balance");
+
+                entity.HasIndex(e => e.NetgroupBalanceId, "IX_netgroup_balance_id")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupBalanceIdx).HasColumnName("netgroup_balance_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.ItsAReward).HasColumnName("its_a_reward");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupBalanceId).HasColumnName("netgroup_balance_id");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NetgroupRewardId).HasColumnName("netgroup_reward_id");
+
+                entity.Property(e => e.RewardPoints)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("reward_points");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<NetgroupPrice>(entity =>
             {
                 entity.HasKey(e => e.NetgroupPriceIdx)
@@ -5575,6 +5631,54 @@ namespace APIControlNet.Models
                 entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.NetgroupPriceId).HasColumnName("netgroup_price_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupReward>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupRewardIdx)
+                    .HasName("PK_netgroup_reward_idx");
+
+                entity.ToTable("netgroup_reward");
+
+                entity.HasIndex(e => e.NetgroupRewardId, "IX_netgroup_reward_id")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupRewardIdx).HasColumnName("netgroup_reward_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NetgroupRewardId).HasColumnName("netgroup_reward_id");
+
+                entity.Property(e => e.Photo)
+                    .HasColumnType("text")
+                    .HasColumnName("photo");
+
+                entity.Property(e => e.RewardPoints)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("reward_points");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -6900,6 +7004,42 @@ namespace APIControlNet.Models
                 entity.Property(e => e.ReportId).HasColumnName("report_id");
 
                 entity.Property(e => e.ReportModuleIdi).HasColumnName("report_module_idi");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.HasKey(e => e.RolePermissionIdx);
+
+                entity.ToTable("role_permission");
+
+                entity.Property(e => e.RolePermissionIdx).HasColumnName("role_permission_idx");
+
+                entity.Property(e => e.Action)
+                    .HasMaxLength(100)
+                    .HasColumnName("action");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(450)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.RoleId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("role_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -8499,6 +8639,11 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Send).HasColumnName("send");
 
+                entity.Property(e => e.ShortName)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("short_name");
+
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.StoreNumber).HasColumnName("store_number");
@@ -9908,6 +10053,38 @@ namespace APIControlNet.Models
                     .HasColumnName("userName");
             });
 
+            modelBuilder.Entity<UserStore>(entity =>
+            {
+                entity.HasKey(e => e.UserStoreIdx);
+
+                entity.ToTable("user_store");
+
+                entity.Property(e => e.UserStoreIdx).HasColumnName("user_store_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+
+                entity.Property(e => e.UserId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("userId");
+            });
+
             modelBuilder.Entity<ValidateType>(entity =>
             {
                 entity.ToTable("validate_type");
@@ -10261,11 +10438,6 @@ namespace APIControlNet.Models
             });
 
             OnModelCreatingPartial(modelBuilder);
-        }
-
-        internal Task Update()
-        {
-            throw new NotImplementedException();
         }
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

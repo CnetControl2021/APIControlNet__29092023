@@ -35,9 +35,21 @@ namespace APIControlNet.Controllers
             var petitionCustomId = dataDB.PetitionCustomsId;
 
             var listPetitions = await context.PetitionCustoms.Where(x => x.PetitionCustomsId == petitionCustomId).ToListAsync();
-
             return mapper.Map<List<PetitionCustomDTO>>(listPetitions);
         }
+
+
+        [HttpGet("byGuidSale/{idGuid}")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<PetitionCustomDTO>> Get2(Guid idGuid)
+        {
+            var dataDB = await context.SaleSuborders.Where(x => x.SaleOrderId == idGuid).FirstOrDefaultAsync();
+            var petitionCustomId = dataDB.PetitionCustomsId;
+
+            var listPetitions = await context.PetitionCustoms.Where(x => x.PetitionCustomsId == petitionCustomId).ToListAsync();
+            return mapper.Map<List<PetitionCustomDTO>>(listPetitions);
+        }
+
 
         [HttpPost("{storeId?}/{idGuid}")]
         public async Task<ActionResult> Post(PetitionCustomDTO petitionCustomDTO, Guid storeId, Guid idGuid)

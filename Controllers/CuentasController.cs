@@ -11,7 +11,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
@@ -58,13 +60,16 @@ namespace APIControlNet.Controllers
         //    return Ok(users);
         //}
 
+
         [HttpGet("listadoUsuarios")]
         public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
         {
             var queryable = userManager.Users.AsQueryable();
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
             //var usuarios = await queryable.Paginar(paginacionDTO).ToListAsync();
-            var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id }).ToListAsync();
+            var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id })
+                .OrderBy(x => x.Email)
+                .ToListAsync();
             return Ok(usuarios);
         }
 
@@ -73,6 +78,23 @@ namespace APIControlNet.Controllers
         public async Task<ActionResult> AsignarRolaUsuario(EditarRolDTO editarRolDTO, Guid storeId)
         {
             var usuario = await userManager.FindByIdAsync(editarRolDTO.UserId);
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            var roles = await userManager.GetRolesAsync(usuario);
+            //if (roles.Count == 0)
+            //{
+            //    return Ok();
+            //}
+
+            var deleteRoles = await userManager.RemoveFromRolesAsync(usuario, roles);
+            if (!deleteRoles.Succeeded)
+            {
+                return BadRequest(deleteRoles.Errors);
+            }
+
             await userManager.AddToRoleAsync(usuario, editarRolDTO.RoleId);
 
             var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == "email").FirstOrDefault();
@@ -87,6 +109,7 @@ namespace APIControlNet.Controllers
             return NoContent();
         }
 
+
         [HttpPost("RemoverRol")]
         public async Task<ActionResult> RemoverRolaUsuario(EditarRolDTO editarRolDTO)
         {
@@ -94,7 +117,6 @@ namespace APIControlNet.Controllers
             await userManager.RemoveFromRoleAsync(usuario, editarRolDTO.RoleId);
             return NoContent();
         }
-
 
         [HttpGet("{id}", Name = "obteneruser")]
         ////[AllowAnonymous]
@@ -145,54 +167,101 @@ namespace APIControlNet.Controllers
         //}
 
 
-        [HttpPost("registrar/{storeId?}")]
-        public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO, Guid? storeId)
+        [HttpPost("registrar/{CompanyId?}")]
+        public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO, Guid CompanyId)
         {
-            var usuario = new IdentityUser
+            try
             {
-                UserName = credencialesUsuariosDTO.Email,
-                Email = credencialesUsuariosDTO.Email,
-            };
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    var usuario = new IdentityUser
+                    {
+                        UserName = credencialesUsuariosDTO.Email,
+                        Email = credencialesUsuariosDTO.Email,
+                    };
 
-            var resultado = await userManager.CreateAsync(usuario, credencialesUsuariosDTO.Password); //Respuesta Identity
-            var emailconfimed = credencialesUsuariosDTO.EmailConfirmed;
+                    var resultado = await userManager.CreateAsync(usuario, credencialesUsuariosDTO.Password); //Respuesta Identity
+                    var emailconfimed = credencialesUsuariosDTO.EmailConfirmed;
 
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name2 = credencialesUsuariosDTO.Email;
-            var storeId2 = storeId;
-            await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name2, storeId2);
+                    if (CompanyId != Guid.Empty)
+                    {
+                        var dbCompany = await context.Stores.FirstOrDefaultAsync(x => x.CompanyId == CompanyId);
+                        var StoreId = dbCompany.StoreId;
 
-            //var ChPerson = mapper.Map<ChPerson>(ChPersonDTO); //respuesta contextbd
+                        UserStore us = new()
+                        {
+                            UserId = usuario.Id,
+                            CompanyId = CompanyId,
+                            StoreId = StoreId,
+                            Date = DateTime.Now,
+                            Updated = DateTime.Now,
+                            Active = true,
+                            Locked = false,
+                            Deleted = false
+                        };
+                        context.UserStores.Add(us);
 
-            if (resultado.Succeeded)
-            {
-                return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed);
-                //return Ok(resultado);
+                        var usuarioId = obtenerUsuarioId();
+                        var ipUser = obtenetIP();
+                        var name2 = credencialesUsuariosDTO.Email;
+                        var storeId2 = StoreId;
+                        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name2, storeId2);
+
+                        context.SaveChanges();
+                        await transaccion.CommitAsync();
+
+                        if (resultado.Succeeded)
+                        {
+
+                            return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, dbCompany.CompanyId);
+                            //return Ok(resultado);
+                        }
+
+                    }
+                    else
+                    {
+                        return BadRequest(resultado.Errors + "Seleccionar Empresa");
+                    }
+                    return BadRequest("Revisar que empresa y sucursal existan");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest(resultado.Errors);
+                return BadRequest(ex.Message + "Revisar que empresa y sucursal existan");
             }
-
-            //if (resultado.Succeeded)
-            //{
-
-            //}
-
-            //if (DisplayConfirmAccountLink)
-            //{
-            //    var userId = await _userManager.GetUserIdAsync(user);
-            //    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            //    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-            //    EmailConfirmationUrl = Url.Page(
-            //        "/Account/ConfirmEmail",
-            //        pageHandler: null,
-            //        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-            //        protocol: Request.Scheme);
-            //}
-
         }
+
+        [HttpPost("registrar")]
+        public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO)
+        {
+            try
+            {
+                var usuario = new IdentityUser
+                {
+                    UserName = credencialesUsuariosDTO.Email,
+                    Email = credencialesUsuariosDTO.Email,
+                };
+
+                var resultado = await userManager.CreateAsync(usuario, credencialesUsuariosDTO.Password); //Respuesta Identity
+                var emailconfimed = credencialesUsuariosDTO.EmailConfirmed;
+
+                if (resultado.Succeeded)
+                {
+
+                    return ConstruirToken2(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed);
+                    //return Ok(resultado);
+                }
+                else
+                {
+                    return BadRequest(resultado.Errors + "Seleccionar Empresa");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message + "Revisar que empresa y sucursal existan");
+            }
+        }
+
 
         [HttpPost("regUserPromo")]
         //[AllowAnonymous]
@@ -246,7 +315,10 @@ namespace APIControlNet.Controllers
                 context.Add(netGroupUser);
                 await context.SaveChangesAsync();
 
-                return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed);
+                var dbUserStore = await context.UserStores.FirstOrDefaultAsync(x => x.UserId == usuario.Id);
+                var dbComany = dbUserStore.CompanyId;
+
+                return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, dbComany);
 
                 //return NoContent();
 
@@ -279,10 +351,21 @@ namespace APIControlNet.Controllers
                 var usuario = await userManager.FindByEmailAsync(credencialesUsuariosDTO.Email);
                 var roles = await userManager.GetRolesAsync(usuario);
                 var emailConfirmed = usuario.EmailConfirmed;
-                await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
-                return ConstruirToken(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed);
+
+                if (credencialesUsuariosDTO.Email != "masterSupport@controlnet.com.mx")
+                {
+                    var dbUserStore = await context.UserStores.FirstOrDefaultAsync(x => x.UserId == usuarioIni.Id);
+                    var dbComany = dbUserStore.CompanyId;
+                    await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
+
+                    return ConstruirToken(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed, dbComany);
+                }
+                else
+                {
+                    return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed);
+                }               
             }
-            else
+            else 
             {
                 await servicioBinnacle.errorLoginBinnacle(usuarioId, ipUser, name);
                 return BadRequest("Login incorrecto");
@@ -356,7 +439,10 @@ namespace APIControlNet.Controllers
             var usuario = await userManager.FindByEmailAsync(credencialesUsuariosDTO.Email);
             var roles = await userManager.GetRolesAsync(usuario);
 
-            return ConstruirToken(credencialesUsuariosDTO, roles, usuarioId, emailConfirmed);
+            var dbUserStore = await context.UserStores.FirstOrDefaultAsync(x => x.UserId == usuario.Id);
+            var dbComany = dbUserStore.CompanyId;
+
+            return ConstruirToken(credencialesUsuariosDTO, roles, usuarioId, emailConfirmed, dbComany);
         }
 
 
@@ -415,6 +501,16 @@ namespace APIControlNet.Controllers
             //{
             //    return NotFound();
             //}
+            var db = await context.UserStores.FirstOrDefaultAsync(x => x.UserId == id);
+            if (db == null)
+            {
+            }
+            else
+            {
+                context.Remove(db);
+            }
+
+
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
             var name = user.Email;
@@ -456,6 +552,42 @@ namespace APIControlNet.Controllers
         //}
 
         private RespuestaAutenticacionDTO ConstruirToken(CredencialesUsuariosDTO credencialesUsuariosDTO,
+            IList<string> roles, string usuarioId, bool emailConfirmed, Guid? dbComany)
+        {
+            var claims = new List<Claim>()
+            {
+                new Claim("email", credencialesUsuariosDTO.Email),
+                new Claim(ClaimTypes.Name, credencialesUsuariosDTO.Email),
+                new Claim("emailConfirmed", credencialesUsuariosDTO.EmailConfirmed.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("id", usuarioId)
+            };
+
+            foreach (var rol in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, rol));
+            }
+
+            var llave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["llavejwt"]));
+            var creds = new SigningCredentials(llave, SecurityAlgorithms.HmacSha256);
+
+            var expiracion = DateTime.Now.AddHours(8);
+
+            var securityToken = new JwtSecurityToken(issuer: null, audience: null, claims: claims,
+                expires: expiracion, signingCredentials: creds);
+
+            //var dbUsrStore = context.UserStores.Where(x => x.UserId == credencialesUsuariosDTO.Id).FirstOrDefaultAsync();
+
+            return new RespuestaAutenticacionDTO()
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
+                Expiracion = expiracion,
+                EmailConfirmed = emailConfirmed,
+                dbComany = (Guid)dbComany
+            };
+        }
+
+        private RespuestaAutenticacionDTO ConstruirToken2(CredencialesUsuariosDTO credencialesUsuariosDTO,
             IList<string> roles, string usuarioId, bool emailConfirmed)
         {
             var claims = new List<Claim>()
@@ -477,9 +609,10 @@ namespace APIControlNet.Controllers
 
             var expiracion = DateTime.Now.AddHours(8);
 
-
             var securityToken = new JwtSecurityToken(issuer: null, audience: null, claims: claims,
                 expires: expiracion, signingCredentials: creds);
+
+            //var dbUsrStore = context.UserStores.Where(x => x.UserId == credencialesUsuariosDTO.Id).FirstOrDefaultAsync();
 
             return new RespuestaAutenticacionDTO()
             {
@@ -488,6 +621,5 @@ namespace APIControlNet.Controllers
                 EmailConfirmed = emailConfirmed
             };
         }
-
     }
 }

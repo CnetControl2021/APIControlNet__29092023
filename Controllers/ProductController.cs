@@ -130,9 +130,7 @@ namespace APIControlNet.Controllers
         [HttpPost("{storeId?}")]
         public async Task<ActionResult> Post(Guid storeId, [FromBody] ProductDTO productDTO)
         {
-
             var existeid = await context.Products.AnyAsync(x => x.ProductIdx == productDTO.ProductIdx);
-
             var Product = mapper.Map<Product>(productDTO);
 
             var usuarioId = obtenerUsuarioId();

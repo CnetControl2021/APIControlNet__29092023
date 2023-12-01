@@ -8,6 +8,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<UserStoreDTO, UserStore>();
+            CreateMap<UserStore, UserStoreDTO>();
+
             CreateMap<JsonSubclaveProductoDTO, JsonSubclaveProducto>();
             CreateMap<JsonSubclaveProducto, JsonSubclaveProductoDTO>();
 

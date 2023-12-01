@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Xml.Linq;
 
 namespace APIControlNet.Controllers
 {
@@ -247,6 +248,12 @@ namespace APIControlNet.Controllers
                     context.SaleSuborders.Add(sso);
                     context.SaveChanges();
 
+                    var usuarioId = obtenerUsuarioId();
+                    var ipUser = obtenetIP();
+                    var name = so.Name;
+                    var storeId2 = storeId;
+                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+
                     await transaccion.CommitAsync();
                     return Ok($"Registro correcto {so.SaleOrderNumber}");
                 }
@@ -293,9 +300,14 @@ namespace APIControlNet.Controllers
             ssub.CalorificPower = so_SsubDTO.NSaleSuborderDTO.CalorificPower;
             ssub.Updated = DateTime.Now;
 
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = so.Name;
+            var storeId2 = so.StoreId;
+            await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+
             await context.SaveChangesAsync();
 
-            //return Ok(new { InventoryInDTO = upd1, InventoryInDocumentDTO = upd2} );
             return Ok();
         }
 

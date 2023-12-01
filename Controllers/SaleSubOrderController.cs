@@ -37,21 +37,21 @@ namespace APIControlNet.Controllers
 
             list = await (from ss in context.SaleSuborders
                           where ss.SaleOrderId == idGuid
+                          join so in context.SaleOrders on ss.SaleOrderId equals so.SaleOrderId
 
                           select new SaleSuborderDTO
                           {
                               SaleSuborderIdx = ss.SaleSuborderIdx,
                               SaleOrderId = ss.SaleOrderId,
-                              Name = ss.Name,
+                              Name = so.SaleOrderNumber.ToString(),
                               ProductId = ss.ProductId,
                               Quantity = ss.Quantity,
                               Price = ss.Price,
                               TotalAmount = ss.TotalAmount,
-                              Date = ss.Date,
+                              Date = so.Date,
                               StartQuantity = ss.StartQuantity,
                               EndQuantity = ss.EndQuantity,
                               QuantityTc = ss.QuantityTc
-
                           }).AsNoTracking().ToListAsync();
             return Ok(list);
         }

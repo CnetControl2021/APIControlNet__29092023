@@ -100,14 +100,14 @@ namespace APIControlNet.Controllers
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
-                VALUES({"3"}, {"2.3"}, {"2.2"}, {"Control Volumetrico"}, {"ControlNet"}, 
+                VALUES({"3"}, {"2.3"}, {"2.3"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se mejoro el sistema de notificaciones de alarmas. Se adiciono modulo de compras y ventas transportistas"}, 
-                {"b4fcdf5d1de14dae27f7cdefbd14e1ec9dfd068a0be0ff2250e5e695699d16eb195221f446bcbc0d5db8b55b5b9e56e986cb5e9a5a60ab85a7c3a456bd68ed72"},
-                {"2023-11-14"}, {"2023-11-14"}, {true}, {false}, {false})");
+                {"b15ecab15a40baac975705e4c4e9a6eb26e79e8e980ef7ca6ab5a341e89180fb3da29ff21816c506d82ebd5a07ff3a4f2cea3f2a2c4781f28bd0c3d33194b164"},
+                {"2023-11-29"}, {"2023-11-29"}, {true}, {false}, {false})");
             }
 
-
             if (hashdb == null)
+
             {
                 return NotFound();
             }

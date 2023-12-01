@@ -31,12 +31,12 @@ namespace APIControlNet.Controllers
             this.context = context;
             this.mapper = mapper;
             this.userManager = userManager;
-            this.servicioBinnacle=servicioBinnacle;
+            this.servicioBinnacle = servicioBinnacle;
         }
 
         public const string gEmpty = "00000000-0000-0000-0000-000000000000";
         string myGuidString = gEmpty.ToString();
-        
+
         [HttpGet("activeSinPag")]
         [AllowAnonymous]
         public async Task<IEnumerable<StoreDTO>> Get([FromQuery] string nombre, Guid storeId)
@@ -98,64 +98,40 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("activeSinPag2")]
+        [HttpGet("activeSinPag2/{idCom?}")]
         [AllowAnonymous]
-        public async Task<IEnumerable<StoreDTO>> Get2([FromQuery] string nombre, Guid storeId)
+        public async Task<IEnumerable<StoreDTO>> Get2([FromQuery] string nombre, Guid storeId, Guid idCom)
         {
-            var queryable = context.Stores.Where(x => x.Active == true && x.Deleted == false && x.StoreId.ToString() != myGuidString).AsQueryable();
-
-            if (!string.IsNullOrEmpty(nombre))
+            if (idCom != Guid.Empty)
             {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+                var queryable = context.Stores.Where(x => x.Active == true && x.Deleted == false && x.StoreId.ToString() != myGuidString
+                  && x.CompanyId == idCom).AsQueryable();
+
+                if (!string.IsNullOrEmpty(nombre))
+                {
+                    queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+                }
+                if (storeId != Guid.Empty)
+                {
+                    queryable = queryable.Where(x => x.StoreId == storeId);
+                }
+                var stores = await queryable
+                    .Include(x => x.Company)
+                    .ToListAsync();
+                return mapper.Map<List<StoreDTO>>(stores);
+
             }
-            if (storeId != Guid.Empty)
+            else
             {
-                queryable = queryable.Where(x => x.StoreId == storeId);
+                var queryable = context.Stores.Where(x => x.Active == true && x.Deleted == false && x.StoreId.ToString() != myGuidString
+                 ).AsQueryable();
+
+                var stores = await queryable
+                    .Include(x => x.Company)
+                    .ToListAsync();
+                return mapper.Map<List<StoreDTO>>(stores);
+
             }
-            var stores = await queryable
-                .Include(x => x.Company)
-                .ToListAsync();
-
-            //var db1 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.0");
-            //if (db1 is null)
-            //{
-            //    await context.Database.ExecuteSqlInterpolatedAsync
-            //    ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
-            //    VALUES({"3"}, {"1.0"}, {"1.0"}, {"Control Volumetrico"}, {"ControlNet"}, {"Version inicial"}, {"2023-05-01"}, {"2023-05-01"}, {true}, {false}, {false})");
-            //}
-            //var db2 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.1");
-            //if (db2 is null)
-            //{
-            //    await context.Database.ExecuteSqlInterpolatedAsync
-            //    ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
-            //    VALUES({"3"}, {"1.1"}, {"1.1"}, {"Control Volumetrico"}, {"ControlNet"}, {"Mejoras en reportes"}, {"2023-05-12"}, {"2023-05-01"}, {true}, {false}, {false})");
-            //}
-            //var db3 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.0");
-            //if (db3 is null)
-            //{
-            //    await context.Database.ExecuteSqlInterpolatedAsync
-            //    ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
-            //    VALUES({"3"}, {"2.0"}, {"2.0"}, {"Control Volumetrico"}, {"ControlNet"}, {"Cambios en campos de medicion TC"}, {"2023-06-12"}, {"2023-06-12"}, {true}, {false}, {false})");
-            //}
-            //var db4 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.1");
-            //if (db4 is null)
-            //{
-            //    await context.Database.ExecuteSqlInterpolatedAsync
-            //    ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
-            //    VALUES({"3"}, {"2.1"}, {"2.1"}, {"Control Volumetrico"}, {"ControlNet"}, {"Adicion de pagina para revisar version he historial"}, {"2023-06-20"}, {"2023-06-20"}, {true}, {false}, {false})");
-            //}
-            //var db5 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.2");
-            //if (db5 is null)
-            //{
-            //    await context.Database.ExecuteSqlInterpolatedAsync
-            //    ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
-            //    VALUES({"3"}, {"2.2"}, {"2.2"}, {"Control Volumetrico"}, {"ControlNet"}, 
-            //    {"Se agrego identificador unico, (hash-512) para comprobar  autenticidad e integridad de la version, encabezado de empresa, y version, logo controlnet. Se agrego en las ventas, la inofrmacion con coeficiente de temperatura. "}, 
-            //    {"16aa232612f555e898c8e4a52ba5c671f0d3216c97e35b5d75ff9b72a6b12617e3e6855b409eb06dd53b76e11bc26358d104c433f9805854e8b349dc906a4485"},
-            //    {"2023-07-11"}, {"2023-07-11"}, {true}, {false}, {false})");
-            //}
-
-            return mapper.Map<List<StoreDTO>>(stores);
         }
 
 
@@ -168,9 +144,9 @@ namespace APIControlNet.Controllers
             {
                 queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
             }
-            if (storeId!= Guid.Empty)
+            if (storeId != Guid.Empty)
             {
-                queryable = queryable.Where(x => x.StoreId==storeId);
+                queryable = queryable.Where(x => x.StoreId == storeId);
             }
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
             var stores = await queryable.Paginar(paginacionDTO)
@@ -212,14 +188,15 @@ namespace APIControlNet.Controllers
         //[AllowAnonymous]
         public async Task<IEnumerable<StoreDTO>> Get3(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
         {
-            var queryable = context.Stores.Where(x => x.Active == true && x.StoreId.ToString() != myGuidString).AsQueryable();
+            var queryable = context.Stores.Where(x => x.Active == true && x.StoreId.ToString() != myGuidString
+            && x.StoreId == storeId).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
             {
                 queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
             }
             if (storeId != Guid.Empty)
             {
-                queryable = queryable.Where(x => x.StoreId== storeId);
+                queryable = queryable.Where(x => x.StoreId == storeId);
             }
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
             var store = await queryable.OrderByDescending(x => x.StoreIdx).Paginar(paginacionDTO)
