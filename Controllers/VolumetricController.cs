@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =====  VERSION  =====
-    // $@m&: 2023-12-04 13:57
+    // $@m&: 2023-12-04 17:49
     // =====================
 
     [Route("api/[controller]")]
@@ -5829,6 +5829,20 @@ namespace APIControlNet.Controllers
                             // <DUDA> GUARDAR Invoice Detail
                             objContext.InvoiceDetails.Add(objFacturaDtlDato);
                             objContext.SaveChanges();
+
+                            if(objFacturaDtlDato.InvoiceDetailIdi > 1)
+                            {
+                                Invoice objFacturaUPD = (from i in objContext.Invoices
+                                                         where i.StoreId == viNEstacion.GetValueOrDefault() &&
+                                                               i.InvoiceSerieId == sFSerie &&
+                                                               i.Folio == iCNFactura.ToString().Trim() &&
+                                                               i.Date == dtFFactura
+                                                         select i).First();
+
+                                objFacturaUPD.Amount = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Sum(d => d.Amount);
+                                objContext.Invoices.Update(objFacturaUPD);
+                                objContext.SaveChanges();
+                            }
                         }
                         #endregion
                     }
