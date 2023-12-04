@@ -684,11 +684,11 @@ namespace APIControlNet.Controllers
                             && iI.Date >= (dateIni) && iI.Date <= dateFin
                             && iI.StoreId == storeId
                             join pd in context.Products on iI.ProductId equals pd.ProductId
-                            join tk in context.Tanks on pd.ProductId equals tk.ProductId
-                            where iI.StoreId == tk.StoreId
-                            join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
-                            where iI.StoreId == iIdoc.StoreId
-                            orderby iI.InventoryInIdx descending
+                            //join tk in context.Tanks on pd.ProductId equals tk.ProductId
+                            //where iI.StoreId == tk.StoreId
+                            //join iIdoc in context.InventoryInDocuments on iI.InventoryInId equals iIdoc.InventoryInId
+                            //where iI.StoreId == iIdoc.StoreId
+                            //orderby iI.InventoryInIdx descending
 
                             select new InventoryInDTO
                             {
@@ -701,8 +701,8 @@ namespace APIControlNet.Controllers
                                 Volume = iI.Volume,
 
                                 ProductName = pd.Name,
-                                TankName = tk.Name,
-                                Price = iIdoc.Price
+                                //TankName = tk.Name,
+                                //Price = iIdoc.Price
 
                             }).AsNoTracking().ToListAsync();
             return Ok(listSO);

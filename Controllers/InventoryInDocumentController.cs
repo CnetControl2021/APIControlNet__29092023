@@ -194,8 +194,9 @@ namespace APIControlNet.Controllers
             {
                 using (var transaccion = await context.Database.BeginTransactionAsync())
                 {
+                    var dataDB = await context.Invoices.FirstOrDefaultAsync(x => x.Uuid == invInDoc_Invoice.NInvoiceDTO.Uuid);
 
-                    if (invInDoc_Invoice.NInvoiceDTO.InvoiceId == Guid.Empty)
+                    if (invInDoc_Invoice.NInvoiceDTO.InvoiceId == Guid.Empty && dataDB == null)
                     {
                         var invIn = await context.InventoryIns.FirstOrDefaultAsync  //inventory_in  COMPRA
                         (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDTO.InventoryInId);
@@ -223,6 +224,7 @@ namespace APIControlNet.Controllers
 
                         InvoiceDetail invoiceDetail = new();
                         invoiceDetail.InvoiceId = oIvoice.InvoiceId;
+                        invoiceDetail.InvoiceDetailIdi = 1;
                         invoiceDetail.ProductId = invIn.ProductId;
                         invoiceDetail.Quantity = invIn.Volume;
                         invoiceDetail.Price = iiDoc?.Price;
@@ -251,30 +253,63 @@ namespace APIControlNet.Controllers
                     }
                     else
                     {
-                        var oIvoice = await context.Invoices.FirstOrDefaultAsync (x => x.InvoiceId == invInDoc_Invoice.NInvoiceDTO.InvoiceId);
+                        var invIn2 = await context.InventoryIns.FirstOrDefaultAsync  //inventory_in  COMPRA
+                        (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDTO.InventoryInId);
+
+                        var iiDoc2 = await context.InventoryInDocuments.FirstOrDefaultAsync  //inventory_in_document  COMPRAdetalle
+                        (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
+
+                        var oInvoice = await context.Invoices.FirstOrDefaultAsync (x => x.InvoiceId == dataDB.InvoiceId);
                         //oIvoice.InvoiceId = Guid.NewGuid();
                         //oIvoice.StoreId = storeId;
-                        oIvoice.InvoiceSerieId = invInDoc_Invoice.NInvoiceDTO.InvoiceSerieId;
-                        oIvoice.Folio = invInDoc_Invoice.NInvoiceDTO.Folio;
-                        oIvoice.Date = invInDoc_Invoice.NInvoiceDTO.Date;
-                        oIvoice.SupplierId = invInDoc_Invoice.NInvoiceDTO.SupplierId;
-                        oIvoice.Amount = invInDoc_Invoice.NInvoiceDTO.Amount;
-                        oIvoice.Subtotal = ((oIvoice.Amount) / ((decimal)1.16));
-                        oIvoice.AmountTax = ((oIvoice.Subtotal) * ((decimal)0.16));
-                        oIvoice.Uuid = invInDoc_Invoice.NInvoiceDTO.Uuid;
-                        oIvoice.SatTipoComprobanteId = invInDoc_Invoice.NInvoiceDTO.SatTipoComprobanteId;
-                        oIvoice.Updated = DateTime.Now;
-                        oIvoice.Active = true;
-                        oIvoice.Locked = false;
-                        oIvoice.Deleted = false;
+                        //oIvoice.InvoiceSerieId = invInDoc_Invoice.NInvoiceDTO.InvoiceSerieId;
+                        //oIvoice.Folio = invInDoc_Invoice.NInvoiceDTO.Folio;
+                        //oIvoice.Date = invInDoc_Invoice.NInvoiceDTO.Date;
+                        //oIvoice.SupplierId = invInDoc_Invoice.NInvoiceDTO.SupplierId;
+                        //oInvoice.Amount = sumInvDet;
+                        //oIvoice.Subtotal = ((oIvoice.Amount) / ((decimal)1.16));
+                        //oIvoice.AmountTax = ((oIvoice.Subtotal) * ((decimal)0.16));
+                        //oIvoice.Uuid = invInDoc_Invoice.NInvoiceDTO.Uuid;
+                        //oIvoice.SatTipoComprobanteId = invInDoc_Invoice.NInvoiceDTO.SatTipoComprobanteId;
+                        //oInvoice.Updated = DateTime.Now;
+                        ////oIvoice.Active = true;
+                        ////oIvoice.Locked = false;
+                        ////oIvoice.Deleted = false;
 
-                        context.Invoices.Update(oIvoice);
+                        //context.Invoices.Update(oInvoice);
+                        var oInvDetail = await context.InvoiceDetails.Where(x => x.InvoiceId == dataDB.InvoiceId)
+                            .OrderBy(x =>x.InvoiceDetailIdi).LastOrDefaultAsync();
+                        var idi = oInvDetail.InvoiceDetailIdi++;
+
+                        InvoiceDetail invoiceDetail = new();
+                        invoiceDetail.InvoiceId = oInvoice.InvoiceId;
+                        invoiceDetail.InvoiceDetailIdi = idi;
+                        invoiceDetail.ProductId = invIn2.ProductId;
+                        invoiceDetail.Quantity = invIn2.Volume;
+                        invoiceDetail.Price = iiDoc2?.Price;
+                        invoiceDetail.Subtotal = oInvoice.Subtotal;
+                        invoiceDetail.Tax = oInvoice.AmountTax;
+                        invoiceDetail.AmountTax = oInvoice.AmountTax;
+                        invoiceDetail.Amount = iiDoc2.Amount;
+                        invoiceDetail.Date = oInvoice.Date;
+                        invoiceDetail.Updated = DateTime.Now;
+                        invoiceDetail.Active = 1;
+                        invoiceDetail.Locked = 0;
+                        invoiceDetail.Deleted = 0;
+                        context.InvoiceDetails.Add(invoiceDetail);
+
+                        var listInvDet = await context.InvoiceDetails.Where(x => x.InvoiceId == dataDB.InvoiceId).ToListAsync(); //update invoice Amount
+                        var sumInvDet = listInvDet.Sum(x => x.Amount.GetValueOrDefault());
+                        oInvoice.Amount = sumInvDet + invoiceDetail.Amount;
+                        oInvoice.Updated = DateTime.Now;
+                        context.Invoices.Update(oInvoice);
+
                         var iiDoc = await context.InventoryInDocuments.FirstOrDefaultAsync
                         (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
 
-                        iiDoc.InvoiceId = oIvoice.InvoiceId;
+                        iiDoc.InvoiceId = oInvoice.InvoiceId;
 
-                        Guid strToGuid = new Guid(oIvoice.Uuid);
+                        Guid strToGuid = new Guid(oInvoice.Uuid);
                         iiDoc.Uuid = strToGuid;
 
                         iiDoc.Updated = DateTime.Now;
