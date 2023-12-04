@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =====  VERSION  =====
-    // $@m&: 2023-12-04 10:14
+    // $@m&: 2023-12-04 13:57
     // =====================
 
     [Route("api/[controller]")]
@@ -5811,13 +5811,14 @@ namespace APIControlNet.Controllers
                                                                        d.Quantity == dCVolumen &&
                                                                        d.Amount == dCImporte
                                                                        select d).Count() <= 0) {
+                            objFacturaDtlDato.InvoiceDetailIdi = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Count() + 1;
                             objFacturaDtlDato.InvoiceId = gCfdiID;
                             objFacturaDtlDato.ProductId = gProductoID;
-                            objFacturaDtlDato.Date = objFacturaHdrDato.Date;
+                            objFacturaDtlDato.Date = dtUpdate;
                             objFacturaDtlDato.Quantity = dCVolumen;
                             objFacturaDtlDato.Price = dCPrecio;
-                            objFacturaDtlDato.Subtotal = objFacturaHdrDato.Subtotal;
-                            objFacturaDtlDato.AmountTax = objFacturaHdrDato.AmountTax;
+                            objFacturaDtlDato.Subtotal = dSubtotal;
+                            objFacturaDtlDato.AmountTax = dIVA;
                             objFacturaDtlDato.Amount = dCImporte;
 
                             objFacturaDtlDato.Active = 1;
@@ -6338,7 +6339,7 @@ namespace APIControlNet.Controllers
                     else
                         objContext.Tanks.Update(objTanqueDatos);
 
-                    //objContext.SaveChanges();
+                    objContext.SaveChanges();
                     iCantRegisSave++;
                     #endregion
                 }
