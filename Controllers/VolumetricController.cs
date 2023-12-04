@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =====  VERSION  =====
-    // $@m&: 2023-11-06
+    // $@m&: 2023-12-04 10:14
     // =====================
 
     [Route("api/[controller]")]
@@ -5595,7 +5595,7 @@ namespace APIControlNet.Controllers
                             return BadRequest(sCFDIMnsInicial + "Ingresa el CFDI de la Factura (CFDI).");
 
                         if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
-                            return BadRequest(sCFDIMnsInicial + "El CFDI capturado no tiene el formato correcto.");
+                            return BadRequest(sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.");
 
                         //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
                         //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
@@ -5805,8 +5805,12 @@ namespace APIControlNet.Controllers
 
                         #region Factura Detalle: Invoice Detail.
                         InvoiceDetail objFacturaDtlDato = new InvoiceDetail();
-                        if ((from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID && d.ProductId == gProductoID && d.Date == dtFFactura select d).Count() <= 0)
-                        {
+                        if ((from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID && 
+                                                                       d.ProductId == gProductoID && 
+                                                                       d.Price == dCPrecio &&
+                                                                       d.Quantity == dCVolumen &&
+                                                                       d.Amount == dCImporte
+                                                                       select d).Count() <= 0) {
                             objFacturaDtlDato.InvoiceId = gCfdiID;
                             objFacturaDtlDato.ProductId = gProductoID;
                             objFacturaDtlDato.Date = objFacturaHdrDato.Date;
@@ -6334,7 +6338,7 @@ namespace APIControlNet.Controllers
                     else
                         objContext.Tanks.Update(objTanqueDatos);
 
-                    objContext.SaveChanges();
+                    //objContext.SaveChanges();
                     iCantRegisSave++;
                     #endregion
                 }
