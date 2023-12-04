@@ -102,7 +102,7 @@ namespace APIControlNet.Controllers
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.3"}, {"2.3"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se mejoro el sistema de notificaciones de alarmas. Se adiciono modulo de compras y ventas transportistas"}, 
-                {"b15ecab15a40baac975705e4c4e9a6eb26e79e8e980ef7ca6ab5a341e89180fb3da29ff21816c506d82ebd5a07ff3a4f2cea3f2a2c4781f28bd0c3d33194b164"},
+                {"c3a3052563e4989ae88f5c16d97eae00eda39d19d864d5814042d0afa244a7ebc6b01984440c2b0c212d6e5d677e95071f909fe7ac7918105afa54853469f298"},
                 {"2023-11-29"}, {"2023-11-29"}, {true}, {false}, {false})");
             }
 
