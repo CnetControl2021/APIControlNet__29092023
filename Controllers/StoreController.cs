@@ -126,11 +126,13 @@ namespace APIControlNet.Controllers
                 var queryable = context.Stores.Where(x => x.Active == true && x.Deleted == false && x.StoreId.ToString() != myGuidString
                  ).AsQueryable();
 
+               // var queryable = context.Stores.AsQueryable();
+
                 var stores = await queryable
                     .Include(x => x.Company)
                     .ToListAsync();
+                //return (IEnumerable<StoreDTO>)Ok(stores);
                 return mapper.Map<List<StoreDTO>>(stores);
-
             }
         }
 

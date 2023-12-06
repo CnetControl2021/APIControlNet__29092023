@@ -84,31 +84,50 @@ namespace APIControlNet.Controllers
             {
                 using (var transaccion = await context.Database.BeginTransactionAsync())
                 {
-                    if (saleSubOrder_Invoice.NInvoiceDTO.InvoiceId == Guid.Empty)
-                    {
-                        Invoice oIvoice = new();
-                        oIvoice.InvoiceId = Guid.NewGuid();
-                        oIvoice.StoreId = storeId;
-                        oIvoice.InvoiceSerieId = saleSubOrder_Invoice.NInvoiceDTO.InvoiceSerieId;
-                        oIvoice.Folio = saleSubOrder_Invoice.NInvoiceDTO.Folio;
-                        oIvoice.Date = saleSubOrder_Invoice.NInvoiceDTO.Date;
-                        oIvoice.CustomerId = saleSubOrder_Invoice.NInvoiceDTO.CustomerId;
-                        oIvoice.Amount = saleSubOrder_Invoice.NInvoiceDTO.Amount;
-                        oIvoice.Subtotal = ((oIvoice.Amount) / ((decimal)1.16));
-                        oIvoice.AmountTax = ((oIvoice.Subtotal) * ((decimal)0.16));
-                        oIvoice.Uuid = saleSubOrder_Invoice.NInvoiceDTO.Uuid;
-                        oIvoice.SatTipoComprobanteId = saleSubOrder_Invoice.NInvoiceDTO.SatTipoComprobanteId;
-                        oIvoice.Updated = DateTime.Now;
-                        oIvoice.Active = true;
-                        oIvoice.Locked = false;
-                        oIvoice.Deleted = false;
+                    var saleSubDB = await context.SaleSuborders.FirstOrDefaultAsync(x => x.SaleOrderId == saleSubOrder_Invoice.NSaleSuborderDTO.SaleOrderId);
+                    var dataDB = await context.Invoices.FirstOrDefaultAsync(x => x.Uuid == saleSubOrder_Invoice.NInvoiceDTO.Uuid);
 
-                        context.Invoices.Add(oIvoice);
+                    if (saleSubOrder_Invoice.NInvoiceDTO.InvoiceId == Guid.Empty && dataDB == null)
+                    {
+                        Invoice oInvoice = new();
+                        oInvoice.InvoiceId = Guid.NewGuid();
+                        oInvoice.StoreId = storeId;
+                        oInvoice.InvoiceSerieId = saleSubOrder_Invoice.NInvoiceDTO.InvoiceSerieId;
+                        oInvoice.Folio = saleSubOrder_Invoice.NInvoiceDTO.Folio;
+                        oInvoice.Date = saleSubOrder_Invoice.NInvoiceDTO.Date;
+                        oInvoice.CustomerId = saleSubOrder_Invoice.NInvoiceDTO.CustomerId;
+                        oInvoice.Amount = saleSubOrder_Invoice.NInvoiceDTO.Amount;
+                        oInvoice.Subtotal = ((oInvoice.Amount) / ((decimal)1.16));
+                        oInvoice.AmountTax = ((oInvoice.Subtotal) * ((decimal)0.16));
+                        oInvoice.Uuid = saleSubOrder_Invoice.NInvoiceDTO.Uuid;
+                        oInvoice.SatTipoComprobanteId = saleSubOrder_Invoice.NInvoiceDTO.SatTipoComprobanteId;
+                        oInvoice.Updated = DateTime.Now;
+                        oInvoice.Active = true;
+                        oInvoice.Locked = false;
+                        oInvoice.Deleted = false;
+
+                        context.Invoices.Add(oInvoice);
+
+                        InvoiceDetail invoiceDetail = new();
+                        invoiceDetail.InvoiceId = oInvoice.InvoiceId;
+                        invoiceDetail.InvoiceDetailIdi = 1;
+                        invoiceDetail.ProductId = saleSubDB.ProductId;
+                        invoiceDetail.Quantity = saleSubDB.Quantity;
+                        invoiceDetail.Price = saleSubDB?.Price;
+                        invoiceDetail.Amount = saleSubOrder_Invoice.NInvoiceDTO.Amount;
+                        invoiceDetail.Subtotal = ((invoiceDetail.Amount) / ((decimal)1.16));
+                        invoiceDetail.AmountTax = ((invoiceDetail.Amount) * ((decimal)0.16));
+                        invoiceDetail.Date = DateTime.Now;
+                        invoiceDetail.Updated = DateTime.Now;
+                        invoiceDetail.Active = 1;
+                        invoiceDetail.Locked = 0;
+                        invoiceDetail.Deleted = 0;
+                        context.InvoiceDetails.Add(invoiceDetail);
 
                         var saSub = await context.SaleSuborders.FirstOrDefaultAsync
                             (x => x.SaleOrderId == saleSubOrder_Invoice.NSaleSuborderDTO.SaleOrderId);
 
-                        saSub.InvoiceId = oIvoice.InvoiceId; 
+                        saSub.InvoiceId = oInvoice.InvoiceId; 
                         saSub.Updated = DateTime.Now;
                         saSub.Active = true;
                         saSub.Deleted = false;
@@ -119,25 +138,45 @@ namespace APIControlNet.Controllers
                     }
                     else
                     {
-                        var oIvoice = await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == saleSubOrder_Invoice.NInvoiceDTO.InvoiceId);
-                        //oIvoice.InvoiceId = Guid.NewGuid();
-                        //oIvoice.StoreId = storeId;
-                        oIvoice.InvoiceSerieId = saleSubOrder_Invoice.NInvoiceDTO.InvoiceSerieId;
-                        oIvoice.Folio = saleSubOrder_Invoice.NInvoiceDTO.Folio;
-                        oIvoice.Date = saleSubOrder_Invoice.NInvoiceDTO.Date;
-                        oIvoice.SupplierId = saleSubOrder_Invoice.NInvoiceDTO.SupplierId;
-                        oIvoice.Amount = saleSubOrder_Invoice.NInvoiceDTO.Amount;
-                        oIvoice.Subtotal = ((oIvoice.Amount) / ((decimal)1.16));
-                        oIvoice.AmountTax = ((oIvoice.Subtotal) * ((decimal)0.16));
-                        oIvoice.Uuid = saleSubOrder_Invoice.NInvoiceDTO.Uuid;
-                        oIvoice.SatTipoComprobanteId = saleSubOrder_Invoice.NInvoiceDTO.SatTipoComprobanteId;
-                        oIvoice.Updated = DateTime.Now;
-                        oIvoice.Active = true;
-                        oIvoice.Locked = false;
-                        oIvoice.Deleted = false;
+                        var oInvoice = await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == dataDB.InvoiceId);
+                        var oInvDetail = await context.InvoiceDetails.Where(x => x.InvoiceId == dataDB.InvoiceId)
+                            .OrderBy(x => x.InvoiceDetailIdi).LastOrDefaultAsync();
+                        var idi = oInvDetail.InvoiceDetailIdi++;
 
-                        context.Invoices.Update(oIvoice);
+                        InvoiceDetail invoiceDetail = new();
+                        invoiceDetail.InvoiceId = oInvoice.InvoiceId;
+                        invoiceDetail.InvoiceDetailIdi = idi;
+                        invoiceDetail.ProductId = saleSubDB.ProductId;
+                        invoiceDetail.Quantity = saleSubDB.Quantity;
+                        invoiceDetail.Price = saleSubDB?.Price;
+                        invoiceDetail.Amount = saleSubOrder_Invoice.NInvoiceDTO.Amount;
+                        invoiceDetail.Subtotal = ((invoiceDetail.Amount) / ((decimal)1.16));
+                        invoiceDetail.AmountTax = ((invoiceDetail.Amount) * ((decimal)0.16));
+                        invoiceDetail.Date = oInvoice.Date;
+                        invoiceDetail.Updated = DateTime.Now;
+                        invoiceDetail.Active = 1;
+                        invoiceDetail.Locked = 0;
+                        invoiceDetail.Deleted = 0;
+                        context.InvoiceDetails.Add(invoiceDetail);
+
+                        var listInvoiceDet = await context.InvoiceDetails.Where(x => x.InvoiceId == dataDB.InvoiceId).ToListAsync(); //update invoice Amount
+                        var sumInvDet = listInvoiceDet.Sum(x => x.Amount.GetValueOrDefault());
+                        oInvoice.Amount = sumInvDet + invoiceDetail.Amount;
+                        oInvoice.Updated = DateTime.Now;
+                        context.Invoices.Update(oInvoice);
+
+                        var saSub = await context.SaleSuborders.FirstOrDefaultAsync
+                            (x => x.SaleOrderId == saleSubOrder_Invoice.NSaleSuborderDTO.SaleOrderId);
+
+                        saSub.InvoiceId = oInvoice.InvoiceId;
+                        saSub.Updated = DateTime.Now;
+                        saSub.Active = true;
+                        saSub.Deleted = false;
+                        saSub.Locked = false;
+
+                        context.SaleSuborders.Update(saSub);
                         context.SaveChanges();
+
                     }
                     await transaccion.CommitAsync();
                 }

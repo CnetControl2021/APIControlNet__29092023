@@ -2,6 +2,7 @@
 {
     public class SaleSubOrder_Invoice
     {
+        public SaleOrderDTO NSaleOrderDTO { get; set; }
         public SaleSuborderDTO NSaleSuborderDTO { get; set; } 
         public InvoiceDTO NInvoiceDTO { get; set; } 
 
@@ -9,6 +10,7 @@
         {
             NSaleSuborderDTO = new SaleSuborderDTO();
             NInvoiceDTO = new InvoiceDTO();
+            NSaleOrderDTO = NSaleOrderDTO;
         }
     }
 }

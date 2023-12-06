@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.CompilerServices;
@@ -53,25 +54,73 @@ namespace APIControlNet.Controllers
         }
 
         //[HttpGet("listadoUsuarios")]
-        ////[AllowAnonymous]
+        //[AllowAnonymous]
         //public IActionResult ListUsers()
         //{
         //    var users = userManager.Users;
-        //    return Ok(users);
+
+        //    //foreach (var usuasio  in users)
+        //    //{
+
+        //    //}
+        //    //    .Select(user => new
+        //    //    {
+        //    //        UserId = user.Id,
+        //    //        UserName = user.Email,
+        //    //        Roles = userManager.GetRolesAsync(user).Result
+        //    //    })
+        //    //    .ToListAsync();
+        //    //return Ok(users);
         //}
 
 
-        [HttpGet("listadoUsuarios")]
-        public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
+        //[HttpGet("listadoUsuarios")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
+        //{
+        //    var queryable = userManager.Users.AsQueryable();
+
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    //var usuarios = await queryable.Paginar(paginacionDTO).ToListAsync();
+        //    var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id })
+        //        .OrderBy(x => x.Email)
+        //        .ToListAsync();
+        //    return Ok(usuarios);
+        //}
+
+
+        //[HttpGet("listadoUsuarios2")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> GetUsersWithRoles()
+        //{
+        //    var users = userManager.Users.ToList();
+        //    var userRoles = new List<CredencialesUsuariosDTO>();
+
+        //    foreach (var user in users)
+        //    {
+        //        var roles = await userManager.GetRolesAsync(user);
+        //        userRoles.Add(item: new CredencialesUsuariosDTO { Email = user.Email, Roles = (List<string>)roles });
+        //    }
+
+        //    return Ok(userRoles);
+        //}
+
+        [HttpGet("listadoUsuarios3")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUsersWithRoles()
         {
-            var queryable = userManager.Users.AsQueryable();
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            //var usuarios = await queryable.Paginar(paginacionDTO).ToListAsync();
-            var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id })
-                .OrderBy(x => x.Email)
+            var usersWithRoles = await userManager.Users
+                .Select(user => new
+                {
+                    UserId = user.Id,
+                    UserName = user.Email,
+                    Roles = userManager.GetRolesAsync(user).Result
+                })
                 .ToListAsync();
-            return Ok(usuarios);
+
+            return Ok(usersWithRoles);
         }
+
 
 
         [HttpPost("AsignarRol/{storeId?}")] ///se guarda relacion en AspNetUserRoles

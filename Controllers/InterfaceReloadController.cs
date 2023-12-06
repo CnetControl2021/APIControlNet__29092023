@@ -8,42 +8,38 @@ namespace APIControlNet.Controllers
     [ApiController]
     public class InterfaceReloadController : ControllerBase
     {
-        [HttpPost]  
-        [Route("api/restart")]
-        public IActionResult RestartServer()
-        {
-            var psi = new ProcessStartInfo("reboot");
-            psi.CreateNoWindow = true;
-            psi.UseShellExecute = false;
-            Process.Start(psi);
-            return Ok();
-        }
-
-        [HttpPost]
-        public IActionResult Restart()
-        {
-            // Aquí puedes ejecutar el comando de reinicio en el sistema Linux.
-            Process.Start("sudo /sbin/reboot");
-
-            // Puedes devolver una respuesta HTTP adecuada.
-            return Ok("El sistema está reiniciando.");
-        }
-
-        [HttpGet("restart")]
+        [HttpPost("restart")]
         public IActionResult RestartSystem()
         {
-            var psi = new ProcessStartInfo
+            try
             {
-                FileName = "/bin/bash",
-                Arguments = "-c \"reboot\"",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            var process = new Process { StartInfo = psi };
-            process.Start();
-            process.WaitForExit();
-            return Ok();
+                // Ejecutar el comando de reinicio del sistema
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = "/bin/bash",
+                    Arguments = "-c \"sudo shutdown -r now\"", // Comando para reiniciar el sistema
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = new Process { StartInfo = processInfo })
+                {
+                    process.Start();
+                    process.WaitForExit();
+
+                    // Puedes manejar la salida del proceso si es necesario
+                    var output = process.StandardOutput.ReadToEnd();
+                    var error = process.StandardError.ReadToEnd();
+
+                    return Ok(new { Message = "Reinicio del sistema iniciado." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = $"Error al reiniciar el sistema: {ex.Message}" });
+            }
         }
     }
 }
