@@ -74,19 +74,19 @@ namespace APIControlNet.Controllers
         //}
 
 
-        //[HttpGet("listadoUsuarios")]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
-        //{
-        //    var queryable = userManager.Users.AsQueryable();
+        [HttpGet("listadoUsuarios")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
+        {
+            var queryable = userManager.Users.AsQueryable();
 
-        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-        //    //var usuarios = await queryable.Paginar(paginacionDTO).ToListAsync();
-        //    var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id })
-        //        .OrderBy(x => x.Email)
-        //        .ToListAsync();
-        //    return Ok(usuarios);
-        //}
+            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+            //var usuarios = await queryable.Paginar(paginacionDTO).ToListAsync();
+            var usuarios = await queryable.Paginar(paginacionDTO).Select(x => new CredencialesUsuariosDTO { Email = x.Email, Id = x.Id })
+                .OrderBy(x => x.Email)
+                .ToListAsync();
+            return Ok(usuarios);
+        }
 
 
         //[HttpGet("listadoUsuarios2")]
@@ -105,20 +105,20 @@ namespace APIControlNet.Controllers
         //    return Ok(userRoles);
         //}
 
-        [HttpGet("listadoUsuarios3")]
+        [HttpGet("listadoUsuarios2")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUsersWithRoles()
+        public async Task<ActionResult<IEnumerable<object>>> GetUsersAndRoles()
         {
-            var usersWithRoles = await userManager.Users
-                .Select(user => new
-                {
-                    UserId = user.Id,
-                    UserName = user.Email,
-                    Roles = userManager.GetRolesAsync(user).Result
-                })
-                .ToListAsync();
+            var users = await userManager.Users.ToListAsync();
+            var userRoles = new List<object>();
 
-            return Ok(usersWithRoles);
+            foreach (var user in users)
+            {
+                var roles = await userManager.GetRolesAsync(user);
+                userRoles.Add(new { User = user.UserName, Roles = roles });
+            }
+
+            return Ok(userRoles);
         }
 
 
