@@ -5702,7 +5702,7 @@ namespace APIControlNet.Controllers
                         #region Recepcion Datos.
                         case TIPO_ARCHIVO_RECEPCION:
                             objRecepcionDato = new InventoryIn();
-                            if ((from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.Date == dtFInicial select i).Count() <= 0)
+                            if ((from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.TankIdi == iNDucto && i.Date == dtFInicial select i).Count() <= 0)
                             {
                                 objRecepcionDato.InventoryInId = Guid.NewGuid();
                                 objRecepcionDato.StoreId = viNEstacion.GetValueOrDefault();
@@ -5726,7 +5726,7 @@ namespace APIControlNet.Controllers
                                 objContext.SaveChanges();
                             }
                             else
-                                objRecepcionDato = (from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.Date == dtFInicial select i).First();
+                                objRecepcionDato = (from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.TankIdi == iNDucto && i.Date == dtFInicial select i).First();
 
                             gRecepcionID = objRecepcionDato.InventoryInId;
                             break;
@@ -5735,7 +5735,7 @@ namespace APIControlNet.Controllers
                         #region Entrega Datos.
                         case TIPO_ARCHIVO_ENTREGA:
                             objEntregDatos = new SaleOrder();
-                            if ((from e in objContext.SaleOrders where e.StoreId == viNEstacion && e.Date == dtFInicial select e).Count() <= 0)
+                            if ((from e in objContext.SaleOrders where e.StoreId == viNEstacion && e.TankIdi == iNDucto && e.Date == dtFInicial select e).Count() <= 0)
                             {
                                 objEntregDatos.StoreId = viNEstacion.GetValueOrDefault();
                                 objEntregDatos.SaleOrderId = Guid.NewGuid();
@@ -5764,7 +5764,7 @@ namespace APIControlNet.Controllers
                                 gEntregaID = objEntregDatos.SaleOrderId;
                             }
                             else
-                                gEntregaID = (from e in objContext.SaleOrders where e.StoreId == viNEstacion.GetValueOrDefault() && e.Date == dtFInicial select e).First().SaleOrderId;
+                                gEntregaID = (from e in objContext.SaleOrders where e.StoreId == viNEstacion.GetValueOrDefault() && e.TankIdi == iNDucto && e.Date == dtFInicial select e).First().SaleOrderId;
                             break;
                             #endregion
                     }
@@ -5987,6 +5987,7 @@ namespace APIControlNet.Controllers
 
                                 objContext.InventoryInDocuments.Add(objRecepcionDocument);
                                 objContext.SaveChanges();
+                                iCantRegisSave++;
                             }
                             break;
                         #endregion
@@ -6032,13 +6033,12 @@ namespace APIControlNet.Controllers
                                 // Guardar Entrega
                                 objContext.SaleSuborders.Add(objEntregaDetalle);
                                 objContext.SaveChanges();
+                                iCantRegisSave++;
                             }
                             break;
                             #endregion
                     }
                     #endregion
-
-                    iCantRegisSave++;
                 }
                 #endregion
             }
