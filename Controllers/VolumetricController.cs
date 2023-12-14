@@ -3611,7 +3611,8 @@ namespace APIControlNet.Controllers
                                                                                Volume = (cd.Volume ?? 0),
                                                                                VolumenDescargado = ((c.EndVolume ?? 0) - (c.StartVolume ?? 0)),
                                                                                SatMeasureUnit = (cd.JsonClaveUnidadMedidaId ?? String.Empty),//(cd.SatMeasureUnit ?? ""),
-                                                                               SatClarification = (cd.SatAclaracion ?? String.Empty)//(cd.SatClarification ?? "")
+                                                                               SatClarification = (cd.SatAclaracion ?? String.Empty),//(cd.SatClarification ?? "")
+                                                                               Compra = c.InventoryInNumber
                                                                            });
                                                         #endregion
 
@@ -3632,20 +3633,21 @@ namespace APIControlNet.Controllers
                                                                         dNacLitros = (Decimal)vPRecepDato.Volume,
                                                                         dNacVolDescargado = (Decimal)vPRecepDato.VolumenDescargado;
                                                                 DateTime dtNacFechaCompra = Convert.ToDateTime(vPRecepDato.Date);
+                                                                int iNacNCompra = Convert.ToInt32(vPRecepDato.Compra);
 
                                                                 Decimal dNacVolRestitucion = dNacVolDescargado - dNacLitros;
                                                                 #endregion
 
                                                                 #region Validacion:  Recepción Proveedor.
                                                                 if (String.IsNullOrEmpty(sNacCFDI))
-                                                                    return BadRequest("CFDI sin definir. (InvInDoct)");
+                                                                    return BadRequest("CFDI sin definir. (InvInDoct: " + iNacNCompra + ")");
 
                                                                 if (String.IsNullOrEmpty(sNacTipoCFDI))
-                                                                    return BadRequest("Tipo de CFDI sin definir. (InvInDoct)");
+                                                                    return BadRequest("Tipo de CFDI sin definir. (InvInDoct: " + iNacNCompra + ")");
 
                                                                 if (!String.IsNullOrEmpty(sAclaracionSAT))
                                                                     if (sAclaracionSAT.Length < 6)
-                                                                        return BadRequest("La Aclaración de la Recepcion con CFDI '" + sNacCFDI + "' no debe ser menor a 6 caracteres.");
+                                                                        return BadRequest("La Aclaración de la Recepcion con CFDI '" + sNacCFDI + "' no debe ser menor a 6 caracteres. (InvInDoct: " + iNacNCompra + ")");
                                                                 #endregion
 
                                                                 #region Llenado: Recepcion CFDI.
@@ -3784,8 +3786,9 @@ namespace APIControlNet.Controllers
                                         #region Consulta: Facturas.
                                         var vQEFacuras = (from th in objContext.SaleOrders
                                                           join sd in objContext.SaleSuborders on th.SaleOrderId equals sd.SaleOrderId
-                                                          join tf in objContext.InvoiceSaleOrders on th.SaleOrderId equals tf.SaleOrderId
-                                                          join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = tf.InvoiceId } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
+                                                          //join tf in objContext.InvoiceSaleOrders on th.SaleOrderId equals tf.SaleOrderId
+                                                          //join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = tf.InvoiceId } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
+                                                          join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = sd.InvoiceId.GetValueOrDefault() } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
                                                           join fd in objContext.InvoiceDetails on fh.InvoiceId equals fd.InvoiceId
                                                           join tc in objContext.SatTipoComprobantes on fh.SatTipoComprobanteId equals tc.SatTipoComprobanteId into ltc
                                                           from tc in ltc.DefaultIfEmpty()
@@ -5512,6 +5515,7 @@ namespace APIControlNet.Controllers
                          gPedimentoID = Guid.Empty,
                          gTransporteID = Guid.Empty,
                          gTransSupplierID = Guid.Empty;
+                    int iProveedorFuelID = 0;
 
                     #region Conversion.
                     int iNFila = 0;
@@ -5571,7 +5575,7 @@ namespace APIControlNet.Controllers
                     Decimal.TryParse(drGeneral[COLUMNA_GENERAL_PODER_CALORIFICO].ToString().Trim(), out dPoderCalor);
 
                     // CFDI
-                    Guid gCfdiPersonaID = Guid.Empty;
+                    Guid gCfdiPersonaID = Guid.Empty, gCfdiUUID = Guid.Empty;
                     String sCfdiRfc = String.Empty, sCfdiTipoComprobante = String.Empty;
                     #endregion
 
@@ -5622,11 +5626,16 @@ namespace APIControlNet.Controllers
                         if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
                             return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.", null));
 
+                        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
+
                         //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
                         //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
 
                         // RFC
                         sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
+                        // CFDI (UUID)
+                        gCfdiUUID = Guid.Parse(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString());
 
                         switch (viTipoArchivo)
                         {
@@ -5636,6 +5645,11 @@ namespace APIControlNet.Controllers
                                     return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
                                 else
                                     gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
+
+                                if ((from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).Count() <= 0)
+                                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
+                                else
+                                    iProveedorFuelID = (from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).First().SupplierFuelIdi;
                                 break;
                             #endregion
 
@@ -5972,6 +5986,8 @@ namespace APIControlNet.Controllers
                                 objRecepcionDocument.Folio = objRecepcionDato.InventoryInNumber.GetValueOrDefault();
                                 objRecepcionDocument.Price = dPrecio;
                                 objRecepcionDocument.Amount = dImporte;
+                                objRecepcionDocument.SatTipoComprobanteId = sCfdiTipoComprobante;
+                                objRecepcionDocument.Uuid = gCfdiUUID;
                                 objRecepcionDocument.JsonClaveUnidadMedidaId = sUnidadMedida;
                                 objRecepcionDocument.Volume = dVolumen;
 
@@ -5981,6 +5997,7 @@ namespace APIControlNet.Controllers
                                 objRecepcionDocument.Deleted = false;
                                 objRecepcionDocument.Locked = false;
 
+                                objRecepcionDocument.SupplierFuelIdi = iProveedorFuelID;
                                 objRecepcionDocument.InvoiceId = gCfdiID;
                                 objRecepcionDocument.PetitionCustomsId = gPedimentoID;
                                 objRecepcionDocument.SupplierTransportRegisterId = gTransporteID;
@@ -6224,6 +6241,9 @@ namespace APIControlNet.Controllers
                         if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
                             lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
 
+                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                            lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
+
                         DateTime dtFFactura;
                         if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
                             lstMensajes.Add("(General) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
@@ -6236,6 +6256,9 @@ namespace APIControlNet.Controllers
                             case TIPO_ARCHIVO_RECEPCION:
                                 if ((from s in objContext.Suppliers where s.Rfc == sFacturaRfc select s).Count() <= 0)
                                     lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "'.");
+
+                                if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.FuelPermission == drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select p).Count() <= 0)
+                                    lstMensajes.Add("(CFDI) No se encontro información del Proveedor con permiso '" + drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() + "'.");
                                 break;
                             #endregion
 
