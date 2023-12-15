@@ -6,7 +6,7 @@ namespace APIControlNet.Models
     public partial class Invoice
     {
         public int InvoiceIdx { get; set; }
-        public Guid InvoiceId { get; set; }
+        public Guid? InvoiceId { get; set; }
         public Guid StoreId { get; set; }
         public string InvoiceSerieId { get; set; }
         public string Folio { get; set; }

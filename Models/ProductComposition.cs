@@ -13,8 +13,8 @@ namespace APIControlNet.Models
         public decimal? CalorificPower { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
-        public int? Active { get; set; }
-        public int? Locked { get; set; }
-        public int? Deleted { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
     }
 }

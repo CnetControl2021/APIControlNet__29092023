@@ -16,6 +16,7 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
+
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -122,6 +123,7 @@ namespace APIControlNet.Models
         public virtual DbSet<PetitionCustom> PetitionCustoms { get; set; }
         public virtual DbSet<PointSale> PointSales { get; set; }
         public virtual DbSet<Port> Ports { get; set; }
+        public virtual DbSet<PortResponse> PortResponses { get; set; }
         public virtual DbSet<PortType> PortTypes { get; set; }
         public virtual DbSet<Printer> Printers { get; set; }
         public virtual DbSet<PrinterBrand> PrinterBrands { get; set; }
@@ -205,7 +207,7 @@ namespace APIControlNet.Models
             if (!optionsBuilder.IsConfigured)
             {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-  //              optionsBuilder.UseSqlServer("server=www.controlnet.com.mx,14334\\SQLEXPRESS;Database=CnetCore;User ID=AdminCnet;Password=Control2207074rd;Trusted_Connection=false;MultipleActiveResultSets=true");
+//                optionsBuilder.UseSqlServer("server=www.controlnet.com.mx,14334\\SQLEXPRESS;Database=CnetCore;User ID=AdminCnet;Password=Control2207074rd;Trusted_Connection=false;MultipleActiveResultSets=true");
             }
         }
 
@@ -514,8 +516,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.BinnacleTypeId).HasColumnName("binnacle_type_id");
 
                 entity.Property(e => e.DataInput)
-                    .HasMaxLength(1024)
-                    .IsUnicode(false)
+                    .HasColumnType("text")
                     .HasColumnName("data_input");
 
                 entity.Property(e => e.DataResponse)
@@ -4776,7 +4777,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Active).HasColumnName("active");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 3)")
                     .HasColumnName("amount");
 
                 entity.Property(e => e.CardEmployeeId)
@@ -4820,13 +4821,13 @@ namespace APIControlNet.Models
                     .HasColumnName("preset_value");
 
                 entity.Property(e => e.Price)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 3)")
                     .HasColumnName("price");
 
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
 
                 entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 3)")
                     .HasColumnName("quantity");
 
                 entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
@@ -4848,19 +4849,19 @@ namespace APIControlNet.Models
                 entity.Property(e => e.TicketNumber).HasColumnName("ticket_number");
 
                 entity.Property(e => e.TotalAmount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_amount");
 
                 entity.Property(e => e.TotalAmountElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_amount_electronic");
 
                 entity.Property(e => e.TotalQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_quantity");
 
                 entity.Property(e => e.TotalQuantityElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_quantity_electronic");
 
                 entity.Property(e => e.Updated)
@@ -4898,11 +4899,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
 
                 entity.Property(e => e.EndAmount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("end_amount");
 
                 entity.Property(e => e.EndAmountElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("end_amount_electronic");
 
                 entity.Property(e => e.EndDate)
@@ -4910,11 +4911,11 @@ namespace APIControlNet.Models
                     .HasColumnName("end_date");
 
                 entity.Property(e => e.EndQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("end_quantity");
 
                 entity.Property(e => e.EndQuantityElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("end_quantity_electronic");
 
                 entity.Property(e => e.HoseIdi).HasColumnName("hose_idi");
@@ -4937,11 +4938,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.ShiftId).HasColumnName("shift_id");
 
                 entity.Property(e => e.StartAmount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("start_amount");
 
                 entity.Property(e => e.StartAmountElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("start_amount_electronic");
 
                 entity.Property(e => e.StartDate)
@@ -4949,11 +4950,11 @@ namespace APIControlNet.Models
                     .HasColumnName("start_date");
 
                 entity.Property(e => e.StartQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("start_quantity");
 
                 entity.Property(e => e.StartQuantityElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("start_quantity_electronic");
 
                 entity.Property(e => e.StatusRun).HasColumnName("status_run");
@@ -4961,11 +4962,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.TotalAmount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_amount");
 
                 entity.Property(e => e.TotalQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_quantity");
 
                 entity.Property(e => e.Updated)
@@ -6295,6 +6296,65 @@ namespace APIControlNet.Models
                     .HasConstraintName("FK_port_store");
             });
 
+            modelBuilder.Entity<PortResponse>(entity =>
+            {
+                entity.HasKey(e => e.PortResponseIdx);
+
+                entity.ToTable("port_response");
+
+                entity.HasIndex(e => new { e.StoreId, e.PortIdi, e.DeviceName, e.DeviceBrand, e.CpuAddress }, "IX_port_response_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.PortResponseIdx).HasColumnName("port_response_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CommPercentage).HasColumnName("comm_percentage ");
+
+                entity.Property(e => e.CpuAddress).HasColumnName("cpu_address");
+
+                entity.Property(e => e.CpuNumberLoop).HasColumnName("cpu_number_loop");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.DeviceBrand)
+                    .IsRequired()
+                    .HasMaxLength(40)
+                    .IsUnicode(false)
+                    .HasColumnName("device_brand");
+
+                entity.Property(e => e.DeviceName)
+                    .IsRequired()
+                    .HasMaxLength(40)
+                    .IsUnicode(false)
+                    .HasColumnName("device_name");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.PortIdi).HasColumnName("port_idi");
+
+                entity.Property(e => e.Response)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("response");
+
+                entity.Property(e => e.Response2)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false)
+                    .HasColumnName("response2");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<PortType>(entity =>
             {
                 entity.HasKey(e => e.PortTypeIdx);
@@ -6528,7 +6588,7 @@ namespace APIControlNet.Models
 
                 entity.ToTable("product_composition");
 
-                entity.HasIndex(e => e.ProductCompositionId, "IX_product_composition_id")
+                entity.HasIndex(e => new { e.ProductCompositionId, e.ProductId, e.JsonTipoComposicionId }, "IX_product_composition")
                     .IsUnique();
 
                 entity.Property(e => e.ProductCompositionIdx).HasColumnName("product_composition_idx");
@@ -7066,7 +7126,7 @@ namespace APIControlNet.Models
                     .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 3)")
                     .HasColumnName("amount");
 
                 entity.Property(e => e.CardEmployeeId)
@@ -7342,19 +7402,19 @@ namespace APIControlNet.Models
                     .HasColumnName("temperature");
 
                 entity.Property(e => e.TotalAmount)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_amount");
 
                 entity.Property(e => e.TotalAmountElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_amount_electronic");
 
                 entity.Property(e => e.TotalQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_quantity");
 
                 entity.Property(e => e.TotalQuantityElectronic)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(14, 2)")
                     .HasColumnName("total_quantity_electronic");
 
                 entity.Property(e => e.Updated)
@@ -9603,6 +9663,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.PortIdi).HasColumnName("port_idi");
 
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
+
+                entity.Property(e => e.ResponseInventoryIn)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false)
+                    .HasColumnName("response_inventory_in");
 
                 entity.Property(e => e.SatDateCalibration)
                     .HasColumnType("datetime")

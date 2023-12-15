@@ -45,6 +45,7 @@ namespace APIControlNet.Models
         public int? CalculateQuantityWithTable { get; set; }
         public int? TankCpuAddressNew { get; set; }
         public decimal? CapacityGastalon { get; set; }
+        public string ResponseInventoryIn { get; set; }
 
         public virtual Port Port { get; set; }
         public virtual Store Store { get; set; }
