@@ -58,7 +58,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("hashFDll")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IActionResult> GetHash512Async()
         {
             string inputok = @"C:\inetpub\appCnet\wwwroot\_framework\FrontCnet.dll";   //windows dll
@@ -99,7 +99,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("activeSinPag2/{idCom?}")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IEnumerable<StoreDTO>> Get2([FromQuery] string nombre, Guid storeId, Guid idCom)
         {
             if (idCom != Guid.Empty)
@@ -226,7 +226,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("byStore/{storeId?}")] //por store
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<StoreDTO>> Get4(Guid? storeId)
         {
             var Store = await context.Stores.FirstOrDefaultAsync(x => x.StoreId == storeId);
