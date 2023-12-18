@@ -23,9 +23,9 @@ using System.Web;
 
 namespace APIControlNet.Controllers
 {
-    // =====  VERSION  =====
-    // $@m&: 2023-12-04 17:49
-    // =====================
+    // =======  VERSION  =======
+    // $@m&: 2023-12-18 09:52
+    // =========================
 
     [Route("api/[controller]")]
     [ApiController]
@@ -922,6 +922,9 @@ namespace APIControlNet.Controllers
                                                 if (!String.IsNullOrEmpty(sNacCFDI) && String.IsNullOrEmpty(sNacTipoCFDI))
                                                     return BadRequest("Recepción (Document): Tipo de CFDI sin definir.");
 
+                                                if (!String.IsNullOrEmpty(sTipoComplemento))
+                                                    return BadRequest("Recepción (Document): TipoComplemento sin definir.");
+
                                                 #region Proveedor Datos.
                                                 #region Consulta: Proveedor Datos.
                                                 //var vQProveedor = new Object();
@@ -1026,7 +1029,14 @@ namespace APIControlNet.Controllers
                                                         #endregion
                                                         #endregion
 
-                                                        objComplementoDato.TipoComplemento = sTipoComplemento;
+                                                        //objComplementoDato.TipoComplemento = sTipoComplemento;
+                                                        switch (objTipoComplemento)
+                                                        {
+                                                            case CVolJSonDTO.eTipoComplemento.Distribuidor: objComplementoDato.TipoComplemento = "Distribucion"; break;
+                                                            case CVolJSonDTO.eTipoComplemento.Comercializadora: objComplementoDato.TipoComplemento = "Comercializacion"; break;
+                                                            case CVolJSonDTO.eTipoComplemento.Transportista: objComplementoDato.TipoComplemento = "Transporte"; break;
+                                                        }
+
                                                     }
 
                                                 oCompRecepDato = objComplementoDato;
@@ -3612,7 +3622,8 @@ namespace APIControlNet.Controllers
                                                                                Volume = (cd.Volume ?? 0),
                                                                                VolumenDescargado = ((c.EndVolume ?? 0) - (c.StartVolume ?? 0)),
                                                                                SatMeasureUnit = (cd.JsonClaveUnidadMedidaId ?? String.Empty),//(cd.SatMeasureUnit ?? ""),
-                                                                               SatClarification = (cd.SatAclaracion ?? String.Empty)//(cd.SatClarification ?? "")
+                                                                               SatClarification = (cd.SatAclaracion ?? String.Empty),//(cd.SatClarification ?? "")
+                                                                               Compra = c.InventoryInNumber
                                                                            });
                                                         #endregion
 
@@ -3633,20 +3644,21 @@ namespace APIControlNet.Controllers
                                                                         dNacLitros = (Decimal)vPRecepDato.Volume,
                                                                         dNacVolDescargado = (Decimal)vPRecepDato.VolumenDescargado;
                                                                 DateTime dtNacFechaCompra = Convert.ToDateTime(vPRecepDato.Date);
+                                                                int iNacNCompra = Convert.ToInt32(vPRecepDato.Compra);
 
                                                                 Decimal dNacVolRestitucion = dNacVolDescargado - dNacLitros;
                                                                 #endregion
 
                                                                 #region Validacion:  Recepción Proveedor.
                                                                 if (String.IsNullOrEmpty(sNacCFDI))
-                                                                    return BadRequest("CFDI sin definir. (InvInDoct)");
+                                                                    return BadRequest("CFDI sin definir. (InvInDoct: " + iNacNCompra + ")");
 
                                                                 if (String.IsNullOrEmpty(sNacTipoCFDI))
-                                                                    return BadRequest("Tipo de CFDI sin definir. (InvInDoct)");
+                                                                    return BadRequest("Tipo de CFDI sin definir. (InvInDoct: " + iNacNCompra + ")");
 
                                                                 if (!String.IsNullOrEmpty(sAclaracionSAT))
                                                                     if (sAclaracionSAT.Length < 6)
-                                                                        return BadRequest("La Aclaración de la Recepcion con CFDI '" + sNacCFDI + "' no debe ser menor a 6 caracteres.");
+                                                                        return BadRequest("La Aclaración de la Recepcion con CFDI '" + sNacCFDI + "' no debe ser menor a 6 caracteres. (InvInDoct: " + iNacNCompra + ")");
                                                                 #endregion
 
                                                                 #region Llenado: Recepcion CFDI.
@@ -3701,7 +3713,14 @@ namespace APIControlNet.Controllers
                                                 if (iNCantRecepcionesProv > 0)
                                                 {
                                                     objComplementoDato.Nacional = lstNacional;
-                                                    objComplementoDato.TipoComplemento = sTipoComplemento;
+
+                                                    //objComplementoDato.TipoComplemento = sTipoComplemento;
+                                                    switch (objTipoComplemento)
+                                                    {
+                                                        case CVolJSonDTO.eTipoComplemento.Distribuidor: objComplementoDato.TipoComplemento = "Distribucion"; break;
+                                                        case CVolJSonDTO.eTipoComplemento.Comercializadora: objComplementoDato.TipoComplemento = "Comercializacion"; break;
+                                                        case CVolJSonDTO.eTipoComplemento.Transportista: objComplementoDato.TipoComplemento = "Transporte"; break;
+                                                    }
 
                                                     if (!String.IsNullOrEmpty(sAclaracionSAT))
                                                         objComplementoDato.ACLARACION = sAclaracionSAT;
@@ -3785,9 +3804,10 @@ namespace APIControlNet.Controllers
                                         #region Consulta: Facturas.
                                         var vQEFacuras = (from th in objContext.SaleOrders
                                                           join sd in objContext.SaleSuborders on th.SaleOrderId equals sd.SaleOrderId
-                                                          join tf in objContext.InvoiceSaleOrders on th.SaleOrderId equals tf.SaleOrderId
-                                                          join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = tf.InvoiceId } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
-                                                          join fd in objContext.InvoiceDetails on fh.InvoiceId equals fd.InvoiceId
+                                                          //join tf in objContext.InvoiceSaleOrders on th.SaleOrderId equals tf.SaleOrderId
+                                                          //join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = tf.InvoiceId } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
+                                                          join fh in objContext.Invoices on new { f1 = th.StoreId, f2 = sd.InvoiceId } equals new { f1 = fh.StoreId, f2 = fh.InvoiceId }
+                                                          //join fd in objContext.InvoiceDetails on fh.InvoiceId equals fd.InvoiceId
                                                           join tc in objContext.SatTipoComprobantes on fh.SatTipoComprobanteId equals tc.SatTipoComprobanteId into ltc
                                                           from tc in ltc.DefaultIfEmpty()
                                                           join c in objContext.Customers on fh.CustomerId equals c.CustomerId into lc
@@ -5422,7 +5442,7 @@ namespace APIControlNet.Controllers
             const int COLUMNA_CFDI_IMPORTE = 8;
             const int COLUMNA_CFDI_FECHA_HORA = 9;
             const int COLUMNA_CFDI_VOLUMEN = 10;
-            const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 12;
+            const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 11;
             #endregion
 
             #region Pedimento.
@@ -5514,6 +5534,7 @@ namespace APIControlNet.Controllers
                          gPedimentoID = Guid.Empty,
                          gTransporteID = Guid.Empty,
                          gTransSupplierID = Guid.Empty;
+                    int iProveedorFuelID = 0;
 
                     #region Conversion.
                     int iNFila = 0;
@@ -5573,7 +5594,7 @@ namespace APIControlNet.Controllers
                     Decimal.TryParse(drGeneral[COLUMNA_GENERAL_PODER_CALORIFICO].ToString().Trim(), out dPoderCalor);
 
                     // CFDI
-                    Guid gCfdiPersonaID = Guid.Empty;
+                    Guid gCfdiPersonaID = Guid.Empty, gCfdiUUID = Guid.Empty;
                     String sCfdiRfc = String.Empty, sCfdiTipoComprobante = String.Empty;
                     #endregion
 
@@ -5624,11 +5645,16 @@ namespace APIControlNet.Controllers
                         if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
                             return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.", null));
 
+                        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
+
                         //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
                         //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
 
                         // RFC
                         sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
+                        // CFDI (UUID)
+                        gCfdiUUID = Guid.Parse(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString());
 
                         switch (viTipoArchivo)
                         {
@@ -5638,6 +5664,11 @@ namespace APIControlNet.Controllers
                                     return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
                                 else
                                     gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
+
+                                if ((from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).Count() <= 0)
+                                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
+                                else
+                                    iProveedorFuelID = (from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).First().SupplierFuelIdi;
                                 break;
                             #endregion
 
@@ -5704,7 +5735,7 @@ namespace APIControlNet.Controllers
                         #region Recepcion Datos.
                         case TIPO_ARCHIVO_RECEPCION:
                             objRecepcionDato = new InventoryIn();
-                            if ((from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.Date == dtFInicial select i).Count() <= 0)
+                            if ((from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.TankIdi == iNDucto && i.Date == dtFInicial select i).Count() <= 0)
                             {
                                 objRecepcionDato.InventoryInId = Guid.NewGuid();
                                 objRecepcionDato.StoreId = viNEstacion.GetValueOrDefault();
@@ -5728,7 +5759,7 @@ namespace APIControlNet.Controllers
                                 objContext.SaveChanges();
                             }
                             else
-                                objRecepcionDato = (from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.Date == dtFInicial select i).First();
+                                objRecepcionDato = (from i in objContext.InventoryIns where i.StoreId == viNEstacion.GetValueOrDefault() && i.TankIdi == iNDucto && i.Date == dtFInicial select i).First();
 
                             gRecepcionID = objRecepcionDato.InventoryInId;
                             break;
@@ -5737,7 +5768,7 @@ namespace APIControlNet.Controllers
                         #region Entrega Datos.
                         case TIPO_ARCHIVO_ENTREGA:
                             objEntregDatos = new SaleOrder();
-                            if ((from e in objContext.SaleOrders where e.StoreId == viNEstacion && e.Date == dtFInicial select e).Count() <= 0)
+                            if ((from e in objContext.SaleOrders where e.StoreId == viNEstacion && e.TankIdi == iNDucto && e.Date == dtFInicial select e).Count() <= 0)
                             {
                                 objEntregDatos.StoreId = viNEstacion.GetValueOrDefault();
                                 objEntregDatos.SaleOrderId = Guid.NewGuid();
@@ -5766,7 +5797,7 @@ namespace APIControlNet.Controllers
                                 gEntregaID = objEntregDatos.SaleOrderId;
                             }
                             else
-                                gEntregaID = (from e in objContext.SaleOrders where e.StoreId == viNEstacion.GetValueOrDefault() && e.Date == dtFInicial select e).First().SaleOrderId;
+                                gEntregaID = (from e in objContext.SaleOrders where e.StoreId == viNEstacion.GetValueOrDefault() && e.TankIdi == iNDucto && e.Date == dtFInicial select e).First().SaleOrderId;
                             break;
                             #endregion
                     }
@@ -5819,7 +5850,7 @@ namespace APIControlNet.Controllers
                             objContext.Invoices.Add(objFacturaHdrDato);
                             objContext.SaveChanges();
 
-                            gCfdiID = objFacturaHdrDato.InvoiceId;
+                            gCfdiID = objFacturaHdrDato.InvoiceId.GetValueOrDefault();
                         }
                         else
                             gCfdiID = (from i in objContext.Invoices
@@ -5827,7 +5858,7 @@ namespace APIControlNet.Controllers
                                              i.InvoiceSerieId == sFSerie &&
                                              i.Folio == iCNFactura.ToString().Trim() &&
                                              i.Date == dtFFactura
-                                       select i).First().InvoiceId;
+                                       select i).First().InvoiceId.GetValueOrDefault();
                         #endregion
 
                         #region Factura Detalle: Invoice Detail.
@@ -5955,7 +5986,7 @@ namespace APIControlNet.Controllers
                         }
                         else
                             gTransporteID = (from t in objContext.SupplierTransportRegisters
-                                             where t.Date == objTransporteDatos.Date
+                                             where t.Date == dtFInicial
                                              select t).First().SupplierTransportRegisterId;
                     }
                     #endregion
@@ -5974,6 +6005,8 @@ namespace APIControlNet.Controllers
                                 objRecepcionDocument.Folio = objRecepcionDato.InventoryInNumber.GetValueOrDefault();
                                 objRecepcionDocument.Price = dPrecio;
                                 objRecepcionDocument.Amount = dImporte;
+                                objRecepcionDocument.SatTipoComprobanteId = sCfdiTipoComprobante;
+                                objRecepcionDocument.Uuid = gCfdiUUID;
                                 objRecepcionDocument.JsonClaveUnidadMedidaId = sUnidadMedida;
                                 objRecepcionDocument.Volume = dVolumen;
 
@@ -5983,12 +6016,14 @@ namespace APIControlNet.Controllers
                                 objRecepcionDocument.Deleted = false;
                                 objRecepcionDocument.Locked = false;
 
+                                objRecepcionDocument.SupplierFuelIdi = iProveedorFuelID;
                                 objRecepcionDocument.InvoiceId = gCfdiID;
                                 objRecepcionDocument.PetitionCustomsId = gPedimentoID;
                                 objRecepcionDocument.SupplierTransportRegisterId = gTransporteID;
 
                                 objContext.InventoryInDocuments.Add(objRecepcionDocument);
                                 objContext.SaveChanges();
+                                iCantRegisSave++;
                             }
                             break;
                         #endregion
@@ -6034,13 +6069,12 @@ namespace APIControlNet.Controllers
                                 // Guardar Entrega
                                 objContext.SaleSuborders.Add(objEntregaDetalle);
                                 objContext.SaveChanges();
+                                iCantRegisSave++;
                             }
                             break;
                             #endregion
                     }
                     #endregion
-
-                    iCantRegisSave++;
                 }
                 #endregion
             }
@@ -6095,7 +6129,7 @@ namespace APIControlNet.Controllers
             const int COLUMNA_CFDI_IMPORTE = 8;
             const int COLUMNA_CFDI_FECHA_HORA = 9;
             const int COLUMNA_CFDI_VOLUMEN = 10;
-            const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 12;
+            const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 11;
             #endregion
 
             #region Pedimento.
@@ -6228,6 +6262,9 @@ namespace APIControlNet.Controllers
                         if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
                             lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
 
+                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                            lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
+
                         DateTime dtFFactura;
                         if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
                             lstMensajes.Add("(General) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
@@ -6241,6 +6278,9 @@ namespace APIControlNet.Controllers
                             case TIPO_ARCHIVO_RECEPCION:
                                 if ((from s in objContext.Suppliers where s.Rfc == sFacturaRfc select s).Count() <= 0)
                                     lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "'.");
+
+                                if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.FuelPermission == drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select p).Count() <= 0)
+                                    lstMensajes.Add("(CFDI) No se encontro información del Proveedor con permiso '" + drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() + "'.");
                                 break;
                             #endregion
 
