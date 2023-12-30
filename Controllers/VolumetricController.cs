@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2023-12-18 09:52
+    // $@m&: 2023-12-30 15:49
     // =========================
 
     [Route("api/[controller]")]
@@ -3621,7 +3621,7 @@ namespace APIControlNet.Controllers
                                                                                Price = (cd.Price ?? 0),
                                                                                SalePrice = (cd.SalePrice ?? 0),
                                                                                PublicSalePrice = (cd.PublicSalePrice ?? 0),
-                                                                               FechaCompra = c.StartDate , //cd.Date,
+                                                                               FechaCompra = c.StartDate, //cd.Date,
                                                                                Volume = (cd.Volume ?? 0),
                                                                                VolumenDescargado = ((c.EndVolume ?? 0) - (c.StartVolume ?? 0)),
                                                                                SatMeasureUnit = (cd.JsonClaveUnidadMedidaId ?? String.Empty),//(cd.SatMeasureUnit ?? ""),
