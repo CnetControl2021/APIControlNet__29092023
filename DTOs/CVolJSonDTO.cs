@@ -1342,7 +1342,8 @@
             /// Registra la totalidad de las entregas del día.
             /// </summary>
             //public List<stEntregaMangueraDato> Entregas { set; get; }
-            public stEntregaMangueraDato Entregas { set; get; }
+            //public stEntregaMangueraDato Entregas { set; get; }
+            public Object Entregas { set; get; }
             #endregion
         }
         #endregion

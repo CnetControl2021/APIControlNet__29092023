@@ -1316,9 +1316,12 @@ namespace APIControlNet.Controllers
                                         objEntMangDato.SumaVolumenEntregado = objSumaVolEntDato;
                                         #endregion
 
+                                        lstMangEntregas.Add(objEntMangDato);
+
                                         CVolJSonDTO.stMangueraDato objMangueraDato = new CVolJSonDTO.stMangueraDato();
                                         objMangueraDato.IdentificadorManguera = sClaveDisp + "-MGA-" + iCManguera.ToString().PadLeft(4, '0');
-                                        objMangueraDato.Entregas = objEntMangDato;
+                                        //objMangueraDato.Entregas = objEntMangDato;
+                                        objMangueraDato.Entregas = lstMangEntregas;
 
                                         lstMangueras.Add(objMangueraDato);
                                     }
@@ -3618,7 +3621,7 @@ namespace APIControlNet.Controllers
                                                                                Price = (cd.Price ?? 0),
                                                                                SalePrice = (cd.SalePrice ?? 0),
                                                                                PublicSalePrice = (cd.PublicSalePrice ?? 0),
-                                                                               cd.Date,
+                                                                               FechaCompra = c.StartDate , //cd.Date,
                                                                                Volume = (cd.Volume ?? 0),
                                                                                VolumenDescargado = ((c.EndVolume ?? 0) - (c.StartVolume ?? 0)),
                                                                                SatMeasureUnit = (cd.JsonClaveUnidadMedidaId ?? String.Empty),//(cd.SatMeasureUnit ?? ""),
@@ -3643,7 +3646,7 @@ namespace APIControlNet.Controllers
                                                                         dNacPrecioVTA = (Decimal)vPRecepDato.SalePrice,
                                                                         dNacLitros = (Decimal)vPRecepDato.Volume,
                                                                         dNacVolDescargado = (Decimal)vPRecepDato.VolumenDescargado;
-                                                                DateTime dtNacFechaCompra = Convert.ToDateTime(vPRecepDato.Date);
+                                                                DateTime dtNacFechaCompra = Convert.ToDateTime(vPRecepDato.FechaCompra);//.Date);
                                                                 int iNacNCompra = Convert.ToInt32(vPRecepDato.Compra);
 
                                                                 Decimal dNacVolRestitucion = dNacVolDescargado - dNacLitros;
