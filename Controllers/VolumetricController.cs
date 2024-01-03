@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2023-12-30 15:49
+    // $@m&: 2024-01-03 14:58
     // =========================
 
     [Route("api/[controller]")]
@@ -3734,7 +3734,9 @@ namespace APIControlNet.Controllers
                                         #endregion
                                     }
 
-                                    objRecepMesDato.Complemento = lstComplementos;
+                                    // <$@m&> 20240103: Se rechaza el archivo al colocar un complemento con 0 registros.
+                                    if (lstComplementos.Count > 0)
+                                        objRecepMesDato.Complemento = lstComplementos;
                                     #endregion
 
                                     #endregion
@@ -3923,7 +3925,9 @@ namespace APIControlNet.Controllers
                                         lstComplementos.Add(objComplementoDato);
                                     }
 
-                                    objEntMesDato.Complemento = lstComplementos;
+                                    // <$@m&> 20240103: Se rechaza el archivo al colocar un complemento con 0 registros.
+                                    if (lstComplementos.Count > 0)
+                                        objEntMesDato.Complemento = lstComplementos;
                                     #endregion
                                     #endregion
 
@@ -5048,6 +5052,13 @@ namespace APIControlNet.Controllers
                         #endregion
                 }
                 #endregion
+
+                if (objTipoDistribucion == CVolJSonDTO.eTipoDistribucion.Ductos)
+                {
+                    List<CVolJSonDTO.stDuctoDatos> lstDuctosCheck = (List<CVolJSonDTO.stDuctoDatos>)objProductoDato.Ducto;
+                    if (lstDuctosCheck.Count <= 0)
+                        objProductoDato.Ducto = null;
+                }
 
                 objCVolDatos.Producto.Add(objProductoDato);
                 dictProductosExis.Add(sNProducto, oSubClaveProducto.ToString());
