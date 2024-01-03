@@ -58,7 +58,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("hashFDll")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IActionResult> GetHash512Async()
         {
             string inputok = @"C:\inetpub\appCnet\wwwroot\_framework\FrontCnet.dll";   //windows dll

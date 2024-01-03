@@ -53,9 +53,8 @@ namespace APIControlNet.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Get5(string hashFDll)
         {
-            var hashdb = await context.Versions.FirstOrDefaultAsync(x => x.Hash512 == hashFDll);
-            //var hashsb2 = hashdb.Hash512;
 
+            //var hashsb2 = hashdb.Hash512;
 
             var db1 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.0");
             if (db1 is null)
@@ -96,18 +95,20 @@ namespace APIControlNet.Controllers
                 {"2023-07-11"}, {"2023-07-11"}, {true}, {false}, {false})");
             }
             var db6 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.3");
+
             if (db6 is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.3"}, {"2.3"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se mejoro el sistema de notificaciones de alarmas. Se adiciono modulo de compras y ventas transportistas"}, 
-                {"b6a436a0f129e583eb7d44802efa58826379c6fb751d5b2e1549f4517be288c2892020d1085aeeb7b33d054a0e58336440d681abbb94c8eab22426a975084d4c"},
+                {"147d01fffed9305cd31e1bf1d5c81f769a97386651d1c914e0863a0d31f74bdff60a1cdf21119ef086ad2763a723566f77d817a3ab44415866abb70006bcef85"},
                 {"2023-11-29"}, {"2023-11-29"}, {true}, {false}, {false})");
             }
 
-            if (hashdb == null)
+            var hashdb = await context.Versions.FirstOrDefaultAsync(x => x.Hash512 == hashFDll);
 
+            if (hashdb == null)
             {
                 return NotFound();
             }

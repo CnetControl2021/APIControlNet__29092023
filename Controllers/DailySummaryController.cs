@@ -50,16 +50,16 @@ namespace APIControlNet.Controllers
 
         [HttpGet]
         [Route("sinPag")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<IEnumerable<DailySummaryDTO>>> Get5(Guid storeId, DateTime dateIni, DateTime dateFin)
         {
              var list = await (from ds in context.DailySummaries
-                               where ds.StoreId == storeId
+                               where ds.StoreId == storeId 
                                join pd in context.Products on ds.ProductId equals pd.ProductId
                                join pds in context.ProductStores on pd.ProductId equals pds.ProductId
                                where pds.StoreId == storeId
                                && ds.Date >= (dateIni) && ds.Date <= dateFin
-                               
+
                               select new DailySummaryDTO
                               {
                                   DailySummaryIdx = ds.DailySummaryIdx,
@@ -76,7 +76,7 @@ namespace APIControlNet.Controllers
                                   InventoryDifferencePercentage = ds.InventoryDifferencePercentage,
                                   SaleQuantity = ds.SaleQuantity,
                                   ProductColor = pds.Color
-                              }).AsNoTracking().ToListAsync();
+                              }).AsNoTracking().OrderByDescending(x => x.Date).ToListAsync();
             return list;
         }
 

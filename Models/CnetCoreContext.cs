@@ -16,7 +16,6 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
-
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -10340,11 +10339,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.VersionIdx).HasColumnName("version_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
-
-                entity.Property(e => e.Correction)
-                    .HasMaxLength(200)
-                    .IsUnicode(false)
-                    .HasColumnName("correction");
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
