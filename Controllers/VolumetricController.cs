@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-03 14:58
+    // $@m&: 2024-01-09 15:50
     // =========================
 
     [Route("api/[controller]")]
@@ -55,7 +55,7 @@ namespace APIControlNet.Controllers
             #region Inicializacion de Valores.
             String sNomClaveInstalacion = "", sClaveTipoReporte = "";
             String sTipoComplementoEstacion = "";
-            String sRutaCarpetaRaiz = String.Empty;
+            String sRutaCarpetaRaiz = String.Empty, sNombreEstacion = String.Empty;
             int iNStore = 0;
             int iNClaveInstalacion = 1, iNTransaccionNew = 1;
             int iDiferenciaHora = 0, iTotalTanques = 0, iTotalDispensarios = 0, iTotalDuctos = 0;
@@ -184,6 +184,7 @@ namespace APIControlNet.Controllers
                                         select new
                                         {
                                             StoreNumber = s.StoreNumber,
+                                            Nombre = s.Name,
                                             SatRfcSupplier = (ss.RfcSystemSupplier ?? ""),
                                             RfcLegalRepresentative = (ss.RfcLegalRepresentative ?? ""),
                                             SatInstallationKey = (ss.JsonClaveInstalacionId ?? ""),
@@ -201,6 +202,7 @@ namespace APIControlNet.Controllers
                         {
                             #region Asignación: Estacion Datos.
                             iNStore = vStoreDatos.StoreNumber;
+                            sNombreEstacion = vStoreDatos.Nombre;
                             String sRfcProveedor = vStoreDatos.SatRfcSupplier; //(F0403: TERfcProveedorSAT)
                             sNomClaveInstalacion = vStoreDatos.SatInstallationKey; //(F0403: TEClaveInstalacionSAT)
                             sDescripInstalacion = vStoreDatos.SatDescriptionInstallation; //(F0403: TEDescripInstalacionSAT)
@@ -3920,12 +3922,12 @@ namespace APIControlNet.Controllers
                                         #endregion
 
                                         objComplementoDato.Nacional = lstNacional;
-                                        // <2021-12-14> se pone por Default "Expendio" para las entregas.
+                                        // <2021-12-14>: Se pone por Default "Expendio" para las entregas.
                                         objComplementoDato.TipoComplemento = "Expendio";//sTipoComplemento;
                                         lstComplementos.Add(objComplementoDato);
                                     }
 
-                                    // <$@m&> 20240103: Se rechaza el archivo al colocar un complemento con 0 registros.
+                                    // <2024-01-03>: Se rechaza el archivo al colocar un complemento con 0 registros.
                                     if (lstComplementos.Count > 0)
                                         objEntMesDato.Complemento = lstComplementos;
                                     #endregion
@@ -5156,6 +5158,7 @@ namespace APIControlNet.Controllers
             {
                 sRutaArchivo = GenerarRutaCarpetaArchivo(viRutaCarpetaRaiz: sRutaCarpetaRaiz,
                                                          viNEstacion: iNStore.ToString(),
+                                                         viNomEstacion: sNombreEstacion,
                                                          viTipoReporte: sTipoArchivo,
                                                          viFecha: dtPerDateIni,
                                                          viNombreArchivo: sNombreArchivo);
@@ -5326,7 +5329,7 @@ namespace APIControlNet.Controllers
             //return Ok("OK|Archivo Generado");
         }
 
-        private static String GenerarRutaCarpetaArchivo(String viRutaCarpetaRaiz, String viNEstacion, String viTipoReporte, DateTime viFecha, String viNombreArchivo)
+        private static String GenerarRutaCarpetaArchivo(String viRutaCarpetaRaiz, String viNEstacion, String viNomEstacion, String viTipoReporte, DateTime viFecha, String viNombreArchivo)
         {
             String sUbicacionArchivo = String.Empty,
                    //sRuta =  viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viTipoReporte + "\\" + viFecha.ToString("yyyy-MM-dd") + "\\";
@@ -6276,8 +6279,9 @@ namespace APIControlNet.Controllers
                         if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
                             lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
 
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
-                            lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
+                        if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                                lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
 
                         DateTime dtFFactura;
                         if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
@@ -6291,7 +6295,7 @@ namespace APIControlNet.Controllers
                             #region Recepcion.
                             case TIPO_ARCHIVO_RECEPCION:
                                 if ((from s in objContext.Suppliers where s.Rfc == sFacturaRfc select s).Count() <= 0)
-                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "'.");
+                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del proveedor.");
 
                                 if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.FuelPermission == drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select p).Count() <= 0)
                                     lstMensajes.Add("(CFDI) No se encontro información del Proveedor con permiso '" + drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() + "'.");
@@ -6301,7 +6305,7 @@ namespace APIControlNet.Controllers
                             #region Entrega.
                             case TIPO_ARCHIVO_ENTREGA:
                                 if ((from c in objContext.Customers where c.Rfc == sFacturaRfc select c).Count() <= 0)
-                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "'.");
+                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del cliente.");
                                 break;
                                 #endregion
                         }
