@@ -14,7 +14,7 @@ namespace APIControlNet.Models
 
         public int SupplierIdx { get; set; }
         public Guid SupplierId { get; set; }
-        public int? SupplierNumber { get; set; }
+        public int SupplierNumber { get; set; }
         public string SatRegimenFiscalId { get; set; }
         public int? SupplierAddressIdi { get; set; }
         public string Name { get; set; }

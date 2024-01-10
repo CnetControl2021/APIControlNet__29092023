@@ -50,7 +50,5 @@ namespace APIControlNet.Models
         public bool? EnableWeekBalance { get; set; }
         public bool? EnableMonthBalance { get; set; }
         public bool? EnableHour3 { get; set; }
-
-        public virtual Customer Customer { get; set; }
     }
 }

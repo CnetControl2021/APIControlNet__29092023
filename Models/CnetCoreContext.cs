@@ -16,6 +16,7 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
+
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -102,6 +103,10 @@ namespace APIControlNet.Models
         public virtual DbSet<License> Licenses { get; set; }
         public virtual DbSet<LoadPosition> LoadPositions { get; set; }
         public virtual DbSet<LoadPositionResponse> LoadPositionResponses { get; set; }
+        public virtual DbSet<ManualCode> ManualCodes { get; set; }
+        public virtual DbSet<ManualInput> ManualInputs { get; set; }
+        public virtual DbSet<ManualModule> ManualModules { get; set; }
+        public virtual DbSet<ManualModuleDetail> ManualModuleDetails { get; set; }
         public virtual DbSet<Menu> Menus { get; set; }
         public virtual DbSet<Monitor> Monitors { get; set; }
         public virtual DbSet<MonthlySummary> MonthlySummaries { get; set; }
@@ -214,7 +219,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
+          
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -423,7 +428,7 @@ namespace APIControlNet.Models
                     .HasColumnName("name");
 
                 entity.Property(e => e.Response)
-                    .HasMaxLength(512)
+                    .HasMaxLength(4096)
                     .IsUnicode(false)
                     .HasColumnName("response");
 
@@ -1393,10 +1398,7 @@ namespace APIControlNet.Models
 
                 entity.ToTable("customer");
 
-                entity.HasIndex(e => e.CustomerId, "IX_customer_id")
-                    .IsUnique();
-
-                entity.HasIndex(e => e.CustomerNumber, "IX_customer_number")
+                entity.HasIndex(e => e.CustomerNumber, "IX_customer")
                     .IsUnique();
 
                 entity.Property(e => e.CustomerIdx).HasColumnName("customer_idx");
@@ -1596,13 +1598,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
-
-                entity.HasOne(d => d.Customer)
-                    .WithMany(p => p.CustomerAddresses)
-                    .HasPrincipalKey(p => p.CustomerId)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_customer_address_customer");
             });
 
             modelBuilder.Entity<CustomerControl>(entity =>
@@ -5308,6 +5303,153 @@ namespace APIControlNet.Models
                     .HasPrincipalKey(p => new { p.LoadPositionIdi, p.StoreId })
                     .HasForeignKey(d => new { d.LoadPositionIdi, d.StoreId })
                     .HasConstraintName("FK_load_position_response_load_position");
+            });
+
+            modelBuilder.Entity<ManualCode>(entity =>
+            {
+                entity.HasKey(e => e.ManualCodeIdx)
+                    .HasName("PK_manual_code_idx");
+
+                entity.ToTable("manual_code");
+
+                entity.HasIndex(e => e.ManualCodeId, "IX_manual_code_id")
+                    .IsUnique();
+
+                entity.Property(e => e.ManualCodeIdx).HasColumnName("manual_code_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ManualCodeId)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("manual_code_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ManualInput>(entity =>
+            {
+                entity.HasKey(e => e.ManualInputIdx)
+                    .HasName("PK_manual_input_idx");
+
+                entity.ToTable("manual_input");
+
+                entity.HasIndex(e => new { e.StoreId, e.ManualInputIdi }, "IX_manual_input_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.ManualInputIdx).HasColumnName("manual_input_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ManualCodeId)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("manual_code_id");
+
+                entity.Property(e => e.ManualInputIdi).HasColumnName("manual_input_idi");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.TextToReplace)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("text_to_replace");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ManualModule>(entity =>
+            {
+                entity.HasKey(e => e.ManualModuleIdx)
+                    .HasName("PK_manual_module_idx");
+
+                entity.ToTable("manual_module");
+
+                entity.HasIndex(e => e.ManualModuleIdi, "IX_manual_module_idi")
+                    .IsUnique();
+
+                entity.Property(e => e.ManualModuleIdx).HasColumnName("manual_module_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ManualModuleIdi).HasColumnName("manual_module_idi");
+
+                entity.Property(e => e.ManualModuleName)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("manual_module_name");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ManualModuleDetail>(entity =>
+            {
+                entity.HasKey(e => e.ManualModuleDetailIdx)
+                    .HasName("PK_manual_module_detail_idx");
+
+                entity.ToTable("manual_module_detail");
+
+                entity.HasIndex(e => new { e.ManualModuleIdi, e.ManualName }, "IX_manual_module_detail_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.ManualModuleDetailIdx).HasColumnName("manual_module_detail_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ManualModuleIdi).HasColumnName("manual_module_idi");
+
+                entity.Property(e => e.ManualName)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("manual_name");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<Menu>(entity =>
@@ -9215,6 +9357,9 @@ namespace APIControlNet.Models
                 entity.HasIndex(e => e.SupplierId, "IX_supplier")
                     .IsUnique();
 
+                entity.HasIndex(e => e.SupplierNumber, "IX_supplier_1")
+                    .IsUnique();
+
                 entity.Property(e => e.SupplierIdx).HasColumnName("supplier_idx");
 
                 entity.Property(e => e.AbbreviatedName)
@@ -9602,13 +9747,21 @@ namespace APIControlNet.Models
                     .HasColumnName("capacity_gastalon")
                     .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.CapacityMinimumOperating).HasColumnName("capacity_minimum_operating");
+                entity.Property(e => e.CapacityMinimumOperating)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_minimum_operating");
 
-                entity.Property(e => e.CapacityOperational).HasColumnName("capacity_operational");
+                entity.Property(e => e.CapacityOperational)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_operational");
 
-                entity.Property(e => e.CapacityTotal).HasColumnName("capacity_total");
+                entity.Property(e => e.CapacityTotal)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_total");
 
-                entity.Property(e => e.CapacityUseful).HasColumnName("capacity_useful");
+                entity.Property(e => e.CapacityUseful)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_useful");
 
                 entity.Property(e => e.CommPercentage).HasColumnName("comm_percentage");
 
@@ -9624,7 +9777,9 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.EnableGetInventory).HasColumnName("enable_get_inventory");
 
-                entity.Property(e => e.Fondage).HasColumnName("fondage");
+                entity.Property(e => e.Fondage)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("fondage");
 
                 entity.Property(e => e.Height)
                     .HasColumnType("decimal(12, 5)")
@@ -10318,12 +10473,6 @@ namespace APIControlNet.Models
                     .HasColumnName("vehicle_number");
 
                 entity.Property(e => e.WeekBalance).HasColumnName("week_balance");
-
-                entity.HasOne(d => d.Customer)
-                    .WithMany(p => p.Vehicles)
-                    .HasPrincipalKey(p => p.CustomerId)
-                    .HasForeignKey(d => d.CustomerId)
-                    .HasConstraintName("FK_vehicle_customer");
             });
 
             modelBuilder.Entity<Version>(entity =>
@@ -10339,6 +10488,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.VersionIdx).HasColumnName("version_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Correction)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("correction");
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 

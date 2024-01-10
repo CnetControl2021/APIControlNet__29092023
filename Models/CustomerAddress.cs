@@ -22,7 +22,5 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-
-        public virtual Customer Customer { get; set; }
     }
 }

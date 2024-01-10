@@ -5,15 +5,9 @@ namespace APIControlNet.Models
 {
     public partial class Customer
     {
-        public Customer()
-        {
-            CustomerAddresses = new HashSet<CustomerAddress>();
-            Vehicles = new HashSet<Vehicle>();
-        }
-
         public int CustomerIdx { get; set; }
         public Guid CustomerId { get; set; }
-        public int? CustomerNumber { get; set; }
+        public int CustomerNumber { get; set; }
         public int? CustomerTypeId { get; set; }
         public string SatFormaPagoId { get; set; }
         public string SatRegimenFiscalId { get; set; }
@@ -41,7 +35,5 @@ namespace APIControlNet.Models
         public virtual SatFormaPago SatFormaPago { get; set; }
         public virtual SatRegimenFiscal SatRegimenFiscal { get; set; }
         public virtual SatUsoCfdi SatUsoCfdi { get; set; }
-        public virtual ICollection<CustomerAddress> CustomerAddresses { get; set; }
-        public virtual ICollection<Vehicle> Vehicles { get; set; }
     }
 }
