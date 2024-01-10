@@ -612,12 +612,12 @@ namespace APIControlNet.Controllers
                                 {
                                     #region Tanque: Asignamos Valores.
                                     int? iNTanque = vTanqDatos.NumeroTanque,
-                                         iCapTotal = vTanqDatos.CapTotal,
-                                         iCapOperativa = vTanqDatos.CapOperativa,
-                                         iCapUtil = vTanqDatos.CapUtil,
-                                         iCapFondaje = vTanqDatos.Fondaje,
-                                         iVolMinOperacion = vTanqDatos.CapMinOperativa,
                                          iTanqueIncertidumbre = vTanqDatos.PorcentIncertMed;
+                                    Decimal iCapTotal = vTanqDatos.CapTotal.GetValueOrDefault(),
+                                            iCapOperativa = vTanqDatos.CapOperativa.GetValueOrDefault(),
+                                            iCapUtil = vTanqDatos.CapUtil.GetValueOrDefault(),
+                                            iCapFondaje = vTanqDatos.Fondaje.GetValueOrDefault(),
+                                            iVolMinOperacion = vTanqDatos.CapMinOperativa.GetValueOrDefault();
                                     String sDescripcionSAT = vTanqDatos.Nombre;
                                     DateTime dtTanqueFCalibracion = Convert.ToDateTime(vTanqDatos.FechaCalibracion);
                                     String sTanqueUniMed = vProd.UnidadMedida,//"UM03",
@@ -1674,12 +1674,12 @@ namespace APIControlNet.Controllers
                                                                     foreach (var vAutoTanqueDatos in vQAutoTanqueDatos)
                                                                     {
                                                                         #region AutoTanque: Asignamos Valores.
-                                                                        int iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
-                                                                            iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
-                                                                            iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
-                                                                            iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
-                                                                            iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault(),
-                                                                            iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        int iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        Decimal iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
+                                                                                iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
+                                                                                iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
+                                                                                iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
+                                                                                iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault();
                                                                         String sDescripcionSAT = vAutoTanqueDatos.Descripcion;
                                                                         DateTime dtTanqueFCalibracion = Convert.ToDateTime(vAutoTanqueDatos.VigenciaCalibracionSistMedicion);
                                                                         String sTipoAutoTanq = vAutoTanqueDatos.TipoTanque,
@@ -2646,12 +2646,12 @@ namespace APIControlNet.Controllers
                                                                     foreach (var vAutoTanqueDatos in vQAutoTanqueDatos)
                                                                     {
                                                                         #region AutoTanque: Asignamos Valores.
-                                                                        int iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
-                                                                            iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
-                                                                            iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
-                                                                            iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
-                                                                            iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault(),
-                                                                            iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        int iTanqueIncertidumbre = vAutoTanqueDatos.IncertidumbreMedicionSistMedicion.GetValueOrDefault();
+                                                                        Decimal iCapTotal = vAutoTanqueDatos.CapacidadTotal.GetValueOrDefault(),
+                                                                                iCapOperativa = vAutoTanqueDatos.CapacidadOperativa.GetValueOrDefault(),
+                                                                                iCapUtil = vAutoTanqueDatos.CapacidadUtil.GetValueOrDefault(),
+                                                                                iCapFondaje = vAutoTanqueDatos.CapacidadFondaje.GetValueOrDefault(),
+                                                                                iVolMinOperacion = vAutoTanqueDatos.VolumenMinimoOperacion.GetValueOrDefault();
                                                                         String sDescripcionSAT = vAutoTanqueDatos.Descripcion;
                                                                         DateTime dtTanqueFCalibracion = Convert.ToDateTime(vAutoTanqueDatos.VigenciaCalibracionSistMedicion);
                                                                         String sTipoAutoTanq = vAutoTanqueDatos.TipoTanque,
@@ -5333,7 +5333,7 @@ namespace APIControlNet.Controllers
         {
             String sUbicacionArchivo = String.Empty,
                    //sRuta =  viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viTipoReporte + "\\" + viFecha.ToString("yyyy-MM-dd") + "\\";
-                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viFecha.Year.ToString("0000") + "\\";
+                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion  + "\\" + viFecha.Year.ToString("0000") + "\\";
 
             switch (viFecha.Month)
             {
