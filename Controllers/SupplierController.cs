@@ -217,26 +217,32 @@ namespace APIControlNet.Controllers
         [HttpPut("{storeId?}")]
         public async Task<IActionResult> Put(SupplierDTO supplierDTO, Guid storeId)
         {
-            var supplierDB = await context.Suppliers.FirstOrDefaultAsync(c => c.SupplierIdx == supplierDTO.SupplierIdx);
-
-            if (supplierDB is null)
+            try
             {
-                return NotFound();
+                var supplierDB = await context.Suppliers.FirstOrDefaultAsync(c => c.SupplierIdx == supplierDTO.SupplierIdx);
+
+                if (supplierDB is null)
+                {
+                    return NotFound();
+                }
+                supplierDB = mapper.Map(supplierDTO, supplierDB);
+
+                //existe y no es el mismo que estoy editando
+                if (supplierDB is not null && supplierDB.SupplierNumber != supplierDTO.SupplierNumber)
+                { return BadRequest($"Ya existe registro {supplierDB.SupplierNumber}"); }
+
+                var storeId2 = storeId;
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var name = supplierDB.Name;
+                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
+                await context.SaveChangesAsync();
+                return NoContent();
             }
-            supplierDB = mapper.Map(supplierDTO, supplierDB);
-
-            var existe = await context.Suppliers.AnyAsync(x => x.SupplierNumber == supplierDTO.SupplierNumber);
-
-            if (supplierDTO.SupplierNumber != supplierDB.SupplierNumber && existe )
-            { return BadRequest("Ya existe ese numero de registro"); }
-
-            var storeId2 = storeId;
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = supplierDB.Name;
-            await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
-            await context.SaveChangesAsync();
-            return NoContent();
+            catch (Exception )
+            {
+                return BadRequest($"El proveedor  {supplierDTO.SupplierNumber}  ya existe");
+            }       
         }
 
 

@@ -39,7 +39,7 @@ namespace APIControlNet.Controllers
             }
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
             var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
-                .Include(x => x.Customer)
+                //.Include(x => x.Customer)
                 .AsNoTracking().ToListAsync();
             return Ok(customers);
         }
@@ -55,7 +55,7 @@ namespace APIControlNet.Controllers
             }
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
             var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
-                .Include(x => x.Customer)
+                //.Include(x => x.Customer)
                 .AsNoTracking().ToListAsync();
             return Ok(customers);
         }
