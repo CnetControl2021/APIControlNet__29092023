@@ -8,6 +8,10 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+
+            CreateMap<SupplierDTO, Supplier>();
+            CreateMap<Supplier, SupplierDTO>();
+
             CreateMap<UserStoreDTO, UserStore>();
             CreateMap<UserStore, UserStoreDTO>();
 
@@ -204,9 +208,6 @@ namespace APIControlNet.Utilidades
 
             CreateMap<StoreSatDTO, StoreSat>();
             CreateMap<StoreSat, StoreSatDTO>();
-
-            CreateMap<SupplierDTO, Supplier>();
-            CreateMap<Supplier, SupplierDTO>();
 
             CreateMap<SupplierAddressDTO, SupplierAddress>();
             CreateMap<SupplierAddress, SupplierAddressDTO>();

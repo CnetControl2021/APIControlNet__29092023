@@ -28,6 +28,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
+        //[AllowAnonymous]
         public async Task<IEnumerable<TankDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
         {
             var queryable = context.Tanks.AsQueryable();
@@ -47,7 +48,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("byStore/{id2}")] //por store
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<List<TankDTO>>> Get2([FromRoute] Guid id2)
         {
             var RSs = await context.Tanks.Where(e => e.StoreId.Equals((Guid)id2))

@@ -31,8 +31,8 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("sinPag")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<SupplierDTO>> Get2([FromQuery] string nombre)
+        [AllowAnonymous]
+        public async Task<IEnumerable<SupplierDTO>> Get([FromQuery] string nombre)
         {
             var queryable = context.Suppliers.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
@@ -43,10 +43,9 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<SupplierDTO>>(suppliers);
         }
 
-
         [HttpGet("active")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<SupplierDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+        [AllowAnonymous]
+        public async Task<IEnumerable<SupplierDTO>> Get2([FromQuery] string nombre)
         {
             var queryable = context.Suppliers.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
@@ -57,10 +56,51 @@ namespace APIControlNet.Controllers
             //{
             //    queryable = queryable.Where(x => x.StoreId == storeId);
             //}
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var suppliers = await queryable.Paginar(paginacionDTO).AsNoTracking().ToListAsync();
+            //await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+            var suppliers = await queryable.AsNoTracking().ToListAsync();
             return mapper.Map<List<SupplierDTO>>(suppliers);
         }
+
+        [HttpGet("GetOK")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiRespSupplierDTO>> Get5(int skip, int take, string searchTerm = "")
+        {
+            var query = context.Suppliers.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || c.SupplierNumber.ToString().ToLower().Contains(searchTerm));
+            }
+
+            var nsuppliers = await query.Skip(skip).Take(take).OrderByDescending(x => x.SupplierNumber).ToListAsync();
+            var ntotal = await query.CountAsync();
+
+            return new ApiRespSupplierDTO
+            {
+                NTotal = ntotal,
+                NProvedores = mapper.Map<IEnumerable<SupplierDTO>>(nsuppliers)
+            };
+        }
+    
+
+
+        //[HttpGet("active")]
+        ////[AllowAnonymous]
+        //public async Task<IEnumerable<SupplierDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+        //{
+        //    var queryable = context.Suppliers.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+        //    if (!string.IsNullOrEmpty(nombre))
+        //    {
+        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+        //    }
+        //    //if (storeId != Guid.Empty)
+        //    //{
+        //    //    queryable = queryable.Where(x => x.StoreId == storeId);
+        //    //}
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    var suppliers = await queryable.Paginar(paginacionDTO).AsNoTracking().ToListAsync();
+        //    return mapper.Map<List<SupplierDTO>>(suppliers);
+        //}
 
 
         [HttpGet("{id:int}", Name = "obtenerSuppliers")]
@@ -88,12 +128,28 @@ namespace APIControlNet.Controllers
             return mapper.Map<SupplierDTO>(suppliers);
         }
 
+        [HttpGet("byName/{textSearch}")] // BlazoredTypeahead
+        [AllowAnonymous]
+        public async Task<ActionResult<List<SupplierDTO>>> Get6(string textSearch)
+        {
+            var queryable = context.Suppliers.OrderByDescending(x => x.SupplierIdx).AsQueryable();
+            if (!string.IsNullOrEmpty(textSearch))
+            {
+                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch.ToLower()));
+            }
+            var suppliers = await queryable
+               .AsNoTracking().ToListAsync();
+            return mapper.Map<List<SupplierDTO>>(suppliers);
+        }
+        
+
         [HttpPost]
         //[AllowAnonymous]
         public async Task<ActionResult> Post([FromBody] SupplierDTO supplierDTO, Guid storeId)
         {
 
-            var existe = await context.Suppliers.AnyAsync(x => x.SupplierIdx == supplierDTO.SupplierIdx);
+            var existe = await context.Suppliers.AnyAsync(x => x.SupplierNumber == supplierDTO.SupplierNumber);
+            if (existe) { return BadRequest("Ya existe ese numero de registro"); }
 
             var supplier = mapper.Map<Supplier>(supplierDTO);
 
@@ -122,6 +178,41 @@ namespace APIControlNet.Controllers
             }
         }
 
+        //[HttpPost]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult> Post([FromBody] SupplierDTO supplierDTO, Guid storeId)
+        //{
+
+        //    var existe = await context.Suppliers.AnyAsync(x => x.SupplierNumber == supplierDTO.SupplierNumber);
+        //    if (existe) { return BadRequest("Ya existe ese numero de registro"); }
+
+        //    var supplier = mapper.Map<Supplier>(supplierDTO);
+
+        //    //var supplierDB = await context.Suppliers.FirstOrDefaultAsync(x => x.StoreId == storeId);
+        //    //storeAddress.StoreId = storeId;
+
+        //    if (existe)
+        //    {
+        //        return BadRequest($"Ya existe {supplierDTO.Name} ");
+        //    }
+        //    else
+        //    {
+        //        context.Add(supplier);
+
+        //        //var queryable = context.StoreAddresses.AsQueryable();
+
+        //        var usuarioId = obtenerUsuarioId();
+        //        var ipUser = obtenetIP();
+        //        var name = supplier.Name;
+        //        var storeId2 = storeId;
+        //        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //        await context.SaveChangesAsync();
+        //        var storeAddressDTO2 = mapper.Map<SupplierDTO>(supplier);
+        //        return CreatedAtRoute("obtenerSuppliers", new { id = supplierDTO.SupplierIdx }, storeAddressDTO2);
+
+        //    }
+        //}
+
 
         [HttpPut("{storeId?}")]
         public async Task<IActionResult> Put(SupplierDTO supplierDTO, Guid storeId)
@@ -133,6 +224,11 @@ namespace APIControlNet.Controllers
                 return NotFound();
             }
             supplierDB = mapper.Map(supplierDTO, supplierDB);
+
+            var existe = await context.Suppliers.AnyAsync(x => x.SupplierNumber == supplierDTO.SupplierNumber);
+
+            if (supplierDTO.SupplierNumber != supplierDB.SupplierNumber && existe )
+            { return BadRequest("Ya existe ese numero de registro"); }
 
             var storeId2 = storeId;
             var usuarioId = obtenerUsuarioId();

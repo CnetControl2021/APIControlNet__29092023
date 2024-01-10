@@ -32,7 +32,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("active")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<SupplierFuelDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, 
             Guid storeId, Guid id2)
         {
@@ -82,13 +82,14 @@ namespace APIControlNet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] SupplierFuelDTO SupplierFuelDTO, Guid id2, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] SupplierFuelDTO SupplierFuelDTO, Guid storeId)
         {
             var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId && SupplierFuelDTO.StoreId == storeId);
-
+            var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId);
+            
             var suppFuel = mapper.Map<SupplierFuel>(SupplierFuelDTO);
-            suppFuel.SupplierId = id2;
             suppFuel.StoreId = storeId;
+            suppFuel.Name = dbSupplier.Name;
 
             if (existe)
             {
@@ -105,9 +106,52 @@ namespace APIControlNet.Controllers
                 await context.SaveChangesAsync();
                 var storeAddressDTO2 = mapper.Map<SupplierFuelDTO>(suppFuel);
                 return CreatedAtRoute("newSuppFuel", new { id = SupplierFuelDTO.SupplierFuelIdx }, storeAddressDTO2);
-
             }
         }
+
+        //[HttpPost("{storeId}")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult> Post([FromBody] SupplierFuel_SupplierDTO supplierFuel_SupplierDTO, Guid storeId)
+        //{
+        //    if (storeId == Guid.Empty)
+        //    {
+        //        return BadRequest("Sucursal no valida");
+        //    }
+        //    try
+        //    {
+        //        using (var transaccion = await context.Database.BeginTransactionAsync())
+        //        {
+        //            var supplierFuel = await context.SupplierFuels.FirstOrDefaultAsync(x => x.SupplierFuelIdi == supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierFuelIdi);
+        //            //var dataDB = await context.Invoices.FirstOrDefaultAsync(x => x.Uuid == saleSubOrder_Invoice.NInvoiceDTO.Uuid);
+
+        //            if (supplierFuel is null || Guid.Empty)
+        //            {
+        //                SupplierFuel oSupFuel = new();
+        //                oSupFuel.SupplierId = supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierId;
+        //                oSupFuel.StoreId = storeId;
+        //                oSupFuel.SupplierFuelIdi = supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierFuelIdi;
+        //                oSupFuel.BrandName = supplierFuel_SupplierDTO.NSupplierFuelDTO.BrandName;
+        //                oSupFuel.Name = supplierFuel_SupplierDTO.NSupplierFuelDTO.Name;
+        //                oSupFuel.FuelPermission = supplierFuel_SupplierDTO.NSupplierFuelDTO.FuelPermission;
+        //                oSupFuel.StorageAndDistributionPermission = supplierFuel_SupplierDTO.NSupplierFuelDTO.StorageAndDistributionPermission;
+        //                oSupFuel.Date = DateTime.Now;
+        //                oSupFuel.Updated = DateTime.Now;
+        //                oSupFuel.Active = true;
+        //                oSupFuel.Locked = false;
+        //                oSupFuel.Deleted = false;
+
+        //                context.Invoices.Add(oSupFuel);
+
+
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return BadRequest("Revisar datos");
+        //    }
+        //    return Ok();
+
+        //}
+
 
 
         [HttpPut]

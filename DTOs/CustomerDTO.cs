@@ -28,10 +28,10 @@ namespace APIControlNet.DTOs
         public string Cellular { get; set; }
         public string Phone { get; set; }
         public DateTime? Date { get; set; } = DateTime.Now;
-        public DateTime? Updated { get; set; }=DateTime.Now;
-        public bool? Active { get; set; }=true;
-        public bool? Locked { get; set; }=false;
-        public bool? Deleted { get; set; }=false ;
+        public DateTime? Updated { get; set; } = DateTime.Now;
+        public bool? Active { get; set; } = true;
+        public bool? Locked { get; set; } = false;
+        public bool? Deleted { get; set; } = false;
         public string ContactPerson { get; set; }
         public string SatConsignmentSale { get; set; }
 
