@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-09 15:50
+    // $@m&: 2024-01-10 16:50
     // =========================
 
     [Route("api/[controller]")]
@@ -5333,7 +5333,7 @@ namespace APIControlNet.Controllers
         {
             String sUbicacionArchivo = String.Empty,
                    //sRuta =  viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viTipoReporte + "\\" + viFecha.ToString("yyyy-MM-dd") + "\\";
-                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion  + "\\" + viFecha.Year.ToString("0000") + "\\";
+                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viFecha.Year.ToString("0000") + "\\";
 
             switch (viFecha.Month)
             {
@@ -5662,8 +5662,9 @@ namespace APIControlNet.Controllers
                         if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
                             return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.", null));
 
-                        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
+                        if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
+                            if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                                return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
 
                         //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
                         //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
