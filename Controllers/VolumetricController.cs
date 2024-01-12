@@ -24,7 +24,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-10 16:50
+    // $@m&: 2024-01-12 14:08
     // =========================
 
     [Route("api/[controller]")]
@@ -325,7 +325,8 @@ namespace APIControlNet.Controllers
             var vQProductos = (from th in objContext.SaleOrders
                                join td in objContext.SaleSuborders on th.SaleOrderId equals td.SaleOrderId
                                join p in objContext.Products on td.ProductId equals p.ProductId
-                               join ps in objContext.ProductSats on new { f1 = th.StoreId, f2 = td.ProductId } equals new { f1 = ps.StoreId, f2 = ps.ProductId }
+                               join ps in objContext.ProductSats on new { f1 = th.StoreId, f2 = td.ProductId } equals new { f1 = ps.StoreId, f2 = ps.ProductId } into psf
+                               from ps in psf.DefaultIfEmpty()
                                where th.StoreId == viNEstacion &&
                                      th.StartDate >= dtPerDateIni && th.StartDate <= dtPerDateEnd
                                      && p.IsFuel == true
@@ -486,7 +487,7 @@ namespace APIControlNet.Controllers
                             #region Composición del Producto: Asignamos Valores.
                             Decimal dFraccionMolar = vComposicionDatos.FraccionMolar.GetValueOrDefault(),
                                     dPoderCalorifico = vComposicionDatos.PoderCalorifico.GetValueOrDefault();
-                            String sTipoCompuesto = vComposicionDatos.TipoCompuesto;
+                            String sTipoCompuesto = vComposicionDatos.TipoCompuesto.Trim();
                             #endregion
 
                             #region Composición del Producto: Validamos Valores.
@@ -954,10 +955,10 @@ namespace APIControlNet.Controllers
 
                                                         #region Asignacion: Proveedor Datos.
                                                         String sTipoProveedor = vProvDato.SupplierType,
-                                                               sRFC_Proveedor = vProvDato.SupplierRfc,
+                                                               sRFC_Proveedor = vProvDato.SupplierRfc.Trim(),
                                                                sNombreProveedor = vProvDato.Name,
-                                                               sPermisoProveedor = vProvDato.SupplierPermission,
-                                                               sPermisoAlmProveedor = vProvDato.StorageAndDistributionPermission,
+                                                               sPermisoProveedor = vProvDato.SupplierPermission.Trim(),
+                                                               sPermisoAlmProveedor = vProvDato.StorageAndDistributionPermission.Trim(),
                                                                sConsignacionProveedor = vProvDato.IsConsignment;
                                                         #endregion
 
@@ -3561,10 +3562,10 @@ namespace APIControlNet.Controllers
 
                                                 #region Asignacion: Recepcion Proveedores.
                                                 String sTipoProveedor = vRProvDato.SupplierType,
-                                                           sRFC_Proveedor = vRProvDato.SupplierRfc,
+                                                           sRFC_Proveedor = vRProvDato.SupplierRfc.Trim(),
                                                            sNombreProveedor = vRProvDato.Name,
-                                                           sPermisoProveedor = vRProvDato.SupplierPermission,
-                                                           sPermisoAlmProveedor = vRProvDato.StorageAndDistributionPermission,
+                                                           sPermisoProveedor = vRProvDato.SupplierPermission.Trim(),
+                                                           sPermisoAlmProveedor = vRProvDato.StorageAndDistributionPermission.Trim(),
                                                            sConsignacionProveedor = vRProvDato.IsConsignment;
                                                 int iNProveedor = vRProvDato.SupplierFuelIdi;
                                                 //Guid? gProveedorID = vRProvDato.SupplierFuelId;
@@ -5565,8 +5566,8 @@ namespace APIControlNet.Controllers
                     Decimal dVolInicial = 0, dVolFinal = 0, dVolumen = 0, dTemperatura = 0, dPresionAbs = 0, dPrecio = 0, dSubtotal = 0, dIVA = 0, dImporte = 0, dPoderCalor = 0;
                     String sNProducto = drGeneral[COLUMNA_GENERAL_NUMERO_PRODUCTO].ToString().Trim(),
                            sUnidadMedida = String.Empty;
-                    DateTime dtFInicial = Convert.ToDateTime(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim()),
-                             dtFFinal = Convert.ToDateTime(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim()),
+                    DateTime dtFInicial, 
+                             dtFFinal,
                              dtUpdate = DateTime.Now;
 
                     int iCNFactura = 0;
@@ -6226,19 +6227,43 @@ namespace APIControlNet.Controllers
                         lstMensajes.Add("(General) No se encontro el Número de Ducto.");
                     }
 
+                    #region Fecha Inicial.
                     if (String.IsNullOrEmpty(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim()))
                         lstMensajes.Add("(General) No se encontro la Fecha Inicial.");
 
                     DateTime dtFInicio;
-                    if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dtFInicio))
-                        lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
+                    //if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dtFInicio))
+                    //    lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
 
+                    if (drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].GetType().Equals(typeof(Double)))
+                    {
+                        Double dFInicial = 0;
+                        if (!Double.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dFInicial))
+                            lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
+                    }
+                    else
+                        if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dtFInicio))
+                            lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
+                    #endregion
+
+                    #region Fecha Final.
                     if (String.IsNullOrEmpty(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim()))
                         lstMensajes.Add("(General) No se encontro la Fecha Final.");
 
                     DateTime dtFFinal;
-                    if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dtFFinal))
-                        lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
+                    //if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dtFFinal))
+                    //    lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
+
+                    if (drGeneral[COLUMNA_GENERAL_FECHA_FINAL].GetType().Equals(typeof(Double)))
+                    {
+                        Double dFFinal = 0;
+                        if (!Double.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dFFinal))
+                            lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
+                    }
+                    else
+                        if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dtFFinal))
+                            lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
+                    #endregion
 
                     if (String.IsNullOrEmpty(sNProducto))
                         lstMensajes.Add("(General) No se encontro el Número de Producto");
@@ -6252,6 +6277,20 @@ namespace APIControlNet.Controllers
                         if (String.IsNullOrEmpty(sUnidadMedidad))
                             lstMensajes.Add("(General) No se encontro la Unidad de Medida del Producto '" + sNProducto + "'");
                     }
+
+                    if (viTipoArchivo.Equals(TIPO_ARCHIVO_ENTREGA))
+                    {
+                        Decimal dVolInicial = 0, dVolFinal = 0, dVolumen = 0;
+
+                        Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_INICIAL].ToString().Trim(), out dVolInicial);
+                        Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_FINAL].ToString().Trim(), out dVolFinal);
+                        Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN].ToString().Trim(), out dVolumen);
+
+                        if(dVolumen > dVolInicial)
+                            lstMensajes.Add("(General) El Volumen Entregado '" + dVolumen.ToString("N3") + "' es mayor al Volumen Incial '" + dVolInicial.ToString("N3") + "'");
+                    }
+                    
+
                     #endregion
 
                     #region Validación: Hoja "CFDI".
@@ -6277,16 +6316,30 @@ namespace APIControlNet.Controllers
                         if (!ValidarCFDI(viCFDI: drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString()))
                             lstMensajes.Add("(CFDI) El CFDI capturado '" + drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.");
 
+                        #region Fecha y Hora.
                         if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
                             lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
+
+
+                        DateTime dtFFactura;
+                        //if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
+                        //    lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
+
+                        if (drGeneral[COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                        {
+                            Double dCfdiFecha = 0;
+                            if (!Double.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha))
+                                lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
+                        }
+                        else
+                            if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
+                                lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
+
+                        #endregion
 
                         if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
                             if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
                                 lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
-
-                        DateTime dtFFactura;
-                        if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
-                            lstMensajes.Add("(General) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
 
                         // RFC
                         sFacturaRfc = drConsultaFactura[0][COLUMNA_CFDI_RFC].ToString().Trim();
