@@ -5,11 +5,6 @@ namespace APIControlNet.Models
 {
     public partial class SupplierTransport
     {
-        public SupplierTransport()
-        {
-            InventoryInDocuments = new HashSet<InventoryInDocument>();
-        }
-
         public int SupplierTransportIdx { get; set; }
         public Guid SupplierId { get; set; }
         public Guid StoreId { get; set; }
@@ -25,6 +20,5 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
 
         public virtual Supplier Supplier { get; set; }
-        public virtual ICollection<InventoryInDocument> InventoryInDocuments { get; set; }
     }
 }

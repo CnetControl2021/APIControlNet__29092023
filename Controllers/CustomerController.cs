@@ -229,10 +229,26 @@ namespace APIControlNet.Controllers
         //}
 
 
-        [HttpGet("{id:int}", Name = "obtenerCustomer")]
+        [HttpGet("{id:int?}", Name = "obtenerCustomer")]
         public async Task<ActionResult<CustomerDTO>> Get3(int id)
         {
-            var Customer = await context.Customers.FirstOrDefaultAsync(x => x.CustomerIdx == id);
+            var Customer = await context.Customers.FirstOrDefaultAsync
+                (x => x.CustomerIdx == id);
+
+            if (Customer == null)
+            {
+                return NotFound();
+            }
+
+            return mapper.Map<CustomerDTO>(Customer);
+        }
+
+        [HttpGet("byCustomerId/{custommerId}", Name = "byGui")]
+        //[AllowAnonymous]
+        public async Task<ActionResult<CustomerDTO>> Get4(Guid custommerId)
+        {
+            var Customer = await context.Customers.FirstOrDefaultAsync
+                (x => x.CustomerId == custommerId);
 
             if (Customer == null)
             {
@@ -264,7 +280,8 @@ namespace APIControlNet.Controllers
             var queryable = context.Customers.OrderByDescending(x => x.CustomerIdx).AsQueryable();
             if (!string.IsNullOrEmpty(textSearch))
             {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch.ToLower()));
+                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch) || x.Rfc.ToLower().Contains(textSearch));
+
             }
             var customers = await queryable
                .AsNoTracking().ToListAsync();

@@ -16,7 +16,6 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
-
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -31,6 +30,7 @@ namespace APIControlNet.Models
         public virtual DbSet<ClienteProveedorCvol> ClienteProveedorCvols { get; set; }
         public virtual DbSet<Company> Companies { get; set; }
         public virtual DbSet<CompanyAddress> CompanyAddresses { get; set; }
+        public virtual DbSet<CompanyCustomer> CompanyCustomers { get; set; }
         public virtual DbSet<CompanyFiel> CompanyFiels { get; set; }
         public virtual DbSet<ComposicionGasNaturalOcondensado> ComposicionGasNaturalOcondensados { get; set; }
         public virtual DbSet<CompraComplementoMesSat> CompraComplementoMesSats { get; set; }
@@ -218,8 +218,8 @@ namespace APIControlNet.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-          
+            modelBuilder.UseCollation("Modern_Spanish_CI_AS");           
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -917,6 +917,36 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.CompanyId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_company_address_company1");
+            });
+
+            modelBuilder.Entity<CompanyCustomer>(entity =>
+            {
+                entity.HasKey(e => e.CompanyCustomerIdx);
+
+                entity.ToTable("company_customer");
+
+                entity.HasIndex(e => new { e.CompanyId, e.CustomerId }, "IX_company_customer")
+                    .IsUnique();
+
+                entity.Property(e => e.CompanyCustomerIdx).HasColumnName("company_customer_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<CompanyFiel>(entity =>
@@ -3157,12 +3187,6 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.InventoryInId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_inventory_in_document_inventory_in");
-
-                entity.HasOne(d => d.S)
-                    .WithMany(p => p.InventoryInDocuments)
-                    .HasPrincipalKey(p => new { p.StoreId, p.SupplierTransportIdi })
-                    .HasForeignKey(d => new { d.StoreId, d.SupplierTransportIdi })
-                    .HasConstraintName("FK_inventory_in_document_supplier_transport");
             });
 
             modelBuilder.Entity<InventoryInSaleOrder>(entity =>
@@ -9617,10 +9641,7 @@ namespace APIControlNet.Models
 
                 entity.ToTable("supplier_transport");
 
-                entity.HasIndex(e => new { e.SupplierId, e.StoreId, e.SupplierTransportIdx }, "IX_supplier_transport")
-                    .IsUnique();
-
-                entity.HasIndex(e => new { e.StoreId, e.SupplierTransportIdi }, "IX_supplier_transport_1")
+                entity.HasIndex(e => new { e.SupplierId, e.StoreId }, "IX_supplier_transport")
                     .IsUnique();
 
                 entity.Property(e => e.SupplierTransportIdx).HasColumnName("supplier_transport_idx");

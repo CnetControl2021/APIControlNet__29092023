@@ -35,6 +35,5 @@ namespace APIControlNet.Models
         public Guid? PetitionCustomsId { get; set; }
 
         public virtual InventoryIn InventoryIn { get; set; }
-        public virtual SupplierTransport S { get; set; }
     }
 }

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
 
 
 namespace APIControlNet.Controllers
@@ -31,32 +33,53 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("active")]
-        [AllowAnonymous]
-        public async Task<IEnumerable<SupplierFuelDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, 
-            Guid storeId, Guid id2)
+        //[HttpGet("active")]
+        //[AllowAnonymous]
+        //public async Task<IEnumerable<SupplierFuelDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, 
+        //    Guid storeId, Guid id2)
+        //{
+        //    var queryable = context.SupplierFuels.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+        //    if (!string.IsNullOrEmpty(nombre))
+        //    {
+        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+        //    }
+        //    if (storeId != Guid.Empty)
+        //    {
+        //        queryable = queryable.Where(x => x.StoreId == storeId);
+        //    }
+        //    if (id2 != Guid.Empty)
+        //    {  
+        //        queryable = queryable.Where(x => x.SupplierId == id2);
+        //    }
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    var suppliersFuel = await queryable.Paginar(paginacionDTO).AsNoTracking().ToListAsync();
+        //    return mapper.Map<List<SupplierFuelDTO>>(suppliersFuel);
+        //}
+
+        [HttpGet("GetOK")]
+        //[AllowAnonymous]
+        public async Task<ActionResult<ApiRespSupplierFuelDTO>> Get5(int skip, int take, Guid storeId, string searchTerm = "")
         {
-            var queryable = context.SupplierFuels.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
+            var query = context.SupplierFuels.Where(x => x.StoreId == storeId ).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || c.Rfc.ToLower().Contains(searchTerm));
             }
-            if (storeId != Guid.Empty)
+
+            var nsupplierf = await query.Skip(skip).Take(take).OrderByDescending(x => x.Date).ToListAsync();
+            var ntotal = await query.CountAsync();
+
+            return new ApiRespSupplierFuelDTO
             {
-                queryable = queryable.Where(x => x.StoreId == storeId);
-            }
-            if (id2 != Guid.Empty)
-            {  
-                queryable = queryable.Where(x => x.SupplierId == id2);
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var suppliersFuel = await queryable.Paginar(paginacionDTO).AsNoTracking().ToListAsync();
-            return mapper.Map<List<SupplierFuelDTO>>(suppliersFuel);
+                NTotal = ntotal,
+                NSupplierFuelDTOs = mapper.Map<IEnumerable<SupplierFuelDTO>>(nsupplierf)
+            };
         }
 
 
-        [HttpGet("{id:int}", Name = "newSuppFuel")]
-        public async Task<ActionResult<SupplierFuelDTO>> Get(int id)
+        [HttpGet("{id:int}/{idGuid}", Name = "newSuppFuel")]
+        public async Task<ActionResult<SupplierFuelDTO>> Get(int id, Guid idGuid)
         {
             var suppliersFuel = await context.SupplierFuels.FirstOrDefaultAsync(x => x.SupplierFuelIdx == id);
 
@@ -84,16 +107,17 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<ActionResult> Post([FromBody] SupplierFuelDTO SupplierFuelDTO, Guid storeId)
         {
-            var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId && SupplierFuelDTO.StoreId == storeId);
+            var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId && x.StoreId == storeId);
             var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId);
             
             var suppFuel = mapper.Map<SupplierFuel>(SupplierFuelDTO);
             suppFuel.StoreId = storeId;
             suppFuel.Name = dbSupplier.Name;
+            suppFuel.Rfc = dbSupplier.Rfc;
 
             if (existe)
             {
-                return BadRequest($"Ya existe {SupplierFuelDTO.SupplierFuelIdi} y {SupplierFuelDTO.Name} ");
+                return BadRequest($"Ya existe {dbSupplier.Name} en proveedor de combustibles ");
             }
             else
             {
@@ -103,74 +127,58 @@ namespace APIControlNet.Controllers
                 var name = suppFuel.Name;
                 var storeId2 = storeId;
                 await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+
+                dbSupplier.IsSupplierOfFuel = true;
                 await context.SaveChangesAsync();
-                var storeAddressDTO2 = mapper.Map<SupplierFuelDTO>(suppFuel);
-                return CreatedAtRoute("newSuppFuel", new { id = SupplierFuelDTO.SupplierFuelIdx }, storeAddressDTO2);
+                return Ok();
             }
         }
 
-        //[HttpPost("{storeId}")]
-        //[AllowAnonymous]
-        //public async Task<ActionResult> Post([FromBody] SupplierFuel_SupplierDTO supplierFuel_SupplierDTO, Guid storeId)
-        //{
-        //    if (storeId == Guid.Empty)
-        //    {
-        //        return BadRequest("Sucursal no valida");
-        //    }
-        //    try
-        //    {
-        //        using (var transaccion = await context.Database.BeginTransactionAsync())
-        //        {
-        //            var supplierFuel = await context.SupplierFuels.FirstOrDefaultAsync(x => x.SupplierFuelIdi == supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierFuelIdi);
-        //            //var dataDB = await context.Invoices.FirstOrDefaultAsync(x => x.Uuid == saleSubOrder_Invoice.NInvoiceDTO.Uuid);
 
-        //            if (supplierFuel is null || Guid.Empty)
-        //            {
-        //                SupplierFuel oSupFuel = new();
-        //                oSupFuel.SupplierId = supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierId;
-        //                oSupFuel.StoreId = storeId;
-        //                oSupFuel.SupplierFuelIdi = supplierFuel_SupplierDTO.NSupplierFuelDTO.SupplierFuelIdi;
-        //                oSupFuel.BrandName = supplierFuel_SupplierDTO.NSupplierFuelDTO.BrandName;
-        //                oSupFuel.Name = supplierFuel_SupplierDTO.NSupplierFuelDTO.Name;
-        //                oSupFuel.FuelPermission = supplierFuel_SupplierDTO.NSupplierFuelDTO.FuelPermission;
-        //                oSupFuel.StorageAndDistributionPermission = supplierFuel_SupplierDTO.NSupplierFuelDTO.StorageAndDistributionPermission;
-        //                oSupFuel.Date = DateTime.Now;
-        //                oSupFuel.Updated = DateTime.Now;
-        //                oSupFuel.Active = true;
-        //                oSupFuel.Locked = false;
-        //                oSupFuel.Deleted = false;
-
-        //                context.Invoices.Add(oSupFuel);
-
-
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return BadRequest("Revisar datos");
-        //    }
-        //    return Ok();
-
-        //}
-
-
-
-        [HttpPut]
-        public async Task<IActionResult> Put(SupplierFuelDTO SupplierFuelDTO)
+        [HttpPut("{idGuid?}")]
+        public async Task<IActionResult> Put(Guid idGuid, [FromBody] SupplierFuelDTO supFuelDTO)
         {
-            var supFuelDB = await context.SupplierFuels.FirstOrDefaultAsync(c => c.SupplierFuelIdx == SupplierFuelDTO.SupplierFuelIdx);
-            if (supFuelDB is null)
+            try
             {
-                return NotFound();
-            }
-            supFuelDB = mapper.Map(SupplierFuelDTO, supFuelDB);
+                var dbSupplierFuel = await context.SupplierFuels.FirstOrDefaultAsync
+                (s => s.SupplierFuelIdx == supFuelDTO.SupplierFuelIdx);
+                var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == supFuelDTO.SupplierId);
 
-            var storeId2 = supFuelDB.StoreId;
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = supFuelDB.Name;
-            await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
-            await context.SaveChangesAsync();
-            return NoContent();
+                dbSupplierFuel.SupplierId = dbSupplier.SupplierId;
+                dbSupplierFuel.StoreId = supFuelDTO.StoreId;
+                dbSupplierFuel.SupplierFuelIdi = supFuelDTO.SupplierFuelIdi++;
+                dbSupplierFuel.BrandName = supFuelDTO.BrandName;
+                dbSupplierFuel.Name = dbSupplier.Name;
+                dbSupplierFuel.SupplierType = supFuelDTO.SupplierType;
+                dbSupplierFuel.Rfc = dbSupplier.Rfc;
+                dbSupplierFuel.FuelPermission = supFuelDTO.FuelPermission;
+                dbSupplierFuel.StorageAndDistributionPermission = supFuelDTO.StorageAndDistributionPermission;
+                dbSupplierFuel.IsConsignment = supFuelDTO.IsConsignment;
+                dbSupplierFuel.Updated = DateTime.Now;
+
+                var storeId2 = supFuelDTO.StoreId;
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var name = supFuelDTO.Name;
+                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
+
+                //reset campo de supplier
+                var dbSupplierGuid = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == idGuid);
+                if (dbSupplierGuid is not null) { dbSupplierGuid.IsSupplierOfFuel = false; }
+
+                //nuevo supplierFuel true
+                var dbSupplier2 = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == supFuelDTO.SupplierId);
+                dbSupplier2.IsSupplierOfFuel = true;
+
+                context.SupplierFuels.Update(dbSupplierFuel);
+                await context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                var dbSupplier2 = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == supFuelDTO.SupplierId);
+                return BadRequest($"Ya existe {dbSupplier2.Name} en provedores de combustible ");
+            }
         }
 
 
@@ -198,8 +206,10 @@ namespace APIControlNet.Controllers
         [HttpDelete("{id}/{storeId?}")]
         public async Task<IActionResult> Delete(int id, Guid? storeId)
         {
-            var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierFuelIdx == id);
-            if (!existe) { return NotFound(); }
+            var existe = await context.SupplierFuels.FirstOrDefaultAsync(x => x.SupplierFuelIdx == id);
+
+            if (existe is null) { return NotFound(); }
+            var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == existe.SupplierId);
 
             var name2 = await context.SupplierFuels.FirstOrDefaultAsync(x => x.SupplierFuelIdx == id);
             context.Remove(name2);
@@ -208,6 +218,7 @@ namespace APIControlNet.Controllers
             var name = name2.Name;
             var storeId2 = storeId;
             await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+            dbSupplier.IsSupplierOfFuel = false;
             await context.SaveChangesAsync();
             return NoContent();
         }

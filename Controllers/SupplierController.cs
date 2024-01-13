@@ -62,7 +62,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("GetOK")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<ApiRespSupplierDTO>> Get5(int skip, int take, string searchTerm = "")
         {
             var query = context.Suppliers.AsQueryable();

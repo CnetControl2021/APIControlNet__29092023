@@ -8,6 +8,8 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<CompanyCustomerDTO, CompanyCustomer>();
+            CreateMap<CompanyCustomer, CompanyCustomerDTO>();
 
             CreateMap<SupplierDTO, Supplier>();
             CreateMap<Supplier, SupplierDTO>();

@@ -13,8 +13,8 @@ namespace APIControlNet.DTOs
         public string Name { get; set; }
         public string SupplierType { get; set; }
         public string ImportPermission { get; set; }
-        [Required(ErrorMessage = "El RFC es obligatorio")]
-        [RegularExpression(@"^[A-Za-zñÑ&]{3,4}\d{6}\w{3}$", ErrorMessage = "El RFC no es válido")]
+        //[Required(ErrorMessage = "El RFC es obligatorio")]
+        //[RegularExpression(@"^[A-Za-zñÑ&]{3,4}\d{6}\w{3}$", ErrorMessage = "El RFC no es válido")]
         public string Rfc { get; set; }
         public string FuelPermission { get; set; }
         public string StorageAndDistributionPermission { get; set; }

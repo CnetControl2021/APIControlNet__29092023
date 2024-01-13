@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace APIControlNet.Controllers
 {
@@ -28,6 +29,27 @@ namespace APIControlNet.Controllers
             this.mapper = mapper;
             this.userManager = userManager;
             this.servicioBinnacle = servicioBinnacle;
+        }
+
+        [HttpGet("GetOK")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiRespSupplierTransportDTO>> Get5(int skip, int take, Guid storeId, string searchTerm = "")
+        {
+            var query = context.SupplierTransports.Where(x => x.StoreId == storeId).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || c.Rfc.ToLower().Contains(searchTerm));
+            }
+
+            var nsupplierT = await query.Skip(skip).Take(take).OrderByDescending(x => x.Date).ToListAsync();
+            var ntotal = await query.CountAsync();
+
+            return new ApiRespSupplierTransportDTO
+            {
+                NTotal = ntotal,
+                NSupplierTransportDTOs = mapper.Map<IEnumerable<SupplierTransportDTO>>(nsupplierT)
+            };
         }
 
 
@@ -55,8 +77,8 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("{id:int}", Name = "newSuppTrans")]
-        public async Task<ActionResult<SupplierTransportDTO>> Get(int id)
+        [HttpGet("{id:int}/{idGuid}", Name = "newSuppTrans")]
+        public async Task<ActionResult<SupplierTransportDTO>> Get(int id, Guid idGuid)
         {
             var suppliersTrans = await context.SupplierTransports.FirstOrDefaultAsync(x => x.SupplierTransportIdx == id);
 
@@ -81,59 +103,79 @@ namespace APIControlNet.Controllers
             return mapper.Map<SupplierTransportDTO>(suppliersTrans);
         }
 
-        [HttpPost]
-        public async Task<ActionResult> Post([FromBody] SupplierTransportDTO SupplierTransportDTO, Guid id2, Guid storeId)
-        {
-            var existe = await context.SupplierTransports.AnyAsync(x => x.SupplierTransportIdi == SupplierTransportDTO.SupplierTransportIdi);
 
-            var suppTrans = mapper.Map<SupplierTransport>(SupplierTransportDTO);
-            suppTrans.SupplierId = id2;
-            suppTrans.StoreId = storeId;
+        [HttpPost]
+        public async Task<ActionResult> Post([FromBody] SupplierTransportDTO supTransDTO, Guid storeId)
+        {
+            var existe = await context.SupplierTransports.AnyAsync(x => x.SupplierId == supTransDTO.SupplierId && x.StoreId == storeId);
+            var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == supTransDTO.SupplierId);
+
+            var suppTransp = mapper.Map<SupplierTransport>(supTransDTO);
+            suppTransp.StoreId = storeId;
+            suppTransp.Name = dbSupplier.Name;
+            suppTransp.Rfc = dbSupplier.Rfc;
 
             if (existe)
             {
-                return BadRequest($"Ya existe {SupplierTransportDTO.SupplierTransportIdi} y {SupplierTransportDTO.Name} ");
+                return BadRequest($"Ya existe {dbSupplier.Name} en proveedor de combustibles ");
             }
             else
             {
-                context.Add(suppTrans);
-
-                //var queryable = context.StoreAddresses.AsQueryable();
-
+                context.Add(suppTransp);
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
-                var name = suppTrans.Name;
+                var name = suppTransp.Name;
                 var storeId2 = storeId;
                 await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                await context.SaveChangesAsync();
-                var storeAddressDTO2 = mapper.Map<SupplierTransportDTO>(suppTrans);
-                return CreatedAtRoute("newSuppTrans", new { id = SupplierTransportDTO.SupplierTransportIdx }, storeAddressDTO2);
 
+                dbSupplier.IsSupplierOfTransport = true;
+                await context.SaveChangesAsync();
+                return Ok();
             }
         }
 
 
-        //[HttpPut("{storeId?}")]
-        [HttpPut]
-        //[AllowAnonymous]
-        public async Task<IActionResult> Put(SupplierTransportDTO SupplierTransportDTO )
+        [HttpPut("{idGuid?}")]
+        public async Task<IActionResult> Put(Guid idGuid, [FromBody] SupplierTransportDTO suptransDTO)
         {
-            var supTransDB = await context.SupplierTransports.FirstOrDefaultAsync(c => c.SupplierTransportIdx == SupplierTransportDTO.SupplierTransportIdx);
-
-
-            if (supTransDB is null)
+            try
             {
-                return NotFound();
-            }
-            supTransDB = mapper.Map(SupplierTransportDTO, supTransDB);
+                var dbSupTransp = await context.SupplierTransports.FirstOrDefaultAsync
+                (s => s.SupplierTransportIdx == suptransDTO.SupplierTransportIdx);
+                var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == suptransDTO.SupplierId);
 
-            var storeId2 = supTransDB.StoreId;
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = supTransDB.Name;
-            await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
-            await context.SaveChangesAsync();
-            return NoContent();
+                dbSupTransp.SupplierId = dbSupplier.SupplierId;
+                dbSupTransp.StoreId = suptransDTO.StoreId;
+                dbSupTransp.SupplierTransportIdi = suptransDTO.SupplierTransportIdi++;
+                dbSupTransp.BrandName = suptransDTO.BrandName;
+                dbSupTransp.Name = dbSupplier.Name;
+                dbSupTransp.Rfc = dbSupplier.Rfc;
+                dbSupTransp.TransportPermission = suptransDTO.TransportPermission;
+                dbSupTransp.Updated = DateTime.Now;
+
+                var storeId2 = suptransDTO.StoreId;
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var name = suptransDTO.Name;
+                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, name, storeId2);
+
+                //reset campo de supplier
+                var dbSupplierGuid = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == idGuid);
+                if (dbSupplierGuid is not null) { dbSupplierGuid.IsSupplierOfFuel = false; }
+
+                //nuevo supplierFuel true
+                var dbSupplier2 = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == suptransDTO.SupplierId);
+                dbSupplier2.IsSupplierOfFuel = true;
+
+                context.SupplierTransports.Update(dbSupTransp);
+                await context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                var dbSupplier2 = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == suptransDTO.SupplierId);
+                return BadRequest($"Ya existe {dbSupplier2.Name} en provedores de combustible ");
+            }
         }
 
 
@@ -157,25 +199,24 @@ namespace APIControlNet.Controllers
             return NoContent();
         }
 
-
         [HttpDelete("{id}/{storeId?}")]
         public async Task<IActionResult> Delete(int id, Guid? storeId)
         {
-            var existe = await context.SupplierTransports.AnyAsync(x => x.SupplierTransportIdx == id);
-            if (!existe) { return NotFound(); }
+            var existe = await context.SupplierTransports.FirstOrDefaultAsync(x => x.SupplierTransportIdx == id);
+
+            if (existe is null) { return NotFound(); }
+            var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == existe.SupplierId);
 
             var name2 = await context.SupplierTransports.FirstOrDefaultAsync(x => x.SupplierTransportIdx == id);
             context.Remove(name2);
-
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
             var name = name2.Name;
             var storeId2 = storeId;
             await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
-
+            dbSupplier.IsSupplierOfTransport = false;
             await context.SaveChangesAsync();
             return NoContent();
         }
-
     }
 }
