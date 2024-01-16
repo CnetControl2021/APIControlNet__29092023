@@ -218,7 +218,7 @@ namespace APIControlNet.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.UseCollation("Modern_Spanish_CI_AS");           
+            modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
@@ -1429,6 +1429,9 @@ namespace APIControlNet.Models
                 entity.ToTable("customer");
 
                 entity.HasIndex(e => e.CustomerNumber, "IX_customer")
+                    .IsUnique();
+
+                entity.HasIndex(e => e.CustomerNumber, "IX_customer_number")
                     .IsUnique();
 
                 entity.Property(e => e.CustomerIdx).HasColumnName("customer_idx");
@@ -9768,21 +9771,13 @@ namespace APIControlNet.Models
                     .HasColumnName("capacity_gastalon")
                     .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.CapacityMinimumOperating)
-                    .HasColumnType("decimal(10, 2)")
-                    .HasColumnName("capacity_minimum_operating");
+                entity.Property(e => e.CapacityMinimumOperating).HasColumnName("capacity_minimum_operating");
 
-                entity.Property(e => e.CapacityOperational)
-                    .HasColumnType("decimal(10, 2)")
-                    .HasColumnName("capacity_operational");
+                entity.Property(e => e.CapacityOperational).HasColumnName("capacity_operational");
 
-                entity.Property(e => e.CapacityTotal)
-                    .HasColumnType("decimal(10, 2)")
-                    .HasColumnName("capacity_total");
+                entity.Property(e => e.CapacityTotal).HasColumnName("capacity_total");
 
-                entity.Property(e => e.CapacityUseful)
-                    .HasColumnType("decimal(10, 2)")
-                    .HasColumnName("capacity_useful");
+                entity.Property(e => e.CapacityUseful).HasColumnName("capacity_useful");
 
                 entity.Property(e => e.CommPercentage).HasColumnName("comm_percentage");
 
@@ -9798,9 +9793,7 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.EnableGetInventory).HasColumnName("enable_get_inventory");
 
-                entity.Property(e => e.Fondage)
-                    .HasColumnType("decimal(10, 2)")
-                    .HasColumnName("fondage");
+                entity.Property(e => e.Fondage).HasColumnName("fondage");
 
                 entity.Property(e => e.Height)
                     .HasColumnType("decimal(12, 5)")

@@ -57,6 +57,7 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<StoreDTO>>(stores);
         }
 
+
         [HttpGet("hashFDll")]
         [AllowAnonymous]
         public async Task<IActionResult> GetHash512Async()

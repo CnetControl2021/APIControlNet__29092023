@@ -28,7 +28,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<TankDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
         {
             var queryable = context.Tanks.AsQueryable();

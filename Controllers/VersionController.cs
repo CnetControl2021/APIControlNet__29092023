@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 
 namespace APIControlNet.Controllers
@@ -104,6 +105,26 @@ namespace APIControlNet.Controllers
                 {"Se mejoro el sistema de notificaciones de alarmas. Se adiciono modulo de compras y ventas transportistas"}, 
                 {"147d01fffed9305cd31e1bf1d5c81f769a97386651d1c914e0863a0d31f74bdff60a1cdf21119ef086ad2763a723566f77d817a3ab44415866abb70006bcef85"},
                 {"2023-11-29"}, {"2023-11-29"}, {true}, {false}, {false})");
+            }
+
+            var db7 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.4");
+
+            if (db7 is null)
+            {
+                await context.Database.ExecuteSqlInterpolatedAsync
+                ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
+                VALUES({"3"}, {"2.4"}, {"2.4"}, {"Control Volumetrico"}, {"ControlNet"}, 
+                {"Se agregaron catalogos para el manejo de clientes y proveedores. Se agrego contol para complemento de Json SAT"}, 
+                {"3f93a043c73f4e1ba6dc453496634720d458959d733430fe65fb2ba6a633ec0d05de026f6de5b9413854b9e6a2139e8209f9e24445307f81761de4ede654ce66"},
+                {"2024-01-15"}, {"2024-01-15"}, {true}, {false}, {false})");
+            }
+            else
+            {
+                var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.4");
+                db.Updated = DateTime.Now;
+                db.Hash512 = "3f93a043c73f4e1ba6dc453496634720d458959d733430fe65fb2ba6a633ec0d05de026f6de5b9413854b9e6a2139e8209f9e24445307f81761de4ede654ce66";
+                context.Update(db);
+                context.SaveChanges();
             }
 
             var hashdb = await context.Versions.FirstOrDefaultAsync(x => x.Hash512 == hashFDll);
