@@ -16,6 +16,7 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
+
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -195,6 +196,7 @@ namespace APIControlNet.Models
         public virtual DbSet<TankShape> TankShapes { get; set; }
         public virtual DbSet<TankType> TankTypes { get; set; }
         public virtual DbSet<TaskType> TaskTypes { get; set; }
+        public virtual DbSet<Testsql> Testsqls { get; set; }
         public virtual DbSet<TransportMediumnCustom> TransportMediumnCustoms { get; set; }
         public virtual DbSet<TypeMovement> TypeMovements { get; set; }
         public virtual DbSet<UserDateCreate> UserDateCreates { get; set; }
@@ -219,7 +221,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
+            
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -10179,6 +10181,23 @@ namespace APIControlNet.Models
                 entity.Property(e => e.TaskTypeId).HasColumnName("task_type_id");
 
                 entity.Property(e => e.Updated).HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<Testsql>(entity =>
+            {
+                entity.ToTable("testsql");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Data).HasColumnName("data");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Quey).HasColumnName("quey");
+
+                entity.Property(e => e.Something).HasColumnName("something");
             });
 
             modelBuilder.Entity<TransportMediumnCustom>(entity =>

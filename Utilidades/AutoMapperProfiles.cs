@@ -8,6 +8,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<TestsqlDTO, Testsql>();
+            CreateMap<Testsql, TestsqlDTO>();
+
             CreateMap<CompanyCustomerDTO, CompanyCustomer>();
             CreateMap<CompanyCustomer, CompanyCustomerDTO>();
 
