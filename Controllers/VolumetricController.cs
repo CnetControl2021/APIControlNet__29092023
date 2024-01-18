@@ -1346,7 +1346,11 @@ namespace APIControlNet.Controllers
                             // Calculamos los totales del Resumen Diario.
                             dictDailySummary[vProd.ProductoID].TheoryInventoryQuantity = ((dictDailySummary[vProd.ProductoID].StartInventoryQuantity + dictDailySummary[vProd.ProductoID].InventoryInQuantity) - dictDailySummary[vProd.ProductoID].SaleQuantity);
                             dictDailySummary[vProd.ProductoID].InventoryDifference = dictDailySummary[vProd.ProductoID].EndInventoryQuantity - dictDailySummary[vProd.ProductoID].TheoryInventoryQuantity;
-                            dictDailySummary[vProd.ProductoID].InventoryDifferencePercentage = dictDailySummary[vProd.ProductoID].InventoryDifference / dictDailySummary[vProd.ProductoID].SaleQuantity;
+                            //dictDailySummary[vProd.ProductoID].InventoryDifferencePercentage = dictDailySummary[vProd.ProductoID].InventoryDifference / dictDailySummary[vProd.ProductoID].SaleQuantity;
+                            if (dictDailySummary[vProd.ProductoID].SaleQuantity > 0)
+                                dictDailySummary[vProd.ProductoID].InventoryDifferencePercentage = dictDailySummary[vProd.ProductoID].InventoryDifference / dictDailySummary[vProd.ProductoID].SaleQuantity;
+                            else
+                                dictDailySummary[vProd.ProductoID].InventoryDifferencePercentage = dictDailySummary[vProd.ProductoID].SaleQuantity;
                         }
                         #endregion
 
@@ -5334,7 +5338,7 @@ namespace APIControlNet.Controllers
         {
             String sUbicacionArchivo = String.Empty,
                    //sRuta =  viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viTipoReporte + "\\" + viFecha.ToString("yyyy-MM-dd") + "\\";
-                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion + "\\" + viFecha.Year.ToString("0000") + "\\";
+                   sRuta = viRutaCarpetaRaiz + "\\" + viNEstacion + " - " + viNomEstacion + "\\" + viFecha.Year.ToString("0000") + "\\";
 
             switch (viFecha.Month)
             {
@@ -5451,7 +5455,7 @@ namespace APIControlNet.Controllers
             #region CFDI.
             const int COLUMNA_CFDI_NUMERO_FILA = 0;
             const int COLUMNA_CFDI_RFC = 1;
-            const int COLUMNA_CFDI_NOMBRE = 2;
+            //const int COLUMNA_CFDI_NOMBRE = 2;
             const int COLUMNA_CFDI_SERIE = 3;
             const int COLUMNA_CFDI_NUMERO_FACTURA = 4;
             const int COLUMNA_CFDI_TIPO_CFDI = 5;
@@ -5478,7 +5482,7 @@ namespace APIControlNet.Controllers
             #region Transporte.
             const int COLUMNA_TRANSPORTE_NUMERO_FILA = 0;
             const int COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE = 1;
-            const int COLUMNA_TRANSPORTE_CLAVE_VEHICULO = 2;
+            //const int COLUMNA_TRANSPORTE_CLAVE_VEHICULO = 2;
             const int COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE = 3;
             const int COLUMNA_TRANSPORTE_CARGO_CAPACIDAD = 4;
             const int COLUMNA_TRANSPORTE_CARGO_USO = 5;
@@ -5517,7 +5521,7 @@ namespace APIControlNet.Controllers
                 dsArchivo = objReader.AsDataSet();
 
                 if (!dsArchivo.Tables.Contains(HOJA_GENERAL))
-                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "No se encontro la hoja 'GENERAL' en el documento de Excel.", null));
+                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "No se encontro la hoja '" + HOJA_GENERAL + "' en el documento de Excel.", null));
                 #endregion
 
                 // Validamos el Archivo Excel que contenga los datos correctos.
@@ -5566,7 +5570,7 @@ namespace APIControlNet.Controllers
                     Decimal dVolInicial = 0, dVolFinal = 0, dVolumen = 0, dTemperatura = 0, dPresionAbs = 0, dPrecio = 0, dSubtotal = 0, dIVA = 0, dImporte = 0, dPoderCalor = 0;
                     String sNProducto = drGeneral[COLUMNA_GENERAL_NUMERO_PRODUCTO].ToString().Trim(),
                            sUnidadMedida = String.Empty;
-                    DateTime dtFInicial, 
+                    DateTime dtFInicial,
                              dtFFinal,
                              dtUpdate = DateTime.Now;
 
@@ -5616,139 +5620,173 @@ namespace APIControlNet.Controllers
                     String sCfdiRfc = String.Empty, sCfdiTipoComprobante = String.Empty;
                     #endregion
 
-                    #region Validaciones.
-                    DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-                    DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-                    DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    #region Validamos que la final tenga CFDI, Pedimiento o Transporte.
+                    Boolean bContCfdi = false, bContPedimento = false, bContTransp = false;
 
-                    if (drConsultaCfdi.Length == 0 && drConsultaPedimento.Length == 0 && drConsultaTrans.Length == 0)
+                    if (dtCfdi.Rows.Count > 0)
+                    {
+                        DataRow[] drQContCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drQContCfdi.Length > 0)
+                            bContCfdi = true;
+                    }
+
+                    if (dtPedimento.Rows.Count > 0)
+                    {
+                        DataRow[] drQContPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drQContPedimento.Length > 0)
+                            bContPedimento = true;
+                    }
+
+                    if (dtTransporte.Rows.Count > 0)
+                    {
+                        DataRow[] drQContTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drQContTrans.Length > 0)
+                            bContTransp = true;
+                    }
+
+                    if (!bContCfdi && !bContPedimento && !bContTransp)
                         continue;
-
-                    #region Validacion: Hoja "General".
-                    String sMnsGeneral = "Fila No. " + iNFila.ToString();
-
-                    if (String.IsNullOrEmpty(sNProducto))
-                        sMnsGeneral += ": No se encontro el Número de Producto";
-
-                    if ((from p in objContext.Products where p.ProductCode == sNProducto select p).Count() <= 0)
-                        sMnsGeneral += ": No se encontro información del Producto '" + sNProducto + "'";
-                    else
-                    {
-                        Product objProductoDatos = new Product();
-                        objProductoDatos = (from p in objContext.Products where p.ProductCode == sNProducto select p).First();
-
-                        gProductoID = objProductoDatos.ProductId;
-                        sUnidadMedida = objProductoDatos.JsonClaveUnidadMedidaId;
-                    }
-
-                    if (String.IsNullOrEmpty(sUnidadMedida))
-                        sMnsGeneral += ": No se encontro la Unidad de Medida del Producto '" + sNProducto + "'";
-
-                    if (sMnsGeneral != "Fila No. " + iNFila.ToString())
-                        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sMnsGeneral, null));
                     #endregion
 
-                    #region Validación: Hoja "CFDI".
-                    if (drConsultaCfdi.Length > 0)
-                    {
-                        String sCFDIMnsInicial = "Fila: '" + iNFila.ToString() + "'. ";
+                    #region Validaciones.
+                    //DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    //DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    //DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
 
-                        String sCFDI_Nombre = drConsultaCfdi[0][COLUMNA_CFDI_NOMBRE].ToString();
-                        if (String.IsNullOrEmpty(sCFDI_Nombre))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Nombre del Cliente (CFDI).", null));
+                    //if (drConsultaCfdi.Length == 0 && drConsultaPedimento.Length == 0 && drConsultaTrans.Length == 0)
+                    //    continue;
 
-                        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el CFDI de la Factura (CFDI).", null));
+                    //#region Validacion: Hoja "General".
+                    //String sMnsGeneral = "Fila No. " + iNFila.ToString();
 
-                        if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.", null));
+                    //if (String.IsNullOrEmpty(sNProducto))
+                    //    sMnsGeneral += ": No se encontro el Número de Producto";
 
-                        if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
-                            if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
-                                return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
+                    //if ((from p in objContext.Products where p.ProductCode == sNProducto select p).Count() <= 0)
+                    //    sMnsGeneral += ": No se encontro información del Producto '" + sNProducto + "'";
+                    //else
+                    //{
+                    //    Product objProductoDatos = new Product();
+                    //    objProductoDatos = (from p in objContext.Products where p.ProductCode == sNProducto select p).First();
 
-                        //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
-                        //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
+                    //    gProductoID = objProductoDatos.ProductId;
+                    //    sUnidadMedida = objProductoDatos.JsonClaveUnidadMedidaId;
+                    //}
 
-                        // RFC
-                        sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
-                        // CFDI (UUID)
-                        gCfdiUUID = Guid.Parse(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString());
+                    //if (String.IsNullOrEmpty(sUnidadMedida))
+                    //    sMnsGeneral += ": No se encontro la Unidad de Medida del Producto '" + sNProducto + "'";
 
-                        switch (viTipoArchivo)
-                        {
-                            #region Recepcion.
-                            case TIPO_ARCHIVO_RECEPCION:
-                                if ((from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).Count() <= 0)
-                                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
-                                else
-                                    gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
+                    //if (sMnsGeneral != "Fila No. " + iNFila.ToString())
+                    //    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sMnsGeneral, null));
+                    //#endregion
 
-                                if ((from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).Count() <= 0)
-                                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
-                                else
-                                    iProveedorFuelID = (from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).First().SupplierFuelIdi;
-                                break;
-                            #endregion
+                    //#region Validación: Hoja "CFDI".
+                    //if (drConsultaCfdi.Length > 0)
+                    //{
+                    //    String sCFDIMnsInicial = "Fila: '" + iNFila.ToString() + "'. ";
 
-                            #region Entrega.
-                            case TIPO_ARCHIVO_ENTREGA:
-                                if ((from c in objContext.Customers where c.Rfc == sCfdiRfc select c).Count() <= 0)
-                                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
-                                else
-                                    gCfdiPersonaID = (from c in objContext.Customers where c.Rfc == sCfdiRfc select c).First().CustomerId;
-                                break;
-                                #endregion
-                        }
+                    //    String sCFDI_Nombre = drConsultaCfdi[0][COLUMNA_CFDI_NOMBRE].ToString();
+                    //    if (String.IsNullOrEmpty(sCFDI_Nombre))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Nombre del Cliente (CFDI).", null));
 
-                        // Tipo Comprobante
-                        sCfdiTipoComprobante = drConsultaCfdi[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
-                        if ((from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).Count() <= 0)
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "(CFDI) No se encontro el tipo de comprobante '" + sCfdiTipoComprobante + "'.", null));
-                        else
-                            sCfdiTipoComprobante = (from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).First().SatTipoComprobanteId;
-                    }
-                    #endregion
+                    //    if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el CFDI de la Factura (CFDI).", null));
 
-                    #region Validación: Hoja "Pedimento".                    
-                    if (drConsultaPedimento.Length > 0)
-                    {
-                        String sPediMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
+                    //    if (!ValidarCFDI(viCFDI: drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "El CFDI capturado '" + drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.", null));
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Clave de Permiso.", null));
+                    //    if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
+                    //        if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                    //            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "Ingresa el Numero de Permiso CRE (CFDI).", null));
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro el Pais.", null));
+                    //    //if (String.IsNullOrEmpty(drConsultaCfdi[0][COLUMNA_CFDI_UNIDAD_MEDIDA].ToString()))
+                    //    //    return BadRequest(sCFDIMnsInicial + "No se ha capturado la Unidad de Medida.");
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Clave de Pedimento.", null));
+                    //    // RFC
+                    //    sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
+                    //    // CFDI (UUID)
+                    //    gCfdiUUID = Guid.Parse(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString());
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Incoterms", null));
-                    }
-                    #endregion
+                    //    switch (viTipoArchivo)
+                    //    {
+                    //        #region Recepcion.
+                    //        case TIPO_ARCHIVO_RECEPCION:
+                    //            if ((from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).Count() <= 0)
+                    //                return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
+                    //            else
+                    //                gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
 
-                    #region Validación: Hoja "Transporte".
-                    //(from s in objContext.SupplierTransports
-                    // where s.TransportPermission == sTPermisoTransporte
-                    // select s).First().SupplierId
-                    if (drConsultaTrans.Length > 0)
-                    {
-                        String sTransMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
-                        String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+                    //            if ((from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).Count() <= 0)
+                    //                return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
+                    //            else
+                    //                iProveedorFuelID = (from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).First().SupplierFuelIdi;
+                    //            break;
+                    //        #endregion
 
-                        if ((from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).Count() <= 0)
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sTransMnsInicial + "(Transporte) No se encontro el Supplier '" + sTPermisoTransporte + "'.", null));
-                        else
-                            gTransSupplierID = (from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).First().SupplierId;
+                    //        #region Entrega.
+                    //        case TIPO_ARCHIVO_ENTREGA:
+                    //            if ((from c in objContext.Customers where c.Rfc == sCfdiRfc select c).Count() <= 0)
+                    //                return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "No se encontro información del RFC '" + sCfdiRfc + "'.", null));
+                    //            else
+                    //                gCfdiPersonaID = (from c in objContext.Customers where c.Rfc == sCfdiRfc select c).First().CustomerId;
+                    //            break;
+                    //            #endregion
+                    //    }
 
-                    }
+                    //    // Tipo Comprobante
+                    //    sCfdiTipoComprobante = drConsultaCfdi[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
+                    //    if ((from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).Count() <= 0)
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sCFDIMnsInicial + "(CFDI) No se encontro el tipo de comprobante '" + sCfdiTipoComprobante + "'.", null));
+                    //    else
+                    //        sCfdiTipoComprobante = (from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).First().SatTipoComprobanteId;
+                    //}
+                    //#endregion
 
-                    #endregion
+                    //#region Validación: Hoja "Pedimento".                    
+                    //if (drConsultaPedimento.Length > 0)
+                    //{
+                    //    String sPediMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
+
+                    //    if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Clave de Permiso.", null));
+
+                    //    if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro el Pais.", null));
+
+                    //    if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Clave de Pedimento.", null));
+
+                    //    if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sPediMnsInicial + " No se encontro la Incoterms", null));
+                    //}
+                    //#endregion
+
+                    //#region Validación: Hoja "Transporte".
+                    ////(from s in objContext.SupplierTransports
+                    //// where s.TransportPermission == sTPermisoTransporte
+                    //// select s).First().SupplierId
+                    //if (drConsultaTrans.Length > 0)
+                    //{
+                    //    String sTransMnsInicial = "Fila: '" + iNFila.ToString() + "'.";
+                    //    String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+
+                    //    if ((from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).Count() <= 0)
+                    //        return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, sTransMnsInicial + "(Transporte) No se encontro el Supplier '" + sTPermisoTransporte + "'.", null));
+                    //    else
+                    //        gTransSupplierID = (from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).First().SupplierId;
+
+                    //}
+
+                    //#endregion
                     #endregion
 
                     #region Llenado.
+                    Product objProductoDatos = new Product();
+                    objProductoDatos = (from p in objContext.Products where p.ProductCode == sNProducto select p).First();
+
+                    gProductoID = objProductoDatos.ProductId;
+                    sUnidadMedida = objProductoDatos.JsonClaveUnidadMedidaId;
+
                     switch (viTipoArchivo)
                     {
                         #region Recepcion Datos.
@@ -5822,191 +5860,229 @@ namespace APIControlNet.Controllers
                     }
 
                     #region CFDI Datos.
-                    if (drConsultaCfdi.Length > 0)
+                    if (dtCfdi.Rows.Count > 0)
                     {
-                        int.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_FACTURA].ToString().Trim(), out iCNFactura);
-                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_PRECIO].ToString().Trim(), out dCPrecio);
-                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_IMPORTE].ToString().Trim(), out dCImporte);
-                        Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_VOLUMEN].ToString().Trim(), out dCVolumen);
-                        DateTime dtFFactura = Convert.ToDateTime(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim());
-                        String sFSerie = drConsultaCfdi[0][COLUMNA_CFDI_SERIE].ToString().Trim();
-
-                        #region Factura: Invoice.
-                        Invoice objFacturaHdrDato = new Invoice();
-                        if ((from i in objContext.Invoices where i.StoreId == viNEstacion.GetValueOrDefault() && i.InvoiceSerieId == sFSerie && i.Folio == iCNFactura.ToString().Trim() && i.Date == dtFFactura select i).Count() <= 0)
+                        DataRow[] drConsultaCfdi = dtCfdi.Select(dtCfdi.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaCfdi.Length > 0)
                         {
-                            objFacturaHdrDato.InvoiceId = Guid.NewGuid();
-                            objFacturaHdrDato.StoreId = viNEstacion.GetValueOrDefault();
+                            // RFC
+                            sCfdiRfc = drConsultaCfdi[0][COLUMNA_CFDI_RFC].ToString().Trim();
+                            // CFDI (UUID)
+                            gCfdiUUID = Guid.Parse(drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString());
+
                             switch (viTipoArchivo)
                             {
-                                case TIPO_ARCHIVO_RECEPCION: objFacturaHdrDato.SupplierId = gCfdiPersonaID; break;
-                                case TIPO_ARCHIVO_ENTREGA: objFacturaHdrDato.CustomerId = gCfdiPersonaID; break;
+                                #region Recepcion.
+                                case TIPO_ARCHIVO_RECEPCION:
+                                    gCfdiPersonaID = (from s in objContext.Suppliers where s.Rfc == sCfdiRfc select s).First().SupplierId;
+                                    iProveedorFuelID = (from s in objContext.SupplierFuels where s.StoreId == viNEstacion && s.FuelPermission == drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select s).First().SupplierFuelIdi;
+                                    break;
+                                #endregion
+
+                                #region Entrega.
+                                case TIPO_ARCHIVO_ENTREGA:
+                                    gCfdiPersonaID = (from c in objContext.Customers where c.Rfc == sCfdiRfc select c).First().CustomerId;
+                                    break;
+                                    #endregion
                             }
-                            objFacturaHdrDato.InvoiceSerieId = drConsultaCfdi[0][COLUMNA_CFDI_SERIE].ToString().Trim();
-                            objFacturaHdrDato.Folio = iCNFactura.ToString().Trim();
-                            objFacturaHdrDato.SatTipoComprobanteId = sCfdiTipoComprobante;
-                            objFacturaHdrDato.Uuid = drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString().Trim();
-                            objFacturaHdrDato.Subtotal = dSubtotal;
-                            objFacturaHdrDato.AmountTax = dIVA;
-                            objFacturaHdrDato.Amount = dCImporte;
 
-                            objFacturaHdrDato.Active = true;
-                            objFacturaHdrDato.Date = dtUpdate;
-                            objFacturaHdrDato.Updated = dtUpdate;
-                            objFacturaHdrDato.Locked = false;
-                            objFacturaHdrDato.Deleted = false;
+                            // Tipo Comprobante
+                            sCfdiTipoComprobante = drConsultaCfdi[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
+                            sCfdiTipoComprobante = (from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).First().SatTipoComprobanteId;
 
-                            if (drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                            int.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_NUMERO_FACTURA].ToString().Trim(), out iCNFactura);
+                            Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_PRECIO].ToString().Trim(), out dCPrecio);
+                            Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_IMPORTE].ToString().Trim(), out dCImporte);
+                            Decimal.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_VOLUMEN].ToString().Trim(), out dCVolumen);
+                            DateTime dtFFactura = Convert.ToDateTime(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim());
+                            String sFSerie = drConsultaCfdi[0][COLUMNA_CFDI_SERIE].ToString().Trim();
+
+                            #region Factura: Invoice.
+                            Invoice objFacturaHdrDato = new Invoice();
+                            if ((from i in objContext.Invoices where i.StoreId == viNEstacion.GetValueOrDefault() && i.InvoiceSerieId == sFSerie && i.Folio == iCNFactura.ToString().Trim() && i.Date == dtFFactura select i).Count() <= 0)
                             {
-                                Double dCfdiFecha = 0;
-                                Double.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha);
-                                objFacturaHdrDato.Date = DateTime.FromOADate(dCfdiFecha);
+                                objFacturaHdrDato.InvoiceId = Guid.NewGuid();
+                                objFacturaHdrDato.StoreId = viNEstacion.GetValueOrDefault();
+                                switch (viTipoArchivo)
+                                {
+                                    case TIPO_ARCHIVO_RECEPCION: objFacturaHdrDato.SupplierId = gCfdiPersonaID; break;
+                                    case TIPO_ARCHIVO_ENTREGA: objFacturaHdrDato.CustomerId = gCfdiPersonaID; break;
+                                }
+                                objFacturaHdrDato.InvoiceSerieId = drConsultaCfdi[0][COLUMNA_CFDI_SERIE].ToString().Trim();
+                                objFacturaHdrDato.Folio = iCNFactura.ToString().Trim();
+                                objFacturaHdrDato.SatTipoComprobanteId = sCfdiTipoComprobante;
+                                objFacturaHdrDato.Uuid = drConsultaCfdi[0][COLUMNA_CFDI_CFDI].ToString().Trim();
+                                objFacturaHdrDato.Subtotal = dSubtotal;
+                                objFacturaHdrDato.AmountTax = dIVA;
+                                objFacturaHdrDato.Amount = dCImporte;
+
+                                objFacturaHdrDato.Active = true;
+                                objFacturaHdrDato.Date = dtUpdate;
+                                objFacturaHdrDato.Updated = dtUpdate;
+                                objFacturaHdrDato.Locked = false;
+                                objFacturaHdrDato.Deleted = false;
+
+                                if (drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                                {
+                                    Double dCfdiFecha = 0;
+                                    Double.TryParse(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha);
+                                    objFacturaHdrDato.Date = DateTime.FromOADate(dCfdiFecha);
+                                }
+                                else
+                                    objFacturaHdrDato.Date = Convert.ToDateTime(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim());
+
+                                // <DUDA> GUARDAR Invoice
+                                objContext.Invoices.Add(objFacturaHdrDato);
+                                objContext.SaveChanges();
+
+                                gCfdiID = objFacturaHdrDato.InvoiceId.GetValueOrDefault();
                             }
                             else
-                                objFacturaHdrDato.Date = Convert.ToDateTime(drConsultaCfdi[0][COLUMNA_CFDI_FECHA_HORA].ToString().Trim());
+                                gCfdiID = (from i in objContext.Invoices
+                                           where i.StoreId == viNEstacion.GetValueOrDefault() &&
+                                                 i.InvoiceSerieId == sFSerie &&
+                                                 i.Folio == iCNFactura.ToString().Trim() &&
+                                                 i.Date == dtFFactura
+                                           select i).First().InvoiceId.GetValueOrDefault();
+                            #endregion
 
-                            // <DUDA> GUARDAR Invoice
-                            objContext.Invoices.Add(objFacturaHdrDato);
-                            objContext.SaveChanges();
-
-                            gCfdiID = objFacturaHdrDato.InvoiceId.GetValueOrDefault();
-                        }
-                        else
-                            gCfdiID = (from i in objContext.Invoices
-                                       where i.StoreId == viNEstacion.GetValueOrDefault() &&
-                                             i.InvoiceSerieId == sFSerie &&
-                                             i.Folio == iCNFactura.ToString().Trim() &&
-                                             i.Date == dtFFactura
-                                       select i).First().InvoiceId.GetValueOrDefault();
-                        #endregion
-
-                        #region Factura Detalle: Invoice Detail.
-                        InvoiceDetail objFacturaDtlDato = new InvoiceDetail();
-                        if ((from d in objContext.InvoiceDetails
-                             where d.InvoiceId == gCfdiID &&
-                                                                       d.ProductId == gProductoID &&
-                                                                       d.Price == dCPrecio &&
-                                                                       d.Quantity == dCVolumen &&
-                                                                       d.Amount == dCImporte
-                             select d).Count() <= 0)
-                        {
-                            objFacturaDtlDato.InvoiceDetailIdi = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Count() + 1;
-                            objFacturaDtlDato.InvoiceId = gCfdiID;
-                            objFacturaDtlDato.ProductId = gProductoID;
-                            objFacturaDtlDato.Date = dtUpdate;
-                            objFacturaDtlDato.Quantity = dCVolumen;
-                            objFacturaDtlDato.Price = dCPrecio;
-                            objFacturaDtlDato.Subtotal = dSubtotal;
-                            objFacturaDtlDato.AmountTax = dIVA;
-                            objFacturaDtlDato.Amount = dCImporte;
-
-                            objFacturaDtlDato.Active = 1;
-                            objFacturaDtlDato.Updated = dtUpdate;
-                            objFacturaDtlDato.Locked = 0;
-                            objFacturaDtlDato.Deleted = 0;
-
-                            // <DUDA> GUARDAR Invoice Detail
-                            objContext.InvoiceDetails.Add(objFacturaDtlDato);
-                            objContext.SaveChanges();
-
-                            if (objFacturaDtlDato.InvoiceDetailIdi > 1)
+                            #region Factura Detalle: Invoice Detail.
+                            InvoiceDetail objFacturaDtlDato = new InvoiceDetail();
+                            if ((from d in objContext.InvoiceDetails
+                                 where d.InvoiceId == gCfdiID &&
+                                                                           d.ProductId == gProductoID &&
+                                                                           d.Price == dCPrecio &&
+                                                                           d.Quantity == dCVolumen &&
+                                                                           d.Amount == dCImporte
+                                 select d).Count() <= 0)
                             {
-                                Invoice objFacturaUPD = (from i in objContext.Invoices
-                                                         where i.StoreId == viNEstacion.GetValueOrDefault() &&
-                                                               i.InvoiceSerieId == sFSerie &&
-                                                               i.Folio == iCNFactura.ToString().Trim() &&
-                                                               i.Date == dtFFactura
-                                                         select i).First();
+                                objFacturaDtlDato.InvoiceDetailIdi = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Count() + 1;
+                                objFacturaDtlDato.InvoiceId = gCfdiID;
+                                objFacturaDtlDato.ProductId = gProductoID;
+                                objFacturaDtlDato.Date = dtUpdate;
+                                objFacturaDtlDato.Quantity = dCVolumen;
+                                objFacturaDtlDato.Price = dCPrecio;
+                                objFacturaDtlDato.Subtotal = dSubtotal;
+                                objFacturaDtlDato.AmountTax = dIVA;
+                                objFacturaDtlDato.Amount = dCImporte;
 
-                                objFacturaUPD.Amount = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Sum(d => d.Amount);
-                                objContext.Invoices.Update(objFacturaUPD);
+                                objFacturaDtlDato.Active = 1;
+                                objFacturaDtlDato.Updated = dtUpdate;
+                                objFacturaDtlDato.Locked = 0;
+                                objFacturaDtlDato.Deleted = 0;
+
+                                // <DUDA> GUARDAR Invoice Detail
+                                objContext.InvoiceDetails.Add(objFacturaDtlDato);
                                 objContext.SaveChanges();
+
+                                if (objFacturaDtlDato.InvoiceDetailIdi > 1)
+                                {
+                                    Invoice objFacturaUPD = (from i in objContext.Invoices
+                                                             where i.StoreId == viNEstacion.GetValueOrDefault() &&
+                                                                   i.InvoiceSerieId == sFSerie &&
+                                                                   i.Folio == iCNFactura.ToString().Trim() &&
+                                                                   i.Date == dtFFactura
+                                                             select i).First();
+
+                                    objFacturaUPD.Amount = (from d in objContext.InvoiceDetails where d.InvoiceId == gCfdiID select d).Sum(d => d.Amount);
+                                    objContext.Invoices.Update(objFacturaUPD);
+                                    objContext.SaveChanges();
+                                }
                             }
+                            #endregion
                         }
-                        #endregion
                     }
                     #endregion
 
                     #region Pedimento Datos.
-                    if (drConsultaPedimento.Length > 0)
+                    if (dtPedimento.Rows.Count > 0)
                     {
-                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PUNTO_INTERNACION].ToString().Trim(), out dPPuntoInterOExt);
-                        int.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_MEDIO].ToString().Trim(), out iPMedIngOSal);
-                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PRECIO].ToString().Trim(), out dPPrecio);
-                        Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_VOLUMEN].ToString().Trim(), out dPVolumen);
-                        String sPClaveDeclaracion = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString().Trim();
-
-                        PetitionCustom objPedimentoDatos = new PetitionCustom();
-                        if ((from p in objContext.PetitionCustoms where p.NumberCustomsDeclaration == sPClaveDeclaracion && p.Date == dtFInicial select p).Count() <= 0)
+                        DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaPedimento.Length > 0)
                         {
-                            objPedimentoDatos.PetitionCustomsId = Guid.NewGuid();
-                            objPedimentoDatos.KeyOfImportationExportation = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString().Trim();
-                            objPedimentoDatos.KeyPointOfInletOrOulet = dPPuntoInterOExt;
-                            objPedimentoDatos.SatPaisId = drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString().Trim();
-                            objPedimentoDatos.TransportMediumnCustomsId = iPMedIngOSal;
-                            objPedimentoDatos.NumberCustomsDeclaration = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString().Trim();
-                            objPedimentoDatos.Incoterms = drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString().Trim();
-                            objPedimentoDatos.QuantityDocumented = dPVolumen;
-                            objPedimentoDatos.AmountOfImportationExportation = dPPrecio;
-                            objPedimentoDatos.JsonClaveUnidadMedidadId = sUnidadMedida;
+                            Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PUNTO_INTERNACION].ToString().Trim(), out dPPuntoInterOExt);
+                            int.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_MEDIO].ToString().Trim(), out iPMedIngOSal);
+                            Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PRECIO].ToString().Trim(), out dPPrecio);
+                            Decimal.TryParse(drConsultaPedimento[0][COLUMNA_PEDIMENTO_VOLUMEN].ToString().Trim(), out dPVolumen);
+                            String sPClaveDeclaracion = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString().Trim();
 
-                            objPedimentoDatos.Active = 1;
-                            objPedimentoDatos.Date = dtFInicial;
-                            objPedimentoDatos.Updated = dtUpdate;
-                            objPedimentoDatos.Locked = 0;
-                            objPedimentoDatos.Deleted = 0;
+                            PetitionCustom objPedimentoDatos = new PetitionCustom();
+                            if ((from p in objContext.PetitionCustoms where p.NumberCustomsDeclaration == sPClaveDeclaracion && p.Date == dtFInicial select p).Count() <= 0)
+                            {
+                                objPedimentoDatos.PetitionCustomsId = Guid.NewGuid();
+                                objPedimentoDatos.KeyOfImportationExportation = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString().Trim();
+                                objPedimentoDatos.KeyPointOfInletOrOulet = dPPuntoInterOExt;
+                                objPedimentoDatos.SatPaisId = drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString().Trim();
+                                objPedimentoDatos.TransportMediumnCustomsId = iPMedIngOSal;
+                                objPedimentoDatos.NumberCustomsDeclaration = drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString().Trim();
+                                objPedimentoDatos.Incoterms = drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString().Trim();
+                                objPedimentoDatos.QuantityDocumented = dPVolumen;
+                                objPedimentoDatos.AmountOfImportationExportation = dPPrecio;
+                                objPedimentoDatos.JsonClaveUnidadMedidadId = sUnidadMedida;
 
-                            // <DUDA> Guardar Pedimento.
-                            objContext.PetitionCustoms.Add(objPedimentoDatos);
-                            objContext.SaveChanges();
-                            gPedimentoID = objPedimentoDatos.PetitionCustomsId;
+                                objPedimentoDatos.Active = 1;
+                                objPedimentoDatos.Date = dtFInicial;
+                                objPedimentoDatos.Updated = dtUpdate;
+                                objPedimentoDatos.Locked = 0;
+                                objPedimentoDatos.Deleted = 0;
+
+                                // <DUDA> Guardar Pedimento.
+                                objContext.PetitionCustoms.Add(objPedimentoDatos);
+                                objContext.SaveChanges();
+                                gPedimentoID = objPedimentoDatos.PetitionCustomsId;
+                            }
+                            else
+                                gPedimentoID = (from p in objContext.PetitionCustoms
+                                                where p.NumberCustomsDeclaration == sPClaveDeclaracion && p.Date >= dtFInicial
+                                                select p).First().PetitionCustomsId;
                         }
-                        else
-                            gPedimentoID = (from p in objContext.PetitionCustoms
-                                            where p.NumberCustomsDeclaration == sPClaveDeclaracion && p.Date >= dtFInicial
-                                            select p).First().PetitionCustomsId;
                     }
                     #endregion
 
                     #region Transporte Datos.
-                    if (drConsultaTrans.Length > 0)
+                    if (dtTransporte.Rows.Count > 0)
                     {
-                        //String sTPermisoTransporte = drConsultaTransporte[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE].ToString().Trim(), out dTTarifa);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_CAPACIDAD].ToString().Trim(), out dTCargoCap);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_USO].ToString().Trim(), out dTCargoUso);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_VOLUMEN].ToString().Trim(), out dTCargoVol);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO].ToString().Trim(), out dTTarifaSum);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CONTRAPRESTACION].ToString().Trim(), out dTContraPrest);
-                        Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_DESCUENTO].ToString().Trim(), out dTDescuento);
-
-                        SupplierTransportRegister objTransporteDatos = new SupplierTransportRegister();
-                        if ((from t in objContext.SupplierTransportRegisters where t.Date == dtFInicial select t).Count() <= 0)
+                        DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaTrans.Length > 0)
                         {
-                            objTransporteDatos.SupplierTransportRegisterId = Guid.NewGuid();
-                            objTransporteDatos.SupplierId = gTransSupplierID; // *<DUDA>
-                            objTransporteDatos.AmountPerFee = dTTarifa;
-                            objTransporteDatos.AmountPerCapacity = dTCargoCap;
-                            objTransporteDatos.AmountPerUse = dTCargoUso;
-                            objTransporteDatos.AmountPerVolume = dTCargoVol;
-                            objTransporteDatos.AmountPerService = dTContraPrest;
-                            objTransporteDatos.AmountOfDiscount = dTDescuento;
+                            String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE].ToString().Trim(), out dTTarifa);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_CAPACIDAD].ToString().Trim(), out dTCargoCap);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_USO].ToString().Trim(), out dTCargoUso);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CARGO_VOLUMEN].ToString().Trim(), out dTCargoVol);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO].ToString().Trim(), out dTTarifaSum);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_CONTRAPRESTACION].ToString().Trim(), out dTContraPrest);
+                            Decimal.TryParse(drConsultaTrans[0][COLUMNA_TRANSPORTE_DESCUENTO].ToString().Trim(), out dTDescuento);
+                            gTransSupplierID = (from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).First().SupplierId;
 
-                            objTransporteDatos.Active = 1;
-                            objTransporteDatos.Date = dtFInicial;
-                            objTransporteDatos.Updated = objTransporteDatos.Date;
-                            objTransporteDatos.Deleted = 0;
-                            objTransporteDatos.Locked = 0;
+                            SupplierTransportRegister objTransporteDatos = new SupplierTransportRegister();
+                            if ((from t in objContext.SupplierTransportRegisters where t.Date == dtFInicial select t).Count() <= 0)
+                            {
+                                objTransporteDatos.SupplierTransportRegisterId = Guid.NewGuid();
+                                objTransporteDatos.SupplierId = gTransSupplierID; // *<DUDA>
+                                objTransporteDatos.AmountPerFee = dTTarifa;
+                                objTransporteDatos.AmountPerCapacity = dTCargoCap;
+                                objTransporteDatos.AmountPerUse = dTCargoUso;
+                                objTransporteDatos.AmountPerVolume = dTCargoVol;
+                                objTransporteDatos.AmountPerService = dTContraPrest;
+                                objTransporteDatos.AmountOfDiscount = dTDescuento;
 
-                            // GUARDAR Transporte
-                            objContext.SupplierTransportRegisters.Add(objTransporteDatos);
-                            objContext.SaveChanges();
-                            gTransporteID = objTransporteDatos.SupplierTransportRegisterId;
+                                objTransporteDatos.Active = 1;
+                                objTransporteDatos.Date = dtFInicial;
+                                objTransporteDatos.Updated = objTransporteDatos.Date;
+                                objTransporteDatos.Deleted = 0;
+                                objTransporteDatos.Locked = 0;
+
+                                // GUARDAR Transporte
+                                objContext.SupplierTransportRegisters.Add(objTransporteDatos);
+                                objContext.SaveChanges();
+                                gTransporteID = objTransporteDatos.SupplierTransportRegisterId;
+                            }
+                            else
+                                gTransporteID = (from t in objContext.SupplierTransportRegisters
+                                                 where t.Date == dtFInicial
+                                                 select t).First().SupplierTransportRegisterId;
                         }
-                        else
-                            gTransporteID = (from t in objContext.SupplierTransportRegisters
-                                             where t.Date == dtFInicial
-                                             select t).First().SupplierTransportRegisterId;
                     }
                     #endregion
 
@@ -6105,6 +6181,7 @@ namespace APIControlNet.Controllers
         {
             String sMnsOut = String.Empty;
             List<stValidacionRecepEntXls> lstValidaciones = new List<stValidacionRecepEntXls>();
+            List<String> lstMensajes = new List<String>();
 
             #region Constantes.
             const String TIPO_ARCHIVO_RECEPCION = "RECEPCION";
@@ -6125,15 +6202,15 @@ namespace APIControlNet.Controllers
             const int COLUMNA_GENERAL_VOLUMEN_INICIAL = 3;
             const int COLUMNA_GENERAL_VOLUMEN = 4;
             const int COLUMNA_GENERAL_VOLUMEN_FINAL = 5;
-            const int COLUMNA_GENERAL_TEMPERATURA = 6;
-            const int COLUMNA_GENERAL_PRESION_ABSOLUTA = 7;
-            const int COLUMNA_GENERAL_PODER_CALORIFICO = 8;
+            //const int COLUMNA_GENERAL_TEMPERATURA = 6;
+            //const int COLUMNA_GENERAL_PRESION_ABSOLUTA = 7;
+            //const int COLUMNA_GENERAL_PODER_CALORIFICO = 8;
             const int COLUMNA_GENERAL_FECHA_INICIAL = 9;
             const int COLUMNA_GENERAL_FECHA_FINAL = 10;
-            const int COLUMNA_GENERAL_PRECIO = 11;
-            const int COLUMNA_GENERAL_SUBTOTAL = 12;
-            const int COLUMNA_GENERAL_IVA = 13;
-            const int COLUMNA_GENERAL_IMPORTE = 14;
+            //const int COLUMNA_GENERAL_PRECIO = 11;
+            //const int COLUMNA_GENERAL_SUBTOTAL = 12;
+            //const int COLUMNA_GENERAL_IVA = 13;
+            //const int COLUMNA_GENERAL_IMPORTE = 14;
             #endregion
 
             #region CFDI.
@@ -6144,36 +6221,36 @@ namespace APIControlNet.Controllers
             const int COLUMNA_CFDI_NUMERO_FACTURA = 4;
             const int COLUMNA_CFDI_TIPO_CFDI = 5;
             const int COLUMNA_CFDI_CFDI = 6;
-            const int COLUMNA_CFDI_PRECIO = 7;
-            const int COLUMNA_CFDI_IMPORTE = 8;
+            //const int COLUMNA_CFDI_PRECIO = 7;
+            //const int COLUMNA_CFDI_IMPORTE = 8;
             const int COLUMNA_CFDI_FECHA_HORA = 9;
-            const int COLUMNA_CFDI_VOLUMEN = 10;
+            //const int COLUMNA_CFDI_VOLUMEN = 10;
             const int COLUMNA_CFDI_NUMERO_PERMISO_CRE = 11;
             #endregion
 
             #region Pedimento.
             const int COLUMNA_PEDIMENTO_NUMERO_FILA = 0;
             const int COLUMNA_PEDIMENTO_CLAVE_PERMISO = 1;
-            const int COLUMNA_PEDIMENTO_PUNTO_INTERNACION = 2;
+            //const int COLUMNA_PEDIMENTO_PUNTO_INTERNACION = 2;
             const int COLUMNA_PEDIMENTO_PAIS = 3;
-            const int COLUMNA_PEDIMENTO_MEDIO = 4;
+            //const int COLUMNA_PEDIMENTO_MEDIO = 4;
             const int COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO = 5;
             const int COLUMNA_PEDIMENTO_INCOTERMS = 6;
-            const int COLUMNA_PEDIMENTO_PRECIO = 7;
-            const int COLUMNA_PEDIMENTO_VOLUMEN = 8;
+            //const int COLUMNA_PEDIMENTO_PRECIO = 7;
+            //const int COLUMNA_PEDIMENTO_VOLUMEN = 8;
             #endregion
 
             #region Transporte.
             const int COLUMNA_TRANSPORTE_NUMERO_FILA = 0;
             const int COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE = 1;
-            const int COLUMNA_TRANSPORTE_CLAVE_VEHICULO = 2;
-            const int COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE = 3;
-            const int COLUMNA_TRANSPORTE_CARGO_CAPACIDAD = 4;
-            const int COLUMNA_TRANSPORTE_CARGO_USO = 5;
-            const int COLUMNA_TRANSPORTE_CARGO_VOLUMEN = 6;
-            const int COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO = 7;
-            const int COLUMNA_TRANSPORTE_CONTRAPRESTACION = 8;
-            const int COLUMNA_TRANSPORTE_DESCUENTO = 9;
+            //const int COLUMNA_TRANSPORTE_CLAVE_VEHICULO = 2;
+            //const int COLUMNA_TRANSPORTE_TARIFA_TRANSPORTE = 3;
+            //const int COLUMNA_TRANSPORTE_CARGO_CAPACIDAD = 4;
+            //const int COLUMNA_TRANSPORTE_CARGO_USO = 5;
+            //const int COLUMNA_TRANSPORTE_CARGO_VOLUMEN = 6;
+            //const int COLUMNA_TRANSPORTE_TARIFA_SUMINISTRO = 7;
+            //const int COLUMNA_TRANSPORTE_CONTRAPRESTACION = 8;
+            //const int COLUMNA_TRANSPORTE_DESCUENTO = 9;
             #endregion
             #endregion
             #endregion
@@ -6192,8 +6269,6 @@ namespace APIControlNet.Controllers
                 if (viArchivo.Tables.Contains(HOJA_TRANSPORTE))
                     dtTransporte = viArchivo.Tables[HOJA_TRANSPORTE];
 
-                lstValidaciones = new List<stValidacionRecepEntXls>();
-
                 foreach (DataRow drGeneral in viArchivo.Tables[HOJA_GENERAL].Rows)
                 {
                     int iNFila = 0;
@@ -6202,11 +6277,14 @@ namespace APIControlNet.Controllers
                     if (iNFila <= 0)
                         continue;
 
-                    DataRow[] drConsultaFactura = dtFactura.Select(dtFactura.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-                    DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
-                    DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    //DataRow[] drConsultaFactura = dtFactura.Select(dtFactura.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    //DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                    //DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
 
-                    if (drConsultaFactura.Length == 0 && drConsultaPedimento.Length == 0 && drConsultaTrans.Length == 0)
+                    //if (drConsultaFactura.Length == 0 && drConsultaPedimento.Length == 0 && drConsultaTrans.Length == 0)
+                    //    continue;
+
+                    if (dtFactura.Rows.Count == 0 && dtPedimento.Rows.Count == 0 && dtTransporte.Rows.Count == 0)
                         continue;
 
                     String sMnsFila = "Fila No." + iNFila.ToString() + ": ";
@@ -6214,8 +6292,6 @@ namespace APIControlNet.Controllers
                            sUnidadMedidad = String.Empty,
                            sFacturaRfc = String.Empty,
                            sCfdiTipoComprobante = String.Empty;
-
-                    List<String> lstMensajes = new List<String>();
 
                     #region Validacion: Hoja "General".
                     int iNDucto = 0;
@@ -6243,7 +6319,7 @@ namespace APIControlNet.Controllers
                     }
                     else
                         if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim(), out dtFInicio))
-                            lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
+                        lstMensajes.Add("(General) Formato incorrecto de Fecha Inicial '" + drGeneral[COLUMNA_GENERAL_FECHA_INICIAL].ToString().Trim() + "'.");
                     #endregion
 
                     #region Fecha Final.
@@ -6262,7 +6338,7 @@ namespace APIControlNet.Controllers
                     }
                     else
                         if (!DateTime.TryParse(drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim(), out dtFFinal))
-                            lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
+                        lstMensajes.Add("(General) Formato incorrecto de Fecha Final '" + drGeneral[COLUMNA_GENERAL_FECHA_FINAL].ToString().Trim() + "'.");
                     #endregion
 
                     if (String.IsNullOrEmpty(sNProducto))
@@ -6286,115 +6362,125 @@ namespace APIControlNet.Controllers
                         Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_FINAL].ToString().Trim(), out dVolFinal);
                         Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN].ToString().Trim(), out dVolumen);
 
-                        if(dVolumen > dVolInicial)
+                        if (dVolumen > dVolInicial)
                             lstMensajes.Add("(General) El Volumen Entregado '" + dVolumen.ToString("N3") + "' es mayor al Volumen Incial '" + dVolInicial.ToString("N3") + "'");
                     }
-                    
-
                     #endregion
 
                     #region Validación: Hoja "CFDI".
-                    if (drConsultaFactura.Length > 0)
+                    if (dtFactura.Rows.Count > 0)
                     {
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_RFC].ToString()))
-                            lstMensajes.Add("(CFDI) Ingresa el RFC.");
-
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NOMBRE].ToString()))
-                            lstMensajes.Add("(CFDI) Ingresa el Nombre del Cliente.");
-
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_SERIE].ToString()))
-                            lstMensajes.Add("(CFDI) Ingresa la Serie de la Factura.");
-
-                        int iNFactura = 0;
-                        int.TryParse(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_FACTURA].ToString(), out iNFactura);
-                        if (iNFactura <= 0)
-                            lstMensajes.Add("(CFDI) Ingresa el Número de la Factura.");
-
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString()))
-                            lstMensajes.Add("(CFDI) Ingresa el CFDI de la Factura.");
-
-                        if (!ValidarCFDI(viCFDI: drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString()))
-                            lstMensajes.Add("(CFDI) El CFDI capturado '" + drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.");
-
-                        #region Fecha y Hora.
-                        if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
-                            lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
-
-
-                        DateTime dtFFactura;
-                        //if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
-                        //    lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
-
-                        if (drGeneral[COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                        DataRow[] drConsultaFactura = dtFactura.Select(dtFactura.Columns[COLUMNA_CFDI_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaFactura.Length > 0)
                         {
-                            Double dCfdiFecha = 0;
-                            if (!Double.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha))
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_RFC].ToString()))
+                                lstMensajes.Add("(CFDI) Ingresa el RFC.");
+
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NOMBRE].ToString()))
+                                lstMensajes.Add("(CFDI) Ingresa el Nombre del Cliente.");
+
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_SERIE].ToString()))
+                                lstMensajes.Add("(CFDI) Ingresa la Serie de la Factura.");
+
+                            int iNFactura = 0;
+                            int.TryParse(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_FACTURA].ToString(), out iNFactura);
+                            if (iNFactura <= 0)
+                                lstMensajes.Add("(CFDI) Ingresa el Número de la Factura.");
+
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString()))
+                                lstMensajes.Add("(CFDI) Ingresa el CFDI de la Factura.");
+
+                            if (!ValidarCFDI(viCFDI: drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString()))
+                                lstMensajes.Add("(CFDI) El CFDI capturado '" + drConsultaFactura[0][COLUMNA_CFDI_CFDI].ToString() + "' no tiene el formato correcto.");
+
+                            #region Fecha y Hora.
+                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_FECHA_HORA].ToString()))
+                                lstMensajes.Add("(CFDI) No se encontro la Fecha de la Factura.");
+
+
+                            DateTime dtFFactura;
+                            //if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
+                            //    lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
+
+                            if (drGeneral[COLUMNA_CFDI_FECHA_HORA].GetType().Equals(typeof(Double)))
+                            {
+                                Double dCfdiFecha = 0;
+                                if (!Double.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dCfdiFecha))
+                                    lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
+                            }
+                            else
+                                if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
                                 lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
-                        }
-                        else
-                            if (!DateTime.TryParse(drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim(), out dtFFactura))
-                                lstMensajes.Add("(CFDI) Formato incorrecto de Fecha '" + drGeneral[COLUMNA_CFDI_FECHA_HORA].ToString().Trim() + "'.");
 
-                        #endregion
-
-                        if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
-                            if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
-                                lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
-
-                        // RFC
-                        sFacturaRfc = drConsultaFactura[0][COLUMNA_CFDI_RFC].ToString().Trim();
-
-                        switch (viTipoArchivo)
-                        {
-                            #region Recepcion.
-                            case TIPO_ARCHIVO_RECEPCION:
-                                if ((from s in objContext.Suppliers where s.Rfc == sFacturaRfc select s).Count() <= 0)
-                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del proveedor.");
-
-                                if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.FuelPermission == drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select p).Count() <= 0)
-                                    lstMensajes.Add("(CFDI) No se encontro información del Proveedor con permiso '" + drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() + "'.");
-                                break;
                             #endregion
 
-                            #region Entrega.
-                            case TIPO_ARCHIVO_ENTREGA:
-                                if ((from c in objContext.Customers where c.Rfc == sFacturaRfc select c).Count() <= 0)
-                                    lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del cliente.");
-                                break;
-                                #endregion
-                        }
+                            if (viTipoArchivo.Equals(TIPO_ARCHIVO_RECEPCION))
+                                if (String.IsNullOrEmpty(drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString()))
+                                    lstMensajes.Add("(CFDI) No se capturo el Numero de Permiso CRE del Proveedor.");
 
-                        // Tipo Comprobante
-                        sCfdiTipoComprobante = drConsultaFactura[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
-                        if ((from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).Count() <= 0)
-                            lstMensajes.Add("(CFDI) No se encontro el tipo de comprobante '" + sCfdiTipoComprobante + "'.");
+                            // RFC
+                            sFacturaRfc = drConsultaFactura[0][COLUMNA_CFDI_RFC].ToString().Trim();
+
+                            switch (viTipoArchivo)
+                            {
+                                #region Recepcion.
+                                case TIPO_ARCHIVO_RECEPCION:
+                                    if ((from s in objContext.Suppliers where s.Rfc == sFacturaRfc select s).Count() <= 0)
+                                        lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del proveedor.");
+
+                                    if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.FuelPermission == drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() select p).Count() <= 0)
+                                        lstMensajes.Add("(CFDI) No se encontro información del Proveedor con permiso '" + drConsultaFactura[0][COLUMNA_CFDI_NUMERO_PERMISO_CRE].ToString() + "'.");
+                                    break;
+                                #endregion
+
+                                #region Entrega.
+                                case TIPO_ARCHIVO_ENTREGA:
+                                    if ((from c in objContext.Customers where c.Rfc == sFacturaRfc select c).Count() <= 0)
+                                        lstMensajes.Add("(CFDI) No se encontro información del RFC '" + sFacturaRfc + "' del cliente.");
+                                    break;
+                                    #endregion
+                            }
+
+                            // Tipo Comprobante
+                            sCfdiTipoComprobante = drConsultaFactura[0][COLUMNA_CFDI_TIPO_CFDI].ToString().Trim();
+                            if ((from t in objContext.SatTipoComprobantes where t.Descripcion.ToUpper() == sCfdiTipoComprobante.ToUpper() select t).Count() <= 0)
+                                lstMensajes.Add("(CFDI) No se encontro el tipo de comprobante '" + sCfdiTipoComprobante + "'.");
+                        }
                     }
                     #endregion
 
-                    #region Validación: Hoja "Pedimento".                    
-                    if (drConsultaPedimento.Length > 0)
+                    #region Validación: Hoja "Pedimento".
+                    if (dtPedimento.Rows.Count > 0)
                     {
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString()))
-                            lstMensajes.Add("(Pedimento) No se encontro la Clave de Permiso.");
+                        DataRow[] drConsultaPedimento = dtPedimento.Select(dtPedimento.Columns[COLUMNA_PEDIMENTO_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaPedimento.Length > 0)
+                        {
+                            if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PERMISO].ToString()))
+                                lstMensajes.Add("(Pedimento) No se encontro la Clave de Permiso.");
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString()))
-                            lstMensajes.Add("(Pedimento) No se encontro el Pais.");
+                            if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_PAIS].ToString()))
+                                lstMensajes.Add("(Pedimento) No se encontro el Pais.");
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString()))
-                            lstMensajes.Add("(Pedimento) No se encontro la Clave de Pedimento.");
+                            if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO].ToString()))
+                                lstMensajes.Add("(Pedimento) No se encontro la Clave de Pedimento.");
 
-                        if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
-                            lstMensajes.Add("(Pedimento) No se encontro la Incoterms");
+                            if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
+                                lstMensajes.Add("(Pedimento) No se encontro la Incoterms");
+                        }
                     }
                     #endregion
 
                     #region Validación: Hoja "Transporte".
-                    if (drConsultaTrans.Length > 0)
+                    if (dtTransporte.Rows.Count > 0)
                     {
-                        String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
+                        DataRow[] drConsultaTrans = dtTransporte.Select(dtTransporte.Columns[COLUMNA_TRANSPORTE_NUMERO_FILA].ColumnName + "='" + iNFila.ToString().Trim() + "'");
+                        if (drConsultaTrans.Length > 0)
+                        {
+                            String sTPermisoTransporte = drConsultaTrans[0][COLUMNA_TRANSPORTE_PERMISO_TRANSPORTE].ToString().Trim();
 
-                        if ((from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).Count() <= 0)
-                            lstMensajes.Add("(Transporte) No se encontro el Supplier '" + sTPermisoTransporte + "'.");
+                            if ((from s in objContext.SupplierTransports where s.StoreId == viNEstacion && s.TransportPermission == sTPermisoTransporte select s).Count() <= 0)
+                                lstMensajes.Add("(Transporte) No se encontro el Supplier '" + sTPermisoTransporte + "'.");
+                        }
                     }
                     #endregion
 
