@@ -91,7 +91,6 @@ namespace APIControlNet.Controllers
                 }
                 list.Add(dict);
             }
-
             return list;
         }
 
