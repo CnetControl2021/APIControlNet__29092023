@@ -8,8 +8,11 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
-            CreateMap<TestsqlDTO, Testsql>();
-            CreateMap<Testsql, TestsqlDTO>();
+            CreateMap<ProductPriceDTO, ProductPrice>();
+            CreateMap<ProductPrice, ProductPriceDTO>();
+
+            CreateMap<SqlReportDTO, SqlReport>();
+            CreateMap<SqlReport, SqlReportDTO>();
 
             CreateMap<CompanyCustomerDTO, CompanyCustomer>();
             CreateMap<CompanyCustomer, CompanyCustomerDTO>();

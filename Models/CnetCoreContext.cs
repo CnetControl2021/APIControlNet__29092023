@@ -172,6 +172,7 @@ namespace APIControlNet.Models
         public virtual DbSet<Shift> Shifts { get; set; }
         public virtual DbSet<ShiftDeposit> ShiftDeposits { get; set; }
         public virtual DbSet<ShiftHead> ShiftHeads { get; set; }
+        public virtual DbSet<SqlReport> SqlReports { get; set; }
         public virtual DbSet<StatusDispenser> StatusDispensers { get; set; }
         public virtual DbSet<StatusIsland> StatusIslands { get; set; }
         public virtual DbSet<Store> Stores { get; set; }
@@ -196,7 +197,6 @@ namespace APIControlNet.Models
         public virtual DbSet<TankShape> TankShapes { get; set; }
         public virtual DbSet<TankType> TankTypes { get; set; }
         public virtual DbSet<TaskType> TaskTypes { get; set; }
-        public virtual DbSet<Testsql> Testsqls { get; set; }
         public virtual DbSet<TransportMediumnCustom> TransportMediumnCustoms { get; set; }
         public virtual DbSet<TypeMovement> TypeMovements { get; set; }
         public virtual DbSet<UserDateCreate> UserDateCreates { get; set; }
@@ -221,7 +221,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-            
+       
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -8697,6 +8697,35 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<SqlReport>(entity =>
+            {
+                entity.ToTable("sqlReport");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Name).HasColumnName("name");
+
+                entity.Property(e => e.Query).HasColumnName("query");
+
+                entity.Property(e => e.Something).HasColumnName("something");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<StatusDispenser>(entity =>
             {
                 entity.HasKey(e => e.StatusDispenserIdx)
@@ -10181,23 +10210,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.TaskTypeId).HasColumnName("task_type_id");
 
                 entity.Property(e => e.Updated).HasColumnName("updated");
-            });
-
-            modelBuilder.Entity<Testsql>(entity =>
-            {
-                entity.ToTable("testsql");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Data).HasColumnName("data");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("datetime")
-                    .HasColumnName("date");
-
-                entity.Property(e => e.Quey).HasColumnName("quey");
-
-                entity.Property(e => e.Something).HasColumnName("something");
             });
 
             modelBuilder.Entity<TransportMediumnCustom>(entity =>

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 
 namespace APIControlNet.Controllers
@@ -28,6 +29,34 @@ namespace APIControlNet.Controllers
             this.mapper = mapper;
             this.servicioBinnacle = servicioBinnacle;
         }
+
+        [HttpGet("viewPrice")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProducts(Guid storeId)
+        {
+            try
+            {
+                var result = await (from p in context.Products
+                                    join ps in context.ProductStores on p.ProductId equals ps.ProductId
+                                    where ps.StoreId == storeId && p.IsFuel == true
+                                    orderby ps.ProductUce
+                                    select new
+                                    {
+                                        p.ProductIdx,
+                                        p.ProductId,
+                                        p.Name,
+                                        p.ProductCode,
+                                        ps.Price,
+                                        ps.Ieps
+                                    }).ToListAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
+        }
+
 
         [HttpGet]
         public async Task<IEnumerable<ProductDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)

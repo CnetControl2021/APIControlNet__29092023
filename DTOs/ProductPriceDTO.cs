@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
-    public partial class ProductPrice
+    public class ProductPriceDTO
     {
         public int ProductPriceIdx { get; set; }
         public Guid StoreId { get; set; }
@@ -23,4 +20,3 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
     }
 }
-

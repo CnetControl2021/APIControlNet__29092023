@@ -76,8 +76,9 @@ namespace APIControlNet.Controllers
 
         [HttpGet("listadoUsuarios")]
         [AllowAnonymous]
-        public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO)
+        public async Task<ActionResult<List<CredencialesUsuariosDTO>>> ListadoUsuarios([FromQuery] PaginacionDTO paginacionDTO, Guid companyId)
         {
+            var userStoreCompany = await context.UserStores.FirstOrDefaultAsync(x => x.CompanyId == companyId);
             var queryable = userManager.Users.AsQueryable();
 
             await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
@@ -86,6 +87,59 @@ namespace APIControlNet.Controllers
                 .OrderBy(x => x.Email)
                 .ToListAsync();
             return Ok(usuarios);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Get(Guid storeId)
+        {
+            var storeDb = await context.Stores.FirstOrDefaultAsync(x => x.StoreId == storeId);
+            var companyId = storeDb.CompanyId;
+            try
+            {
+                var result = await (from us in context.UserStores
+                                    join u in context.Users on us.UserId equals u.Id
+                                    join c in context.Companies on us.CompanyId equals c.CompanyId
+                                    where us.CompanyId == companyId
+                                    orderby u.Email
+                                    select new
+                                    {
+                                        us.UserStoreIdx,
+                                        u.Id,
+                                        u.Email,
+                                        us.Date,
+                                        c.Name
+                                    }).ToListAsync();
+                var conteo = result.Count();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("support")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Get2(Guid storeId)
+        {
+            try
+            {
+                var result = await (from u in context.Users
+                                    orderby u.Email
+                            select new
+                            {
+                                u.Id,
+                                u.Email,
+                            }).ToListAsync();
+
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
         }
 
 
@@ -216,13 +270,16 @@ namespace APIControlNet.Controllers
         //}
 
 
-        [HttpPost("registrar/{CompanyId?}")]
-        public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO, Guid CompanyId)
+        [HttpPost("registrar/{storeId?}")]
+        public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO, Guid storeId)
         {
             try
             {
                 using (var transaccion = await context.Database.BeginTransactionAsync())
                 {
+                    var aspNetUserDb = await context.Users.AnyAsync(x => x.Email == credencialesUsuariosDTO.Email);
+                    if (aspNetUserDb) { return BadRequest("Usuario ya existe"); }
+
                     var usuario = new IdentityUser
                     {
                         UserName = credencialesUsuariosDTO.Email,
@@ -232,16 +289,16 @@ namespace APIControlNet.Controllers
                     var resultado = await userManager.CreateAsync(usuario, credencialesUsuariosDTO.Password); //Respuesta Identity
                     var emailconfimed = credencialesUsuariosDTO.EmailConfirmed;
 
-                    if (CompanyId != Guid.Empty)
-                    {
-                        var dbCompany = await context.Stores.FirstOrDefaultAsync(x => x.CompanyId == CompanyId);
-                        var StoreId = dbCompany.StoreId;
+                    var storedb = await context.Stores.FirstOrDefaultAsync(x => x.StoreId == storeId);
+                    var companyId = storedb.CompanyId;
 
+                    if (companyId != Guid.Empty)
+                    {
                         UserStore us = new()
                         {
                             UserId = usuario.Id,
-                            CompanyId = CompanyId,
-                            StoreId = StoreId,
+                            CompanyId = companyId,
+                            StoreId = storeId,
                             Date = DateTime.Now,
                             Updated = DateTime.Now,
                             Active = true,
@@ -253,7 +310,7 @@ namespace APIControlNet.Controllers
                         var usuarioId = obtenerUsuarioId();
                         var ipUser = obtenetIP();
                         var name2 = credencialesUsuariosDTO.Email;
-                        var storeId2 = StoreId;
+                        var storeId2 = storeId;
                         await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name2, storeId2);
 
                         context.SaveChanges();
@@ -262,21 +319,22 @@ namespace APIControlNet.Controllers
                         if (resultado.Succeeded)
                         {
 
-                            return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, dbCompany.CompanyId);
+                            return ConstruirToken(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, storedb.CompanyId);
                             //return Ok(resultado);
                         }
+                        return Ok(resultado);
 
                     }
                     else
                     {
-                        return BadRequest(resultado.Errors + "Seleccionar Empresa");
+                        return BadRequest(resultado.Errors /*+ "Seleccionar Empresa"*/);
                     }
-                    return BadRequest("Revisar que empresa y sucursal existan");
+                    //return BadRequest("Revisar que empresa y sucursal existan");
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message + "Revisar que empresa y sucursal existan");
+                return BadRequest(ex.Message /*+ "Revisar que empresa y sucursal existan"*/);
             }
         }
 
@@ -339,7 +397,6 @@ namespace APIControlNet.Controllers
             //await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name);
 
             //var ChPerson = mapper.Map<ChPerson>(ChPersonDTO); //respuesta contextbd
-
 
             if (resultado.Succeeded)
             {
@@ -412,9 +469,9 @@ namespace APIControlNet.Controllers
                 else
                 {
                     return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed);
-                }               
+                }
             }
-            else 
+            else
             {
                 await servicioBinnacle.errorLoginBinnacle(usuarioId, ipUser, name);
                 return BadRequest("Login incorrecto");
