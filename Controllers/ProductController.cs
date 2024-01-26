@@ -5,11 +5,8 @@ using APIControlNet.Utilidades;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 
 namespace APIControlNet.Controllers
@@ -47,7 +44,7 @@ namespace APIControlNet.Controllers
                                         p.Name,
                                         p.ProductCode,
                                         ps.Price,
-                                        ps.Ieps
+                                        ps.Ieps,
                                     }).ToListAsync();
                 return Ok(result);
             }

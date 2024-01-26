@@ -178,6 +178,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost("AsignarRol/{storeId?}")] ///se guarda relacion en AspNetUserRoles
+        //[AllowAnonymous]
         public async Task<ActionResult> AsignarRolaUsuario(EditarRolDTO editarRolDTO, Guid storeId)
         {
             var usuario = await userManager.FindByIdAsync(editarRolDTO.UserId);
@@ -339,6 +340,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpPost("registrar")]
+        [AllowAnonymous]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CredencialesUsuariosDTO credencialesUsuariosDTO)
         {
             try

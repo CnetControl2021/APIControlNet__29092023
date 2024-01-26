@@ -146,25 +146,34 @@ namespace APIControlNet.Controllers
         //    //return (IEnumerable<CustomerDTO>)Ok(claseEmpaquetada);
         //}
 
+
         [HttpGet]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse>> GetClientes(int skip, int take, string searchTerm = "")
         {
-            var query = context.Customers.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            try
             {
-                query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || c.CustomerNumber.ToString().ToLower().Contains(searchTerm)); 
+                var query = context.Customers.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || c.CustomerNumber.ToString().ToLower().Contains(searchTerm));
+                }
+
+                var nclientes = await query.Skip(skip).Take(take).ToListAsync();
+                var ntotal = await query.CountAsync();
+
+                return new ApiResponse
+                {
+                    NTotal = ntotal,
+                    NClientes = mapper.Map<IEnumerable<CustomerDTO>>(nclientes)
+                };
             }
-
-            var nclientes = await query.Skip(skip).Take(take).ToListAsync();
-            var ntotal = await query.CountAsync();
-
-            return new ApiResponse
+            catch (Exception ex)
             {
-                NTotal = ntotal,
-                NClientes = mapper.Map<IEnumerable<CustomerDTO>>(nclientes)
-            };
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         //[HttpGet]

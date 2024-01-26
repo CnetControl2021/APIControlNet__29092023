@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace APIControlNet.Controllers
@@ -68,22 +69,28 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<ActionResult> Post(ProductPriceDTO productPriceDTO, Guid storeId)
         {
-            //var dataDb = await context.Stores.FirstOrDefaultAsync(x => x.StoreId == storeId);
-            //var companyId = dataDb.CompanyId;
-
+            var dataDb = await context.ProductPrices.FirstOrDefaultAsync(x => x.StoreId == storeId
+            && x.ProductId == productPriceDTO.ProductId && x.IsCancelled == false && x.IsApplied == false);
+            if (dataDb != null) { dataDb.IsCancelled = true; context.Update(dataDb); }           
+                     
             try 
             {
                 var pp = mapper.Map<ProductPrice>(productPriceDTO);
                 pp.StoreId = storeId;
-                pp.Date = DateTime.Now;
+                pp.Date = DateTime.Now;      
+                pp.ApplicationDate = DateTime.Now;
+                pp.IsCancelled = false;
+                pp.IsApplied = false;
                 pp.Updated = DateTime.Now;
-
-
+                pp.Active = true;
+                pp.Locked = false;
+                pp.Deleted = false;
 
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
                 var name = pp.Price.ToString();
                 var storeId2 = storeId;
+
 
                 context.Add(pp);
                 await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
@@ -94,21 +101,68 @@ namespace APIControlNet.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        // POST api/datos/actualizar
+        [HttpPost("list")]
+        public async Task<IActionResult> ActualizarDatos([FromBody] List<ProductPriceDTO> datos, Guid storeId)
+        {
+            var queryable = context.ProductPrices.AsQueryable();
+
+            var db = queryable.Where(x => x.StoreId == storeId && x.IsCancelled == false && x.IsApplied == false);
+
+            if (db.Any())
+            {
+
+                foreach (var item in db)
+                {
+                    item.IsCancelled = true; 
+                }
+                context.SaveChanges();
+            }
+
+            try
+            {
+                if (datos == null || !datos.Any())
+                {
+                    return BadRequest("No se proporcionaron datos para actualizar.");
+                }
+
+                foreach (var item in datos)
+                {
+                    ProductPrice pp = new();
+                    pp.StoreId = storeId;
+                    pp.ProductId = item.ProductId;
+                    pp.Date = DateTime.Now;
+                    pp.ApplicationDate = DateTime.Now;
+                    pp.IsCancelled = false;
+                    pp.IsApplied = false;
+                    pp.Updated = DateTime.Now;
+                    pp.Active = true;
+                    pp.Locked = false;
+                    pp.Deleted = false;
+                    pp.Price = item.Price;
+                    pp.IsImmediate = item.IsImmediate;
+                    pp.Ieps = item.Ieps;
+                    pp.ProgrammingDate = item.ProgrammingDate;
+
+                    var usuarioId = obtenerUsuarioId();
+                    var ipUser = obtenetIP();
+                    var name = pp.Price.ToString();
+                    var storeId2 = storeId;
+
+                    context.Add(pp);
+                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+                    await context.SaveChangesAsync();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
             
-
-            //if (existeIDYNombre)
-            //{
-            //    return BadRequest($"Ya existe {IslandDTO.IslandIdi} en esa sucursal ");
-            //}
-            //else
-            //{
-            //    context.Add(island);
-            //    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-            //    await context.SaveChangesAsync();
-            //}
-
-            //var IslandDTO2 = mapper.Map<IslandDTO>(island);
-            //return CreatedAtRoute("obtenerIsla", new { id = island.IslandIdx }, IslandDTO2);
+            return Ok("Datos actualizados con éxito");
         }
 
     }
