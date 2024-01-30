@@ -1,13 +1,4 @@
-﻿using APIControlNet.DTOs;
-using APIControlNet.Models;
-using APIControlNet.Services;
-using APIControlNet.Utilidades;
-using AutoMapper;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Newtonsoft.Json;
@@ -24,7 +15,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-26 16:50
+    // $@m&: 2024-01-30 15:37
     // =========================
 
     [Route("api/[controller]")]
@@ -4179,14 +4170,15 @@ namespace APIControlNet.Controllers
 
                                                         #region Consulta: Pedimento Datos.
                                                         var vQRecepPedimentoDato = (from p in objContext.PetitionCustoms
-                                                                                    join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                                    join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId into tf
+                                                                                    from t in tf.DefaultIfEmpty()
                                                                                     where p.PetitionCustomsId == gPedimentoID
                                                                                     select new
                                                                                     {
                                                                                         ClavePermisoImportOExport = p.KeyOfImportationExportation,
                                                                                         PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
                                                                                         Pais = (p.SatPaisId ?? String.Empty),
-                                                                                        MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                                        MedioIngresoOSalida = t == null ? 0 : t.TransportMediumnCustomsId,
                                                                                         ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
                                                                                         Incoterms = (p.Incoterms ?? String.Empty),
                                                                                         PrecioDeImportOExport = p.AmountOfImportationExportation,
@@ -4206,7 +4198,7 @@ namespace APIControlNet.Controllers
                                                                        sExtIncoterms = vPedimentoDatos.Incoterms,
                                                                        sExtUnidadMedida = vPedimentoDatos.UnidadMedida;
                                                                 int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDatos.PuntoInternacionOExtracccion),
-                                                                    iExtMedioIngOSal = Convert.ToInt32(vPedimentoDatos.MedioIngresoOSalida);
+                                                                    iExtMedioIngOSal = vPedimentoDatos.MedioIngresoOSalida;
                                                                 Decimal dExtImporte = vPedimentoDatos.PrecioDeImportOExport,
                                                                         dExtVolumen = vPedimentoDatos.Volumen;
                                                                 #endregion
@@ -4223,6 +4215,9 @@ namespace APIControlNet.Controllers
 
                                                                 if (String.IsNullOrEmpty(sExtIncoterms))
                                                                     return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Recepción.");
+
+                                                                if (iExtMedioIngOSal <= 0)
+                                                                    return BadRequest("No se encontro el dato 'Medio de Transporte' del Pedimento de Recepción.");
                                                                 #endregion
 
                                                                 #region Pedimento Datos: Llenado de Estructura.
@@ -4986,6 +4981,7 @@ namespace APIControlNet.Controllers
                                                         List<CVolJSonDTO.stCompleComerNacional> lstEntComerNacional = new List<CVolJSonDTO.stCompleComerNacional>();
 
                                                         #region Consulta: CFDI Datos.
+                                                        #region Version 01.
                                                         //var vQEntregaCfdiDato = (from tf in objContext.InvoiceSaleOrders
                                                         //                         join fh in objContext.Invoices on tf.InvoiceId equals fh.InvoiceId
                                                         //                         join fd in objContext.InvoiceDetails on fh.InvoiceId equals fd.InvoiceId
@@ -5018,6 +5014,7 @@ namespace APIControlNet.Controllers
                                                         //                             CargoVolumenTrans = (tr.AmountPerVolume.ToString() ?? "0"),
                                                         //                             Descuento = (tr.AmountOfDiscount.ToString() ?? "0")
                                                         //                         });
+                                                        #endregion
                                                         var vQEntregaCfdiDato = (from eh in objContext.SaleOrders
                                                                                  join ed in objContext.SaleSuborders on eh.SaleOrderId equals ed.SaleOrderId
                                                                                  join fh in objContext.Invoices on ed.InvoiceId equals fh.InvoiceId
@@ -5246,14 +5243,15 @@ namespace APIControlNet.Controllers
 
                                                         #region Consulta: Pedimento Datos.
                                                         var vQEntregaPedimentoDato = (from p in objContext.PetitionCustoms
-                                                                                      join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                                      join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId into tf
+                                                                                      from t in tf.DefaultIfEmpty()
                                                                                       where p.PetitionCustomsId == gPedimentoID
                                                                                       select new
                                                                                       {
                                                                                           ClavePermisoImportOExport = p.KeyOfImportationExportation,
                                                                                           PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
                                                                                           Pais = (p.SatPaisId ?? String.Empty),
-                                                                                          MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                                          MedioIngresoOSalida = t == null ? 0 : t.TransportMediumnCustomsId,//(t.TransportMediumn ?? "0"),
                                                                                           ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
                                                                                           Incoterms = (p.Incoterms ?? String.Empty),
                                                                                           PrecioDeImportOExport = p.AmountOfImportationExportation,
@@ -5273,7 +5271,7 @@ namespace APIControlNet.Controllers
                                                                        sExtIncoterms = vPedimentoDato.Incoterms,
                                                                        sExtUnidadMedida = vPedimentoDato.UnidadMedida;
                                                                 int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDato.PuntoInternacionOExtracccion),
-                                                                    iExtMedioIngOSal = Convert.ToInt32(vPedimentoDato.MedioIngresoOSalida);
+                                                                    iExtMedioIngOSal = vPedimentoDato.MedioIngresoOSalida;
                                                                 Decimal dExtImporte = vPedimentoDato.PrecioDeImportOExport,
                                                                         dExtVolumen = vPedimentoDato.Volumen;
                                                                 #endregion
@@ -5290,6 +5288,9 @@ namespace APIControlNet.Controllers
 
                                                                 if (String.IsNullOrEmpty(sExtIncoterms))
                                                                     return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Entrega.");
+
+                                                                if (iExtMedioIngOSal <= 0)
+                                                                    return BadRequest("No se encontro el dato 'Medio de Transporte' del Pedimento de Recepción.");
                                                                 #endregion
 
                                                                 #region Pedimento: Llenado de Estructura.
@@ -7423,7 +7424,8 @@ namespace APIControlNet.Controllers
                                             var vQMPedimentos = (from r in objContext.InventoryIns
                                                                  join rd in objContext.InventoryInDocuments on r.InventoryInId equals rd.InventoryInId
                                                                  join p in objContext.PetitionCustoms on rd.PetitionCustomsId equals p.PetitionCustomsId
-                                                                 join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                 join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId into tf
+                                                                 from t in tf.DefaultIfEmpty()
                                                                  where r.StoreId == viNEstacion &&
                                                                        r.EndDate >= dtPerDateIni && r.EndDate <= dtPerDateEnd &&
                                                                        r.ProductId == vProd.ProductoID
@@ -7432,7 +7434,7 @@ namespace APIControlNet.Controllers
                                                                      ClavePermisoImportOExport = p.KeyOfImportationExportation,
                                                                      PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
                                                                      Pais = (p.SatPaisId ?? String.Empty),
-                                                                     MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                     MedioIngresoOSalida = t == null ? 0 : t.TransportMediumnCustomsId,
                                                                      ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
                                                                      Incoterms = (p.Incoterms ?? String.Empty),
                                                                      PrecioDeImportOExport = p.AmountOfImportationExportation,
@@ -7452,7 +7454,7 @@ namespace APIControlNet.Controllers
                                                            sExtIncoterms = vPedimentoDatos.Incoterms,
                                                            sExtUnidadMedida = vPedimentoDatos.UnidadMedida;
                                                     int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDatos.PuntoInternacionOExtracccion),
-                                                        iExtMedioIngOSal = Convert.ToInt32(vPedimentoDatos.MedioIngresoOSalida);
+                                                        iExtMedioIngOSal = vPedimentoDatos.MedioIngresoOSalida;
                                                     Decimal dExtImporte = vPedimentoDatos.PrecioDeImportOExport,
                                                             dExtVolumen = vPedimentoDatos.Volumen;
                                                     #endregion
@@ -7469,6 +7471,9 @@ namespace APIControlNet.Controllers
 
                                                     if (String.IsNullOrEmpty(sExtIncoterms))
                                                         return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Recepción.");
+
+                                                    if (iExtMedioIngOSal <= 0)
+                                                        return BadRequest("No se encontro el dato 'Medio de Transporte' del Pedimento de Recepción.");
                                                     #endregion
 
                                                     #region Pedimento: Llenado de Estructura.
@@ -8003,7 +8008,8 @@ namespace APIControlNet.Controllers
                                             var vQMPedimentos = (from eh in objContext.SaleOrders
                                                                  join ed in objContext.SaleSuborders on eh.SaleOrderId equals ed.SaleOrderId
                                                                  join p in objContext.PetitionCustoms on ed.PetitionCustomsId equals p.PetitionCustomsId
-                                                                 join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId
+                                                                 join t in objContext.TransportMediumnCustoms on p.TransportMediumnCustomsId equals t.TransportMediumnCustomsId into tf
+                                                                 from t in tf.DefaultIfEmpty()
                                                                  where eh.StoreId == viNEstacion &&
                                                                        eh.Date >= dtPerDateIni && eh.Date <= dtPerDateEnd &&
                                                                        ed.ProductId == vProd.ProductoID
@@ -8012,7 +8018,7 @@ namespace APIControlNet.Controllers
                                                                      ClavePermisoImportOExport = p.KeyOfImportationExportation,
                                                                      PuntoInternacionOExtracccion = p.KeyPointOfInletOrOulet,
                                                                      Pais = (p.SatPaisId ?? String.Empty),
-                                                                     MedioIngresoOSalida = (t.TransportMediumn ?? "0"),
+                                                                     MedioIngresoOSalida = t == null ? 0 : t.TransportMediumnCustomsId,
                                                                      ClavePedimento = (p.NumberCustomsDeclaration ?? String.Empty),
                                                                      Incoterms = (p.Incoterms ?? String.Empty),
                                                                      PrecioDeImportOExport = p.AmountOfImportationExportation,
@@ -8031,7 +8037,7 @@ namespace APIControlNet.Controllers
                                                            sExtIncoterms = vPedimentoDatos.Incoterms,
                                                            sExtUnidadMedida = vProd.UnidadMedida;
                                                     int iExtPuntoInterOExtra = Convert.ToInt32(vPedimentoDatos.PuntoInternacionOExtracccion),
-                                                        iExtMedioIngOSal = Convert.ToInt32(vPedimentoDatos.MedioIngresoOSalida);
+                                                        iExtMedioIngOSal = vPedimentoDatos.MedioIngresoOSalida;
                                                     Decimal dExtImporte = vPedimentoDatos.PrecioDeImportOExport,
                                                             dExtVolumen = vPedimentoDatos.Volumen;
                                                     #endregion
@@ -8048,6 +8054,9 @@ namespace APIControlNet.Controllers
 
                                                     if (String.IsNullOrEmpty(sExtIncoterms))
                                                         return BadRequest("No se encontro el dato 'Incoterms' del Pedimento de Entrega.");
+
+                                                    if (iExtMedioIngOSal <= 0)
+                                                        return BadRequest("No se encontro el dato 'Medio de Transporte' del Pedimento de Recepción.");
                                                     #endregion
 
                                                     #region Pedimento: Llenado de Estructura.
@@ -9426,7 +9435,7 @@ namespace APIControlNet.Controllers
             const int COLUMNA_PEDIMENTO_CLAVE_PERMISO = 1;
             //const int COLUMNA_PEDIMENTO_PUNTO_INTERNACION = 2;
             const int COLUMNA_PEDIMENTO_PAIS = 3;
-            //const int COLUMNA_PEDIMENTO_MEDIO = 4;
+            const int COLUMNA_PEDIMENTO_MEDIO = 4;
             const int COLUMNA_PEDIMENTO_CLAVE_PEDIMENTO = 5;
             const int COLUMNA_PEDIMENTO_INCOTERMS = 6;
             //const int COLUMNA_PEDIMENTO_PRECIO = 7;
@@ -9659,6 +9668,11 @@ namespace APIControlNet.Controllers
 
                             if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_INCOTERMS].ToString()))
                                 lstMensajes.Add("(Pedimento) No se encontro la Incoterms");
+
+                            if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_MEDIO].ToString()))
+                                lstMensajes.Add("(Pedimento) No se encontro la MedioIngresoOSalida");
+
+
                         }
                     }
                     #endregion
