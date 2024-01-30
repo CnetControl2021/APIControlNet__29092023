@@ -15,7 +15,7 @@ using System.Web;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-30 15:37
+    // $@m&: 2024-01-30 17:08
     // =========================
 
     [Route("api/[controller]")]
@@ -9564,8 +9564,8 @@ namespace APIControlNet.Controllers
                         Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN_FINAL].ToString().Trim(), out dVolFinal);
                         Decimal.TryParse(drGeneral[COLUMNA_GENERAL_VOLUMEN].ToString().Trim(), out dVolumen);
 
-                        if (dVolumen > dVolInicial)
-                            lstMensajes.Add("(General) El Volumen Entregado '" + dVolumen.ToString("N3") + "' es mayor al Volumen Incial '" + dVolInicial.ToString("N3") + "'");
+                        //if (dVolumen > dVolInicial)
+                        //    lstMensajes.Add("(General) El Volumen Entregado '" + dVolumen.ToString("N3") + "' es mayor al Volumen Incial '" + dVolInicial.ToString("N3") + "'");
                     }
                     #endregion
 
@@ -9672,7 +9672,7 @@ namespace APIControlNet.Controllers
                             if (String.IsNullOrEmpty(drConsultaPedimento[0][COLUMNA_PEDIMENTO_MEDIO].ToString()))
                                 lstMensajes.Add("(Pedimento) No se encontro la MedioIngresoOSalida");
 
-
+                            
                         }
                     }
                     #endregion
