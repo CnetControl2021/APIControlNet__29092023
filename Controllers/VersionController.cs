@@ -115,14 +115,14 @@ namespace APIControlNet.Controllers
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.4"}, {"2.4"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se agregaron catalogos para el manejo de clientes y proveedores. Se agrego contol para complemento de Json SAT"}, 
-                {"9e6568377fac579d4c75c8abde17af5545f8db8554e51b37dea65daa5d9df575a53c2e231958320e98163464f9129004773b917e6791ce1c481f6b4a4de1d303"},
+                {"54cfc8c724d956b61c5d5ff30da752e62f7f0b3924687dbb0ac803b7c929e45f64d16458f3a48303569113f9c9f442414637cd088029d383cfdb8ea6cb81a475"},
                 {"2024-01-15"}, {"2024-01-15"}, {true}, {false}, {false})");
             }
             else
             {
                 var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.4");
                 db.Updated = DateTime.Now;
-                db.Hash512 = "9e6568377fac579d4c75c8abde17af5545f8db8554e51b37dea65daa5d9df575a53c2e231958320e98163464f9129004773b917e6791ce1c481f6b4a4de1d303";
+                db.Hash512 = "54cfc8c724d956b61c5d5ff30da752e62f7f0b3924687dbb0ac803b7c929e45f64d16458f3a48303569113f9c9f442414637cd088029d383cfdb8ea6cb81a475";
                 context.Update(db);
                 context.SaveChanges();
             }
