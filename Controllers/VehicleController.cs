@@ -27,38 +27,74 @@ namespace APIControlNet.Controllers
             this.servicioBinnacle=servicioBinnacle;
         }
 
-
         [HttpGet]
-        //[AllowAnonymous]
-        public async Task<ActionResult<VehicleDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid idGuid)
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<VehicleDTO>>> Get(int skip, int take, Guid customerId, string searchTerm = "")
         {
-            var queryable = context.Vehicles.AsQueryable();
-            if (!string.IsNullOrEmpty(nombre) || idGuid != Guid.Empty)
+            var data = await (from v in context.Vehicles
+                              where v.CustomerId == customerId
+                              //join c in context.Customers on cc.CustomerId equals c.CustomerId
+                              select new VehicleDTO
+                              {
+                                  VehicleIdx = v.VehicleIdx,
+                                  CustomerId = v.CustomerId,
+                                  Name = v.Name,
+                                  VehicleNumber = v.VehicleNumber,
+                                  Plate = v.Plate
+                              }).AsNoTracking().ToListAsync();
+
+            var query = data.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre) || x.CustomerId.Equals(idGuid));
+                query = query.Where(c => c.VehicleNumber.ToLower().Contains(searchTerm)
+                || c.Plate.ToLower().Contains(searchTerm) || c.Name.ToLower().Contains(searchTerm));
             }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
-                //.Include(x => x.Customer)
-                .AsNoTracking().ToListAsync();
-            return Ok(customers);
+
+            var ntotal = query.Count();
+            return Ok(new { query, ntotal });
+        }
+
+        [HttpGet("ValidateType")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<ValidateTypeDTO>> Get4()
+        {
+            var data = await context.ValidateTypes.ToListAsync();
+            return mapper.Map<IEnumerable<ValidateTypeDTO>>(data);
         }
 
 
-        [HttpGet("active")]
-        public async Task<ActionResult<VehicleDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid idGuid)
-        {
-            var queryable = context.Vehicles.Where(x => x.Active == true).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre) || idGuid != Guid.Empty)
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre) || x.CustomerId.Equals(idGuid));
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
-                //.Include(x => x.Customer)
-                .AsNoTracking().ToListAsync();
-            return Ok(customers);
-        }
+        //[HttpGet]
+        ////[AllowAnonymous]
+        //public async Task<ActionResult<VehicleDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid idGuid)
+        //{
+        //    var queryable = context.Vehicles.AsQueryable();
+        //    if (!string.IsNullOrEmpty(nombre) || idGuid != Guid.Empty)
+        //    {
+        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre) || x.CustomerId.Equals(idGuid));
+        //    }
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
+        //        //.Include(x => x.Customer)
+        //        .AsNoTracking().ToListAsync();
+        //    return Ok(customers);
+        //}
+
+
+        //[HttpGet("active")]
+        //public async Task<ActionResult<VehicleDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid idGuid)
+        //{
+        //    var queryable = context.Vehicles.Where(x => x.Active == true).AsQueryable();
+        //    if (!string.IsNullOrEmpty(nombre) || idGuid != Guid.Empty)
+        //    {
+        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre) || x.CustomerId.Equals(idGuid));
+        //    }
+        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+        //    var customers = await queryable.OrderByDescending(x => x.VehicleIdx).Paginar(paginacionDTO)
+        //        //.Include(x => x.Customer)
+        //        .AsNoTracking().ToListAsync();
+        //    return Ok(customers);
+        //}
 
         [HttpGet("sinPag/{nombre}")]
         //[AllowAnonymous]
@@ -110,38 +146,32 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] VehicleDTO vehicleDTO)
+        public async Task<ActionResult> Post([FromBody] VehicleDTO vehicleDTO, Guid customerId, Guid storeId)
         {
+            var existe = await context.Vehicles.AnyAsync
+                (x => x.VehicleId == vehicleDTO.VehicleId && x.CustomerId == vehicleDTO.CustomerId);
 
-            var existeid = await context.Vehicles.AnyAsync(x => x.VehicleIdx == vehicleDTO.VehicleIdx);
+            var dbveh = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == vehicleDTO.CustomerId);
 
             var vehicle = mapper.Map<Vehicle>(vehicleDTO);
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = vehicle.Name;
+            vehicle.CustomerId = customerId;
 
-            if (existeid)
+            if (existe)
             {
-                context.Update(vehicle);
-                await context.SaveChangesAsync();
+                return BadRequest($"Ya existe {dbveh.Name} ");
             }
             else
             {
-                var existe = await context.Vehicles.AnyAsync(x => x.VehicleNumber == (vehicleDTO.VehicleNumber) & x.CustomerId == vehicleDTO.CustomerId);
+                context.Add(vehicle);
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var name = vehicleDTO.Name;
+                var storeId2 = storeId;
+                await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
 
-                if (existe)
-                {
-                    return BadRequest($"Ya existe {vehicleDTO.VehicleNumber} en este cliente ");
-                }
-                else
-                {
-                    context.Add(vehicle);
-                    //await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name);
-                    await context.SaveChangesAsync();
-                }
+                await context.SaveChangesAsync();
+                return Ok();
             }
-            var VehicleDTO2 = mapper.Map<VehicleDTO>(vehicle);
-            return CreatedAtRoute("obtenerVehiculo", new { id = vehicle.VehicleIdx }, VehicleDTO2);
         }
 
 

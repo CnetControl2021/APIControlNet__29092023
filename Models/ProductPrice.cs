@@ -23,4 +23,3 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
     }
 }
-

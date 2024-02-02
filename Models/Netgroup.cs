@@ -17,5 +17,8 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public int? IsEnableRaffle { get; set; }
+        public Guid? NetgroupRaffleId { get; set; }
+        public int? IsEnableReward { get; set; }
     }
 }

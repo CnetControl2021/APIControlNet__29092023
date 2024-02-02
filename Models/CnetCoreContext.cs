@@ -114,8 +114,14 @@ namespace APIControlNet.Models
         public virtual DbSet<MovementType> MovementTypes { get; set; }
         public virtual DbSet<Netgroup> Netgroups { get; set; }
         public virtual DbSet<NetgroupBalance> NetgroupBalances { get; set; }
+        public virtual DbSet<NetgroupNews> NetgroupNews { get; set; }
         public virtual DbSet<NetgroupPrice> NetgroupPrices { get; set; }
+        public virtual DbSet<NetgroupPromotion> NetgroupPromotions { get; set; }
+        public virtual DbSet<NetgroupPromotionDetail> NetgroupPromotionDetails { get; set; }
+        public virtual DbSet<NetgroupRaffle> NetgroupRaffles { get; set; }
+        public virtual DbSet<NetgroupRaffleTicket> NetgroupRaffleTickets { get; set; }
         public virtual DbSet<NetgroupReward> NetgroupRewards { get; set; }
+        public virtual DbSet<NetgroupRewardProduct> NetgroupRewardProducts { get; set; }
         public virtual DbSet<NetgroupStore> NetgroupStores { get; set; }
         public virtual DbSet<NetgroupUser> NetgroupUsers { get; set; }
         public virtual DbSet<Odr> Odrs { get; set; }
@@ -221,7 +227,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-       
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -5697,6 +5703,10 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
+                entity.Property(e => e.IsEnableRaffle).HasColumnName("is_enable_raffle");
+
+                entity.Property(e => e.IsEnableReward).HasColumnName("is_enable_reward");
+
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.Logo).HasColumnName("logo");
@@ -5714,6 +5724,8 @@ namespace APIControlNet.Models
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("netgroup_phone");
+
+                entity.Property(e => e.NetgroupRaffleId).HasColumnName("netgroup_raffle_id");
 
                 entity.Property(e => e.ShortDescription)
                     .HasMaxLength(50)
@@ -5768,6 +5780,45 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<NetgroupNews>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupNewsIdx)
+                    .HasName("PK_netgroup_news_idx");
+
+                entity.ToTable("netgroup_news");
+
+                entity.Property(e => e.NetgroupNewsIdx).HasColumnName("netgroup_news_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.Photo)
+                    .HasColumnType("text")
+                    .HasColumnName("photo");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<NetgroupPrice>(entity =>
             {
                 entity.HasKey(e => e.NetgroupPriceIdx)
@@ -5806,6 +5857,264 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupPromotion>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupPromotionIdx)
+                    .HasName("PK_netgroup_promotion_idx");
+
+                entity.ToTable("netgroup_promotion");
+
+                entity.HasIndex(e => e.NetgroupPromotionId, "IX_netgroup_promotion_id")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupPromotionIdx).HasColumnName("netgroup_promotion_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.EnableDay1).HasColumnName("enable_day_1");
+
+                entity.Property(e => e.EnableDay2).HasColumnName("enable_day_2");
+
+                entity.Property(e => e.EnableDay3).HasColumnName("enable_day_3");
+
+                entity.Property(e => e.EnableDay4).HasColumnName("enable_day_4");
+
+                entity.Property(e => e.EnableDay5).HasColumnName("enable_day_5");
+
+                entity.Property(e => e.EnableDay6).HasColumnName("enable_day_6");
+
+                entity.Property(e => e.EnableDay7).HasColumnName("enable_day_7");
+
+                entity.Property(e => e.EnableHour1).HasColumnName("enable_hour_1");
+
+                entity.Property(e => e.EnableHour2).HasColumnName("enable_hour_2");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.EndHour1)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_hour_1");
+
+                entity.Property(e => e.EndHour2)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_hour_2");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NetgroupPromotionId).HasColumnName("netgroup_promotion_id");
+
+                entity.Property(e => e.StartDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_date");
+
+                entity.Property(e => e.StartHour1)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_hour_1");
+
+                entity.Property(e => e.StartHour2)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_hour_2");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupPromotionDetail>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupPromotionDetailIdx)
+                    .HasName("PK_netgroup_promotion_detail_idx");
+
+                entity.ToTable("netgroup_promotion_detail");
+
+                entity.HasIndex(e => new { e.NetgroupPromotionId, e.ProductId }, "IX_netgroup_promotion_detail_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupPromotionDetailIdx).HasColumnName("netgroup_promotion_detail_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupPromotionId).HasColumnName("netgroup_promotion_id");
+
+                entity.Property(e => e.PointValue)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("point_value");
+
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupRaffle>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupRaffleIdx)
+                    .HasName("PK_netgroup_raffle_idx");
+
+                entity.ToTable("netgroup_raffle");
+
+                entity.HasIndex(e => e.NetgroupRaffleId, "IX_netgroup_raffle_id")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupRaffleIdx).HasColumnName("netgroup_raffle_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.DescriptionGift)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description_gift");
+
+                entity.Property(e => e.EnableDay1).HasColumnName("enable_day_1");
+
+                entity.Property(e => e.EnableDay2).HasColumnName("enable_day_2");
+
+                entity.Property(e => e.EnableDay3).HasColumnName("enable_day_3");
+
+                entity.Property(e => e.EnableDay4).HasColumnName("enable_day_4");
+
+                entity.Property(e => e.EnableDay5).HasColumnName("enable_day_5");
+
+                entity.Property(e => e.EnableDay6).HasColumnName("enable_day_6");
+
+                entity.Property(e => e.EnableDay7).HasColumnName("enable_day_7");
+
+                entity.Property(e => e.EnableHour1).HasColumnName("enable_hour_1");
+
+                entity.Property(e => e.EnableHour2).HasColumnName("enable_hour_2");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.EndHour1)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_hour_1");
+
+                entity.Property(e => e.EndHour2)
+                    .HasColumnType("datetime")
+                    .HasColumnName("end_hour_2");
+
+                entity.Property(e => e.Folio)
+                    .HasColumnName("folio")
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.LogoRaffle)
+                    .HasColumnType("text")
+                    .HasColumnName("logo_raffle");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NetgroupRaffleId).HasColumnName("netgroup_raffle_id");
+
+                entity.Property(e => e.RaffleAmount)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("raffle_amount");
+
+                entity.Property(e => e.StartDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_date");
+
+                entity.Property(e => e.StartHour1)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_hour_1");
+
+                entity.Property(e => e.StartHour2)
+                    .HasColumnType("datetime")
+                    .HasColumnName("start_hour_2");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupRaffleTicket>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupRaffleTicketIdx)
+                    .HasName("PK_netgroup_raffle_ticket_idx");
+
+                entity.ToTable("netgroup_raffle_ticket");
+
+                entity.HasIndex(e => new { e.NetgroupRaffleId, e.UserId, e.IdtranCode }, "IX_netgroup_raffle_ticket_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupRaffleTicketIdx).HasColumnName("netgroup_raffle_ticket_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.IdtranCode)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("idtran_code");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupRaffleId).HasColumnName("netgroup_raffle_id");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.TicketAmount)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("ticket_amount");
+
+                entity.Property(e => e.TicketNumber).HasColumnName("ticket_number");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+
+                entity.Property(e => e.UserId).HasColumnName("user_id");
             });
 
             modelBuilder.Entity<NetgroupReward>(entity =>
@@ -5850,6 +6159,48 @@ namespace APIControlNet.Models
                 entity.Property(e => e.RewardPoints)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("reward_points");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupRewardProduct>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupRewardProductIdx)
+                    .HasName("PK_netgroup_reward_product_idx");
+
+                entity.ToTable("netgroup_reward_product");
+
+                entity.HasIndex(e => new { e.NetgroupId, e.ProductId }, "IX_netgroup_reward_product_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupRewardProductIdx).HasColumnName("netgroup_reward_product_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(200)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.PointValue)
+                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnName("point_value");
+
+                entity.Property(e => e.PresetType).HasColumnName("preset_type");
+
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -5908,7 +6259,13 @@ namespace APIControlNet.Models
 
                 entity.ToTable("netgroup_user");
 
+                entity.HasIndex(e => e.Name, "IX_netgroup_name")
+                    .IsUnique();
+
                 entity.HasIndex(e => new { e.NetgroupId, e.UserId }, "IX_netgroup_user_compound")
+                    .IsUnique();
+
+                entity.HasIndex(e => e.DeviceCode, "IX_netgroup_user_device_code")
                     .IsUnique();
 
                 entity.HasIndex(e => e.NetgroupUserId, "IX_netgroup_user_id")
@@ -5929,6 +6286,12 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("description");
 
+                entity.Property(e => e.DeviceCode)
+                    .HasMaxLength(40)
+                    .IsUnicode(false)
+                    .HasColumnName("device_code")
+                    .HasDefaultValueSql("(CONVERT([varchar](80),newid()))");
+
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.MakeInvoice).HasColumnName("make_invoice");
@@ -5941,6 +6304,21 @@ namespace APIControlNet.Models
                 entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.NetgroupUserId).HasColumnName("netgroup_user_id");
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(40)
+                    .IsUnicode(false)
+                    .HasColumnName("password");
+
+                entity.Property(e => e.PasswordAspnet)
+                    .HasMaxLength(40)
+                    .IsUnicode(false)
+                    .HasColumnName("password_aspnet");
+
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("phone");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -6011,6 +6389,8 @@ namespace APIControlNet.Models
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("product_code");
+
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
 
                 entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
 
@@ -10417,6 +10797,8 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.DayBalance).HasColumnName("day_balance");
 
+                entity.Property(e => e.DayBalanceAditional).HasColumnName("day_balance_aditional");
+
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
                 entity.Property(e => e.Detail)
@@ -10465,6 +10847,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.MonthBalance).HasColumnName("month_balance");
+
+                entity.Property(e => e.MonthBalanceAditional).HasColumnName("month_balance_aditional");
 
                 entity.Property(e => e.Name)
                     .HasMaxLength(80)
@@ -10518,6 +10902,8 @@ namespace APIControlNet.Models
                     .HasColumnName("vehicle_number");
 
                 entity.Property(e => e.WeekBalance).HasColumnName("week_balance");
+
+                entity.Property(e => e.WeekBalanceAditional).HasColumnName("week_balance_aditional");
             });
 
             modelBuilder.Entity<Version>(entity =>

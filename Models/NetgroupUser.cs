@@ -17,5 +17,9 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public string Password { get; set; }
+        public string PasswordAspnet { get; set; }
+        public string DeviceCode { get; set; }
+        public string Phone { get; set; }
     }
 }

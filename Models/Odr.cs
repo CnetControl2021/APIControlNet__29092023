@@ -12,6 +12,7 @@ namespace APIControlNet.Models
         public Guid? CustomerId { get; set; }
         public Guid? VehicleId { get; set; }
         public int? OdrNumber { get; set; }
+        public Guid? ProductId { get; set; }
         public string ProductCode { get; set; }
         public Guid? OperatorId1 { get; set; }
         public Guid? OperatorId2 { get; set; }

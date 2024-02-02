@@ -8,6 +8,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<ValidateTypeDTO, ValidateType>();
+            CreateMap<ValidateType, ValidateTypeDTO>();
+
             CreateMap<ProductPriceDTO, ProductPrice>();
             CreateMap<ProductPrice, ProductPriceDTO>();
 

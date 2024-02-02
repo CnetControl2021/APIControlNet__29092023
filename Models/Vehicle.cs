@@ -44,8 +44,11 @@ namespace APIControlNet.Models
         public bool? EnableHour2 { get; set; }
         public int? ValidateTypeId { get; set; }
         public int? DayBalance { get; set; }
+        public int? DayBalanceAditional { get; set; }
         public int? WeekBalance { get; set; }
+        public int? WeekBalanceAditional { get; set; }
         public int? MonthBalance { get; set; }
+        public int? MonthBalanceAditional { get; set; }
         public bool? EnableDayBalance { get; set; }
         public bool? EnableWeekBalance { get; set; }
         public bool? EnableMonthBalance { get; set; }
