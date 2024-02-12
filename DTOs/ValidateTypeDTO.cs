@@ -1,4 +1,4 @@
-﻿namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
     public class ValidateTypeDTO
     {

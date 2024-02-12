@@ -52,6 +52,43 @@ namespace APIControlNet.Services
             await context.SaveChangesAsync();
         }
 
+        public async Task AddBinnacle2(string usuarioId, string Ip, string name, Guid? storeId, string Table)
+        {
+            var addr = "";
+            foreach (NetworkInterface n in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (n.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                    n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 && n.OperationalStatus == OperationalStatus.Up)
+                {
+                    addr += n.GetPhysicalAddress().ToString();
+                    break;
+                }
+            }
+
+            var binnacle = new Binnacle
+            {
+                BinnacleId = Guid.NewGuid(),
+                StoreId = storeId,
+                Name = "Adicionar ",
+                Response = "Adicion de registro " + name + "de " + Table,
+                UserId = usuarioId,
+                BinnacleTypeId = 6,
+                Description = "controlVolumetrico",
+                ValueName = "Add",
+                IpAddress = Ip,
+                MacAddress = addr,
+                Date = DateTime.Now,
+                Updated = DateTime.Now,
+                Active = true,
+                Locked = false,
+                Deleted = false
+            };
+
+            context.Add(binnacle);
+
+            await context.SaveChangesAsync();
+        }
+
         public async Task ManualBinnacle(string usuarioId, string Ip, string name, Guid? storeId)
         {
             var addr = "";
@@ -147,6 +184,42 @@ namespace APIControlNet.Services
                 UserId = usuarioId,
                 BinnacleTypeId = 6,
                 Description = "controlVolumetrico",
+                ValueName = "delete",
+                IpAddress = Ip,
+                MacAddress = addr,
+                Date = DateTime.Now,
+                Updated = DateTime.Now,
+                Active = true,
+                Locked = false,
+                Deleted = false
+            };
+
+            context.Add(binnacle);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task deleteBinnacle2(string usuarioId, string Ip, string name, Guid? storeId, string Table)
+        {
+            var addr = "";
+            foreach (NetworkInterface n in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (n.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                    n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 && n.OperationalStatus == OperationalStatus.Up)
+                {
+                    addr += n.GetPhysicalAddress().ToString();
+                    break;
+                }
+            }
+
+            var binnacle = new Binnacle
+            {
+                BinnacleId = Guid.NewGuid(),
+                StoreId = storeId,
+                //Name = "Elimino",
+                Response = "Se elimino registro " + name + "de " + Table,
+                UserId = usuarioId,
+                BinnacleTypeId = 6,
+                Description = "Evento controlVolumetrico",
                 ValueName = "delete",
                 IpAddress = Ip,
                 MacAddress = addr,

@@ -31,7 +31,6 @@ namespace APIControlNet.Controllers
             this.servicioBinnacle=servicioBinnacle;
         }
 
-
         //[HttpGet]
         //public async Task<ActionResult<CustomerDTO>> Get([FromQuery] string nombre)
         //{

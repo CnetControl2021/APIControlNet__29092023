@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
-    public partial class NetgroupStore
+    public class NetgroupStoreDTO
     {
         public int NetgroupStoreIdx { get; set; }
         public Guid NetgroupId { get; set; }
@@ -17,6 +14,5 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-        public string Photo1 { get; set; }
     }
 }

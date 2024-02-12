@@ -114,6 +114,8 @@ namespace APIControlNet.Models
         public virtual DbSet<MovementType> MovementTypes { get; set; }
         public virtual DbSet<Netgroup> Netgroups { get; set; }
         public virtual DbSet<NetgroupBalance> NetgroupBalances { get; set; }
+        public virtual DbSet<NetgroupNet> NetgroupNets { get; set; }
+        public virtual DbSet<NetgroupNetDetail> NetgroupNetDetails { get; set; }
         public virtual DbSet<NetgroupNews> NetgroupNews { get; set; }
         public virtual DbSet<NetgroupPrice> NetgroupPrices { get; set; }
         public virtual DbSet<NetgroupPromotion> NetgroupPromotions { get; set; }
@@ -225,7 +227,7 @@ namespace APIControlNet.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder); 
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
             modelBuilder.Entity<AuthorizationSet>(entity =>
@@ -5780,6 +5782,64 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<NetgroupNet>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupNetIdx);
+
+                entity.ToTable("netgroup_net");
+
+                entity.Property(e => e.NetgroupNetIdx).HasColumnName("netgroup_net_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
+
+                entity.Property(e => e.NetgroupNetName)
+                    .HasMaxLength(150)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupNetDetail>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupNetDetailIdx);
+
+                entity.ToTable("netgroup_net_detail");
+
+                entity.Property(e => e.NetgroupNetDetailIdx).HasColumnName("netgroup_net_detail_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
+
+                entity.Property(e => e.NetgroupNetStore).HasColumnName("netgroup_net_store");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<NetgroupNews>(entity =>
             {
                 entity.HasKey(e => e.NetgroupNewsIdx)
@@ -6244,6 +6304,10 @@ namespace APIControlNet.Models
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("phone");
+
+                entity.Property(e => e.Photo1)
+                    .HasColumnType("text")
+                    .HasColumnName("photo_1");
 
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 

@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.CompilerServices;
@@ -140,6 +141,22 @@ namespace APIControlNet.Controllers
             {
                 return BadRequest($"Error: {ex.Message}");
             }
+        }
+
+        [HttpGet("byName/{textSearch?}")] // BlazoredTypeahead
+        [AllowAnonymous]
+        public async Task<ActionResult<List<CredencialesUsuariosDTO>>> Get2(string textSearch)
+        {
+            var queryable = userManager.Users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(textSearch))
+            {
+                queryable = queryable.Where(x => x.Email.ToLower().Contains(textSearch) || x.UserName.ToLower().Contains(textSearch));
+
+            }
+            var s = await queryable
+               .AsNoTracking().ToListAsync();
+            return Ok(s);
         }
 
 

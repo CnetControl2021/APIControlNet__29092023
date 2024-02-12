@@ -4,10 +4,26 @@ using AutoMapper;
 
 namespace APIControlNet.Utilidades
 {
+    
     public class AutoMapperProfiles : Profile
     {
         public AutoMapperProfiles()
         {
+            CreateMap<NetgroupNetDetailDTO, NetgroupNetDetail>();
+            CreateMap<NetgroupNetDetail, NetgroupNetDetailDTO>();
+
+            CreateMap<NetgroupNetDTO, NetgroupNet>();
+            CreateMap<NetgroupNet, NetgroupNetDTO>();
+
+            CreateMap<NetgroupUserDTO, NetgroupUser>();
+            CreateMap<NetgroupUser, NetgroupUserDTO>();
+
+            CreateMap<NetgroupStoreDTO, NetgroupStore>();
+            CreateMap<NetgroupStore, NetgroupStoreDTO>();
+
+            CreateMap<NetgroupDTO, Netgroup>();
+            CreateMap<Netgroup, NetgroupDTO>();
+
             CreateMap<ValidateTypeDTO, ValidateType>();
             CreateMap<ValidateType, ValidateTypeDTO>();
 

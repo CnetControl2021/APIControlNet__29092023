@@ -240,6 +240,20 @@ namespace APIControlNet.Controllers
             return mapper.Map<StoreDTO>(Store);
         }
 
+        [HttpGet("byName/{textSearch?}")] // BlazoredTypeahead
+        [AllowAnonymous]
+        public async Task<ActionResult<List<StoreDTO>>> Get2(string textSearch)
+        {
+            var queryable = context.Stores.OrderByDescending(x => x.StoreIdx).AsQueryable();
+            if (!string.IsNullOrEmpty(textSearch))
+            {
+                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch) || x.StoreNumber.ToString().ToLower().Contains(textSearch));
+
+            }
+            var s = await queryable
+               .AsNoTracking().ToListAsync();
+            return mapper.Map<List<StoreDTO>>(s);
+        }
 
         //[HttpGet("{nombre}")]
         //public async Task<ActionResult<List<StoreDTO>>> Get([FromRoute] string nombre)

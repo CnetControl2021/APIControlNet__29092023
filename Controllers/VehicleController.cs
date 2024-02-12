@@ -1,13 +1,12 @@
 ﻿using APIControlNet.DTOs;
 using APIControlNet.Models;
 using APIControlNet.Services;
-using APIControlNet.Utilidades;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+
 
 namespace APIControlNet.Controllers
 {
@@ -202,9 +201,10 @@ namespace APIControlNet.Controllers
 
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, Guid storeId)
         {
             var existe = await context.Vehicles.AnyAsync(x => x.VehicleIdx == id);
+            var tabla = context.Model.FindEntityType(typeof(Netgroup)).GetTableName();
             if (!existe) { return NotFound(); }
 
             var name2 = await context.Vehicles.FirstOrDefaultAsync(x => x.VehicleIdx == id);
@@ -213,7 +213,9 @@ namespace APIControlNet.Controllers
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
             var name = name2.Name;
-            //await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name);
+            var storeId2 = storeId;
+            var Table = tabla;
+            await servicioBinnacle.deleteBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
             await context.SaveChangesAsync();
             return NoContent();
         }
