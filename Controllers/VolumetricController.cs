@@ -43,7 +43,7 @@ namespace APIControlNet.Controllers
 
         [AllowAnonymous]
         [HttpGet(Name = "CVolJSon")]
-        public async Task<IActionResult> GenerarCVolJSon(Guid? viNCompania, Guid? viNEstacion, CVolJSonDTO.eTipoReporte viTipoReporte, Boolean viReporteEstacion, DateTime viFecha, CVolJSonDTO.eProcesoArchivo viProcesoArchivo, Boolean viGenerarCompTransporte, Boolean viGenCompRecepcion, Boolean viGenComEntrega)
+        public async Task<IActionResult> GenerarCVolJSon(Guid? viNCompania, Guid? viNEstacion, CVolJSonDTO.eTipoReporte viTipoReporte, Boolean viReporteEstacion, DateTime viFecha, CVolJSonDTO.eProcesoArchivo viProcesoArchivo, Boolean viGenCompRecepcion, Boolean viGenCompRecepTransporte, Boolean viGenComEntrega)
         {
             CVolJSonDTO objCVolDatos = new CVolJSonDTO();
             Dictionary<Guid, DailySummary> dictDailySummary = null;
@@ -4116,7 +4116,61 @@ namespace APIControlNet.Controllers
                                                                     #endregion
 
                                                                     #region Complemento: Transportista.
-                                                                    case CVolJSonDTO.eTipoComplemento.Transportista: break;
+                                                                    case CVolJSonDTO.eTipoComplemento.Transportista:
+                                                                        if (viGenCompRecepTransporte)
+                                                                        {
+                                                                            iIdxCliente = lstRecepTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+
+                                                                            CVolJSonDTO.stComplementoTransNacional objRecepTransNacionalDato;
+                                                                            if (iIdxCliente < 0)
+                                                                            {
+                                                                                objRecepTransNacionalDato = new CVolJSonDTO.stComplementoTransNacional();
+                                                                                objRecepTransNacionalDato.RfcCliente = sNacClienteRFC;
+                                                                                objRecepTransNacionalDato.NombreCliente = sNacNombreCliente;
+
+                                                                                List<CVolJSonDTO.stCompleTransNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleTransNacionalCfdis>();
+                                                                                objRecepTransNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                                lstRecepTransNacional.Add(objRecepTransNacionalDato);
+                                                                                iIdxCliente = lstRecepTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+                                                                            }
+
+                                                                            #region CFDI Datos.
+                                                                            CVolJSonDTO.stCompleTransNacionalCfdis objTransCFDI_Dato = new CVolJSonDTO.stCompleTransNacionalCfdis();
+                                                                            objTransCFDI_Dato.Cfdi = sNacCFDI;
+                                                                            objTransCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                            objTransCFDI_Dato.Contraprestacion = dNacContraPrestacion;
+                                                                            objTransCFDI_Dato.TarifaDeTransporte = dNacTarifaTrans;
+                                                                            objTransCFDI_Dato.FechaYHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                                      iDiferenciaHora.ToString("00") + ":00";
+                                                                            #region VolumenDocumentado.
+                                                                            CVolJSonDTO.stVolumenDato objRecepTransVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                            objRecepTransVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                            objRecepTransVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                            objTransCFDI_Dato.VolumenDocumentado = objRecepTransVolumenDocumentado;
+                                                                            #endregion
+
+                                                                            if (dNacCargoCapTrans > 0)
+                                                                                objTransCFDI_Dato.CargoPorCapacidadDeTrans = dNacCargoCapTrans;
+
+                                                                            if (dNacCargoUsoTrans > 0)
+                                                                                objTransCFDI_Dato.CargoPorUsoTrans = dNacCargoUsoTrans;
+
+                                                                            if (dNacCargoVolTrans > 0)
+                                                                                objTransCFDI_Dato.CargoVolumetricoTrans = dNacCargoVolTrans;
+
+                                                                            if (dNacDescuento > 0)
+                                                                                objTransCFDI_Dato.Descuento = dNacDescuento;
+                                                                            #endregion
+
+                                                                            objRecepTransNacionalDato = (CVolJSonDTO.stComplementoTransNacional)lstRecepTransNacional[iIdxCliente];
+                                                                            List<CVolJSonDTO.stCompleTransNacionalCfdis> lstRecepTransCfDIs = (List<CVolJSonDTO.stCompleTransNacionalCfdis>)objRecepTransNacionalDato.CFDIs;
+                                                                            lstRecepTransCfDIs.Add(objTransCFDI_Dato);
+                                                                            objRecepTransNacionalDato.CFDIs = lstRecepTransCfDIs;
+                                                                            lstRecepTransNacional[iIdxCliente] = objRecepTransNacionalDato;
+                                                                        }
+                                                                        break;
                                                                     #endregion
 
                                                                     #region Complemento: Comercializadora.
@@ -7172,7 +7226,7 @@ namespace APIControlNet.Controllers
                                 objRecepMesDato.TotalDocumentosMes = 0;
                                 objRecepMesDato.TotalRecepcionesMes = 0;
                                 objRecepMesDato.ImporteTotalRecepcionesMensual = 0;
-                                objRecepMesDato.Complemento = lstRVacia;
+                                //objRecepMesDato.Complemento = lstRVacia;
 
                                 #region Consulta: Recepcion Datos.
                                 var vQMRecepciones = (from r in objContext.InventoryIns
@@ -7231,7 +7285,7 @@ namespace APIControlNet.Controllers
                                         List<CVolJSonDTO.stComplementoTransportista> lstRecepComplementoTransportista = new List<CVolJSonDTO.stComplementoTransportista>();
                                         List<CVolJSonDTO.stComplementoComercializadora> lstRecepComplementoComercializadora = new List<CVolJSonDTO.stComplementoComercializadora>();
 
-                                        if (bCompRecep && objTipoComplemento != CVolJSonDTO.eTipoComplemento.Transportista)
+                                        if (bCompRecep)// && objTipoComplemento != CVolJSonDTO.eTipoComplemento.Transportista)
                                         {
                                             CVolJSonDTO.stComplementoDistribucion objRecepComplementoDistribuidor = new CVolJSonDTO.stComplementoDistribucion();
                                             CVolJSonDTO.stComplementoTransportista objRecepComplementoTransportista = new CVolJSonDTO.stComplementoTransportista();
@@ -7368,6 +7422,64 @@ namespace APIControlNet.Controllers
                                                             lstCfDIs.Add(objDistCFDI_Dato);
                                                             objRecepDistNacionalDato.CFDIs = lstCfDIs;
                                                             lstRecepDistNacional[iIdxCliente] = objRecepDistNacionalDato;
+                                                            break;
+                                                        #endregion
+
+                                                        #region Transportista.
+                                                        case CVolJSonDTO.eTipoComplemento.Transportista:
+                                                            if (viGenCompRecepTransporte)
+                                                            {
+                                                                iIdxCliente = lstRecepTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+
+                                                                CVolJSonDTO.stComplementoTransNacional objRecepTransNacionalDato;
+                                                                if (iIdxCliente < 0)
+                                                                {
+                                                                    objRecepTransNacionalDato = new CVolJSonDTO.stComplementoTransNacional();
+                                                                    objRecepTransNacionalDato.RfcCliente = sNacClienteRFC;
+                                                                    objRecepTransNacionalDato.NombreCliente = sNacNombreCliente;
+
+                                                                    List<CVolJSonDTO.stCompleTransNacionalCfdis> lstCFDIsNew = new List<CVolJSonDTO.stCompleTransNacionalCfdis>();
+                                                                    objRecepTransNacionalDato.CFDIs = lstCFDIsNew;
+
+                                                                    lstRecepTransNacional.Add(objRecepTransNacionalDato);
+                                                                    iIdxCliente = lstRecepTransNacional.FindIndex(n => n.RfcCliente.Equals(sNacClienteRFC));
+                                                                }
+
+                                                                #region CFDI Datos.
+                                                                CVolJSonDTO.stCompleTransNacionalCfdis objTransCFDI_Dato = new CVolJSonDTO.stCompleTransNacionalCfdis();
+                                                                objTransCFDI_Dato.Cfdi = sNacCFDI;
+                                                                objTransCFDI_Dato.TipoCfdi = sNacTipoCFDI;
+                                                                objTransCFDI_Dato.Contraprestacion = dNacContraPrestacion;
+                                                                objTransCFDI_Dato.TarifaDeTransporte = dNacTarifaTrans;
+                                                                objTransCFDI_Dato.FechaYHoraTransaccion = dtNacFechaHora.ToString("s") + "-" +
+                                                                                                          iDiferenciaHora.ToString("00") + ":00";
+                                                                #region VolumenDocumentado.
+                                                                CVolJSonDTO.stVolumenDato objRecepTransVolumenDocumentado = new CVolJSonDTO.stVolumenDato();
+                                                                objRecepTransVolumenDocumentado.ValorNumerico = Math.Round(dNacVolumen, 3);
+                                                                objRecepTransVolumenDocumentado.UnidadDeMedida = sNacUnidadMedida;
+
+                                                                objTransCFDI_Dato.VolumenDocumentado = objRecepTransVolumenDocumentado;
+                                                                #endregion
+
+                                                                if (dNacCargoCapTrans > 0)
+                                                                    objTransCFDI_Dato.CargoPorCapacidadDeTrans = dNacCargoCapTrans;
+
+                                                                if (dNacCargoUsoTrans > 0)
+                                                                    objTransCFDI_Dato.CargoPorUsoTrans = dNacCargoUsoTrans;
+
+                                                                if (dNacCargoVolTrans > 0)
+                                                                    objTransCFDI_Dato.CargoVolumetricoTrans = dNacCargoVolTrans;
+
+                                                                if (dNacDescuento > 0)
+                                                                    objTransCFDI_Dato.Descuento = dNacDescuento;
+                                                                #endregion
+
+                                                                objRecepTransNacionalDato = (CVolJSonDTO.stComplementoTransNacional)lstRecepTransNacional[iIdxCliente];
+                                                                List<CVolJSonDTO.stCompleTransNacionalCfdis> lstRecepTransCfDIs = (List<CVolJSonDTO.stCompleTransNacionalCfdis>)objRecepTransNacionalDato.CFDIs;
+                                                                lstRecepTransCfDIs.Add(objTransCFDI_Dato);
+                                                                objRecepTransNacionalDato.CFDIs = lstRecepTransCfDIs;
+                                                                lstRecepTransNacional[iIdxCliente] = objRecepTransNacionalDato;
+                                                            }
                                                             break;
                                                         #endregion
 
@@ -7629,7 +7741,7 @@ namespace APIControlNet.Controllers
                                                 if (lstRecepComplementoDistribucion.Count > 0)
                                                     objRecepMesDato.Complemento = lstRecepComplementoDistribucion;
                                                 else
-                                                    throw new Exception("Recepciones Mes: No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
+                                                    return BadRequest("Recepciones Mes (Dist): No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
                                                 break;
                                             #endregion
 
@@ -7638,7 +7750,7 @@ namespace APIControlNet.Controllers
                                                 if (lstRecepComplementoTransportista.Count > 0)
                                                     objRecepMesDato.Complemento = lstRecepComplementoTransportista;
                                                 else
-                                                    throw new Exception("Recepciones Mes: No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
+                                                    return BadRequest("Recepciones Mes: No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
                                                 break;
                                             #endregion
 
@@ -7647,10 +7759,12 @@ namespace APIControlNet.Controllers
                                                 if (lstRecepComplementoComercializadora.Count > 0)
                                                     objRecepMesDato.Complemento = lstRecepComplementoComercializadora;
                                                 else
-                                                    throw new Exception("Recepciones Mes: No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
+                                                    return BadRequest("Recepciones Mes (Comer): No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
                                                 break;
                                                 #endregion
                                         }
+
+                                        // <$@m&> 20240103: Se rechaza el archivo al colocar un complemento con 0 registros.
                                         #endregion
                                         #endregion
                                     }
