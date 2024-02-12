@@ -21,7 +21,7 @@ using APIControlNet.DTOs;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-01-30 17:08
+    // $@m&: 2024-02-12 16:16
     // =========================
 
     [Route("api/[controller]")]
@@ -7750,7 +7750,7 @@ namespace APIControlNet.Controllers
                                                 if (lstRecepComplementoTransportista.Count > 0)
                                                     objRecepMesDato.Complemento = lstRecepComplementoTransportista;
                                                 else
-                                                    return BadRequest("Recepciones Mes: No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
+                                                    return BadRequest("Recepciones Mes (Trans): No se encontraron datos de Facturación, Pedimento, etc. Favor de captura la información para la generación del Complemento.");
                                                 break;
                                             #endregion
 
