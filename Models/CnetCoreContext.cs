@@ -16,7 +16,6 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
-
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -138,6 +137,7 @@ namespace APIControlNet.Models
         public virtual DbSet<Port> Ports { get; set; }
         public virtual DbSet<PortResponse> PortResponses { get; set; }
         public virtual DbSet<PortType> PortTypes { get; set; }
+        public virtual DbSet<PresetType> PresetTypes { get; set; }
         public virtual DbSet<Printer> Printers { get; set; }
         public virtual DbSet<PrinterBrand> PrinterBrands { get; set; }
         public virtual DbSet<Product> Products { get; set; }
@@ -227,7 +227,7 @@ namespace APIControlNet.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); 
+            base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
             modelBuilder.Entity<AuthorizationSet>(entity =>
@@ -7003,6 +7003,40 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<PresetType>(entity =>
+            {
+                entity.HasKey(e => e.PresetTypeIdx)
+                    .HasName("PK_preset_type_idx");
+
+                entity.ToTable("preset_type");
+
+                entity.HasIndex(e => e.PresetType1, "IX_preset_type")
+                    .IsUnique();
+
+                entity.Property(e => e.PresetTypeIdx).HasColumnName("preset_type_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.PresetType1).HasColumnName("preset_type");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<Printer>(entity =>
             {
                 entity.HasKey(e => e.PrinterIdx)
@@ -10246,13 +10280,21 @@ namespace APIControlNet.Models
                     .HasColumnName("capacity_gastalon")
                     .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.CapacityMinimumOperating).HasColumnName("capacity_minimum_operating");
+                entity.Property(e => e.CapacityMinimumOperating)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_minimum_operating");
 
-                entity.Property(e => e.CapacityOperational).HasColumnName("capacity_operational");
+                entity.Property(e => e.CapacityOperational)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_operational");
 
-                entity.Property(e => e.CapacityTotal).HasColumnName("capacity_total");
+                entity.Property(e => e.CapacityTotal)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_total");
 
-                entity.Property(e => e.CapacityUseful).HasColumnName("capacity_useful");
+                entity.Property(e => e.CapacityUseful)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("capacity_useful");
 
                 entity.Property(e => e.CommPercentage).HasColumnName("comm_percentage");
 
@@ -10268,7 +10310,9 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.EnableGetInventory).HasColumnName("enable_get_inventory");
 
-                entity.Property(e => e.Fondage).HasColumnName("fondage");
+                entity.Property(e => e.Fondage)
+                    .HasColumnType("decimal(10, 2)")
+                    .HasColumnName("fondage");
 
                 entity.Property(e => e.Height)
                     .HasColumnType("decimal(12, 5)")
@@ -10923,6 +10967,8 @@ namespace APIControlNet.Models
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("plate");
+
+                entity.Property(e => e.PresetType).HasColumnName("preset_type");
 
                 entity.Property(e => e.Series)
                     .HasMaxLength(20)

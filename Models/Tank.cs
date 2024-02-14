@@ -13,11 +13,11 @@ namespace APIControlNet.Models
         public int? PortIdi { get; set; }
         public int? TankBrandId { get; set; }
         public string Name { get; set; }
-        public int? CapacityTotal { get; set; }
-        public int? CapacityOperational { get; set; }
-        public int? CapacityMinimumOperating { get; set; }
-        public int? CapacityUseful { get; set; }
-        public int? Fondage { get; set; }
+        public decimal? CapacityTotal { get; set; }
+        public decimal? CapacityOperational { get; set; }
+        public decimal? CapacityMinimumOperating { get; set; }
+        public decimal? CapacityUseful { get; set; }
+        public decimal? Fondage { get; set; }
         public DateTime? SatDateCalibration { get; set; }
         public string SatTypeMeasurement { get; set; }
         public string SatTankType { get; set; }

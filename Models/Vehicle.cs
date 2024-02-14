@@ -53,5 +53,6 @@ namespace APIControlNet.Models
         public bool? EnableWeekBalance { get; set; }
         public bool? EnableMonthBalance { get; set; }
         public bool? EnableHour3 { get; set; }
+        public int? PresetType { get; set; }
     }
 }

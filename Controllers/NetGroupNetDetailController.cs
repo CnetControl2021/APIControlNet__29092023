@@ -51,10 +51,8 @@ namespace APIControlNet.Controllers
                 query = query.Where(c => c.NetgroupNetName.ToLower().Contains(searchTerm));
             }
             var ntotal = query.Count();
-
             return Ok(new { query, ntotal });
         }
-
 
 
         [HttpPost]
