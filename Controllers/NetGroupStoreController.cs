@@ -82,5 +82,21 @@ namespace APIControlNet.Controllers
             await context.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpGet("byName/{textSearch?}/{netgroupId?}")] // BlazoredTypeahead
+        //[AllowAnonymous]
+        public async Task<ActionResult<List<NetgroupStoreDTO>>> Get2(string textSearch, Guid netgroupId)
+        {
+            var queryable = context.NetgroupStores.Where(x => x.NetgroupId == netgroupId )
+                .OrderByDescending(x => x.NetgroupStoreIdx).AsQueryable();
+            if (!string.IsNullOrEmpty(textSearch))
+            {
+                queryable = queryable.Where(x => x.Name.ToLower().Contains(textSearch) );
+
+            }
+            var s = await queryable
+               .AsNoTracking().ToListAsync();
+            return mapper.Map<List<NetgroupStoreDTO>>(s);
+        }
     }
 }

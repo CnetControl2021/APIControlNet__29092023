@@ -10,5 +10,8 @@
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+
+        public string NetgroupNetName { get; set; }
+        public string Name { get; set; }
     }
 }

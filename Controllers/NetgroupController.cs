@@ -29,6 +29,7 @@ namespace APIControlNet.Controllers
 
         //var data2 = await query.Skip(skip).Take(take).ToListAsync();
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<NetgroupDTO>>> Get(int skip, int take, string userName, string searchTerm = "")
         {
                 if (userName is null || userName == "masterSupport@controlnet.com.mx")
