@@ -70,7 +70,7 @@ namespace APIControlNet.Services
                 BinnacleId = Guid.NewGuid(),
                 StoreId = storeId,
                 Name = "Adicionar ",
-                Response = "Adicion de registro " + name + "de " + Table,
+                Response = "Adicion de registro " + name + " de " + Table,
                 UserId = usuarioId,
                 BinnacleTypeId = 6,
                 Description = "controlVolumetrico",

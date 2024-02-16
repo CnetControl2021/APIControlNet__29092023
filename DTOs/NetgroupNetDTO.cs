@@ -4,8 +4,8 @@
     {
         public int NetgroupNetIdx { get; set; }
         public Guid NetgroupNetId { get; set; }
-        public string NetgroupNetName { get; set; }
         public Guid NetgroupId { get; set; }
+        public string Name { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
         public bool? Active { get; set; }

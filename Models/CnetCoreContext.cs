@@ -43,6 +43,7 @@ namespace APIControlNet.Models
         public virtual DbSet<CustomerAddress> CustomerAddresses { get; set; }
         public virtual DbSet<CustomerControl> CustomerControls { get; set; }
         public virtual DbSet<CustomerLimit> CustomerLimits { get; set; }
+        public virtual DbSet<CustomerNetgroupNet> CustomerNetgroupNets { get; set; }
         public virtual DbSet<CustomerType> CustomerTypes { get; set; }
         public virtual DbSet<DailySummary> DailySummaries { get; set; }
         public virtual DbSet<Device> Devices { get; set; }
@@ -126,7 +127,6 @@ namespace APIControlNet.Models
         public virtual DbSet<NetgroupStore> NetgroupStores { get; set; }
         public virtual DbSet<NetgroupUser> NetgroupUsers { get; set; }
         public virtual DbSet<Odr> Odrs { get; set; }
-        public virtual DbSet<OdrStore> OdrStores { get; set; }
         public virtual DbSet<Operator> Operators { get; set; }
         public virtual DbSet<Page> Pages { get; set; }
         public virtual DbSet<PagePerUserType> PagePerUserTypes { get; set; }
@@ -1746,6 +1746,10 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
+                entity.Property(e => e.FolioOdrNumber)
+                    .HasColumnName("folio_odr_number")
+                    .HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.InvoiceDay1).HasColumnName("invoice_day_1");
 
                 entity.Property(e => e.InvoiceDay2).HasColumnName("invoice_day_2");
@@ -1775,6 +1779,38 @@ namespace APIControlNet.Models
                 entity.Property(e => e.PaymentDay6).HasColumnName("payment_day_6");
 
                 entity.Property(e => e.PaymentDay7).HasColumnName("payment_day_7");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<CustomerNetgroupNet>(entity =>
+            {
+                entity.HasKey(e => e.CustomerNetgroupNetIdx);
+
+                entity.ToTable("customer_netgroup_net");
+
+                entity.HasIndex(e => new { e.CustomerId, e.NetgroupNetId }, "IX_customer_netgroup_net_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.CustomerNetgroupNetIdx)
+                    .ValueGeneratedNever()
+                    .HasColumnName("customer_netgroup_net_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+
+                entity.Property(e => e.Daleted).HasColumnName("daleted");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -5800,13 +5836,14 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
+                entity.Property(e => e.Name)
+                    .HasMaxLength(150)
+                    .IsUnicode(false)
+                    .HasColumnName("name");
+
                 entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
-
-                entity.Property(e => e.NetgroupNetName)
-                    .HasMaxLength(150)
-                    .IsUnicode(false);
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -5833,7 +5870,7 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
 
-                entity.Property(e => e.NetgroupNetStore).HasColumnName("netgroup_net_store");
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -6433,11 +6470,11 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
+                entity.Property(e => e.NetgroupNetId).HasColumnName("netgroup_net_id");
+
                 entity.Property(e => e.OdrId).HasColumnName("odr_id");
 
                 entity.Property(e => e.OdrNumber).HasColumnName("odr_number");
-
-                entity.Property(e => e.OdrStoreId).HasColumnName("odr_store_id");
 
                 entity.Property(e => e.OperatorId1).HasColumnName("operator_id_1");
 
@@ -6463,42 +6500,6 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
 
                 entity.Property(e => e.VehicleId).HasColumnName("vehicle_id");
-            });
-
-            modelBuilder.Entity<OdrStore>(entity =>
-            {
-                entity.HasKey(e => e.OdrStoreIdx)
-                    .HasName("pk_odr_store_idx");
-
-                entity.ToTable("odr_store");
-
-                entity.HasIndex(e => new { e.CustomerId, e.StoreId }, "IX_odr_store_compound")
-                    .IsUnique();
-
-                entity.HasIndex(e => e.OdrStoreIdx, "IX_odr_store_id")
-                    .IsUnique();
-
-                entity.Property(e => e.OdrStoreIdx).HasColumnName("odr_store_idx");
-
-                entity.Property(e => e.Active).HasColumnName("active");
-
-                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("datetime")
-                    .HasColumnName("date");
-
-                entity.Property(e => e.Deleted).HasColumnName("deleted");
-
-                entity.Property(e => e.Locked).HasColumnName("locked");
-
-                entity.Property(e => e.OdrStoreId).HasColumnName("odr_store_id");
-
-                entity.Property(e => e.StoreId).HasColumnName("store_id");
-
-                entity.Property(e => e.Updated)
-                    .HasColumnType("datetime")
-                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<Operator>(entity =>

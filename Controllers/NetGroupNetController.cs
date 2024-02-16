@@ -35,7 +35,7 @@ namespace APIControlNet.Controllers
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(c => c.NetgroupNetName.ToLower().Contains(searchTerm));
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm));
             }
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
@@ -49,7 +49,7 @@ namespace APIControlNet.Controllers
                 var dbNgn = await context.NetgroupNets.FirstOrDefaultAsync(x => x.NetgroupId == ngnDTO.NetgroupId && x.NetgroupNetId == ngnDTO.NetgroupNetId);
                 if (dbNgn is not null)
                 {
-                    return BadRequest($"Ya existe {dbNgn.NetgroupNetName} ");
+                    return BadRequest($"Ya existe {dbNgn.Name} ");
                 }
 
                 var data2 = await context.NetgroupUsers.Where(x => x.Name == userName).FirstOrDefaultAsync();
@@ -58,7 +58,7 @@ namespace APIControlNet.Controllers
 
                 NetgroupNet ngn = new();
                 ngn.NetgroupNetId = Guid.NewGuid();
-                ngn.NetgroupNetName = ngnDTO.NetgroupNetName;
+                ngn.Name = ngnDTO.Name;
                 ngn.NetgroupId = data2.NetgroupId;
                 ngn.Date = DateTime.Now;
                 ngn.Updated = DateTime.Now;
@@ -69,7 +69,7 @@ namespace APIControlNet.Controllers
                 context.NetgroupNets.Add(ngn);
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
-                var name = ngnDTO.NetgroupNetName;
+                var name = ngnDTO.Name;
                 var storeId2 = storeId;
                 var Table = tabla;
                 await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
@@ -93,7 +93,7 @@ namespace APIControlNet.Controllers
 
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
-            var name = name2.NetgroupNetName;
+            var name = name2.Name;
             var storeId2 = storeId;
             var Table = tabla;
             await servicioBinnacle.deleteBinnacle2(usuarioId, ipUser, name, storeId2, Table);

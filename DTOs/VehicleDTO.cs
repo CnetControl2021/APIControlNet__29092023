@@ -10,7 +10,7 @@ namespace APIControlNet.DTOs
         public string Name { get; set; }
         public Guid? VehicleBrandTypeId { get; set; }
         public Guid? VehicleColorId { get; set; }
-        [Required(ErrorMessage = "El campo {0} es requerio")]
+        //[Required(ErrorMessage = "El campo {0} es requerio")]
         public Guid? CustomerId { get; set; }
         [Required(ErrorMessage = "El campo {0} es requerio")]
         public string VehicleNumber { get; set; }

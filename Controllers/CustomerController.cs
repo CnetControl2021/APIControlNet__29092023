@@ -282,7 +282,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("byName/{textSearch}")] // BlazoredTypeahead
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<List<CustomerDTO>>> Get2(string textSearch)
         {
             var queryable = context.Customers.OrderByDescending(x => x.CustomerIdx).AsQueryable();

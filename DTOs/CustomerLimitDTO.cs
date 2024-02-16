@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
-    public partial class CustomerLimit
+    public class CustomerLimitDTO
     {
         public int CustomerLimitIdx { get; set; }
         public Guid CustomerId { get; set; }
@@ -31,7 +28,7 @@ namespace APIControlNet.Models
         public bool? AllowDay6 { get; set; }
         public bool? AllowDay7 { get; set; }
         public DateTime? Date { get; set; }
-        public DateTime? Updated { get; set; }
+        public DateTime? Updated { get; set; } 
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }

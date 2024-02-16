@@ -4,7 +4,6 @@ using APIControlNet.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,14 +32,13 @@ namespace APIControlNet.Controllers
         {
             var data = await (from ngnd in context.NetgroupNetDetails where ngnd.NetgroupNetId == netgroupnetId
                               join ngn in context.NetgroupNets on ngnd.NetgroupNetId equals ngn.NetgroupNetId
-                              join ngs in context.NetgroupStores on ngnd.NetgroupNetStore equals ngs.StoreId
+                              join ngs in context.NetgroupStores on ngnd.StoreId equals ngs.StoreId
                               
                               select new
                               {
                                   ngnd.NetgroupNetDetailIdx,
                                   ngnd.NetgroupNetId,
-                                  ngnd.NetgroupNetStore,
-                                  ngn.NetgroupNetName,
+                                  ngnd.StoreId,
                                   ngs.Name
                               }).AsNoTracking().ToListAsync();
 
@@ -48,7 +46,7 @@ namespace APIControlNet.Controllers
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(c => c.NetgroupNetName.ToLower().Contains(searchTerm));
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm));
             }
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
@@ -59,14 +57,14 @@ namespace APIControlNet.Controllers
         public async Task<ActionResult> Post([FromBody] NetgroupNetDetailDTO netgrNetDetailDTO, Guid storeId)
         {
             var dbNgND = await context.NetgroupNetDetails.FirstOrDefaultAsync(
-                x => x.NetgroupNetId == netgrNetDetailDTO.NetgroupNetId && x.NetgroupNetStore == netgrNetDetailDTO.NetgroupNetStore);
+                x => x.NetgroupNetId == netgrNetDetailDTO.NetgroupNetId && x.StoreId == netgrNetDetailDTO.StoreId);
             var tabla = context.Model.FindEntityType(typeof(NetgroupNetDetail)).GetTableName();
 
             var netgd = mapper.Map<NetgroupNetDetail>(netgrNetDetailDTO);
 
             if (dbNgND is not null)
             {
-                return BadRequest($"Ya existe estacion {dbNgND.NetgroupNetStore} ");
+                return BadRequest($"Ya existe estacion {dbNgND.StoreId} ");
             }
             else
             {
@@ -74,7 +72,7 @@ namespace APIControlNet.Controllers
 
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
-                var name = netgrNetDetailDTO.NetgroupNetName;
+                var name = netgrNetDetailDTO.NetgroupNetId.ToString();
                 var storeId2 = storeId;
                 var Table = tabla;
                 await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
@@ -96,7 +94,7 @@ namespace APIControlNet.Controllers
 
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
-            var name = name2.NetgroupNetStore.ToString();
+            var name = name2.StoreId.ToString();
             var storeId2 = storeId;
             var Table = tabla;
             await servicioBinnacle.deleteBinnacle2(usuarioId, ipUser, name, storeId2, Table);

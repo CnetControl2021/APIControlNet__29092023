@@ -47,9 +47,9 @@ namespace APIControlNet.DTOs
         public decimal? CapacityGastalon { get; set; }
         public string ResponseInventoryIn { get; set; }
 
-        public virtual Port Port { get; set; }
-        public virtual Store Store { get; set; }
-        public virtual TankBrand TankBrand { get; set; }
+        public virtual PortDTO Port { get; set; }
+        public virtual StoreDTO Store { get; set; }
+        public virtual TankBrandDTO TankBrand { get; set; }
 
     }
 }

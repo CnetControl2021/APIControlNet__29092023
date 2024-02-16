@@ -7,7 +7,7 @@ namespace APIControlNet.Models
     {
         public int NetgroupNetDetailIdx { get; set; }
         public Guid NetgroupNetId { get; set; }
-        public Guid NetgroupNetStore { get; set; }
+        public Guid StoreId { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
         public bool? Active { get; set; }

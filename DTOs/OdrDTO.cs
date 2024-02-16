@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace APIControlNet.Models
+﻿namespace APIControlNet.DTOs
 {
-    public partial class Odr
+    public class OdrDTO
     {
         public int OdrIdx { get; set; }
-        public Guid? OdrId { get; set; }
+        public Guid? OdrId { get; set; } = Guid.NewGuid();
         public string CardOdr { get; set; }
-        public Guid? NetgroupNetId { get; set; }
+        public Guid? OdrStoreId { get; set; }
         public Guid? CustomerId { get; set; }
         public Guid? VehicleId { get; set; }
         public int? OdrNumber { get; set; }
@@ -19,11 +16,11 @@ namespace APIControlNet.Models
         public int? PresetType { get; set; }
         public decimal? PresetQuantity { get; set; }
         public Guid? SaleOrderId { get; set; }
-        public DateTime? Date { get; set; }
-        public DateTime? EndDate { get; set; }
-        public DateTime? Updated { get; set; }
-        public bool? Active { get; set; }
-        public bool? Locked { get; set; }
-        public bool? Deleted { get; set; }
+        public DateTime? Date { get; set; }=DateTime.Now;
+        public DateTime? EndDate { get; set; } = DateTime.Now;
+        public DateTime? Updated { get; set; } = DateTime.Now;
+        public bool? Active { get; set; } = true;
+        public bool? Locked { get; set; }=false;
+        public bool? Deleted { get; set; } = false;
     }
 }

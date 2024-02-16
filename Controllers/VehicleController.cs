@@ -27,7 +27,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<IEnumerable<VehicleDTO>>> Get(int skip, int take, Guid customerId, string searchTerm = "")
         {
             var data = await (from v in context.Vehicles
@@ -42,7 +42,8 @@ namespace APIControlNet.Controllers
                                   Plate = v.Plate
                               }).AsNoTracking().ToListAsync();
 
-            var query = data.AsQueryable();
+            //var query = data.AsQueryable();
+            var query = data.Skip(skip).Take(take).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -53,6 +54,7 @@ namespace APIControlNet.Controllers
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
         }
+
 
         [HttpGet("ValidateType")]
         [AllowAnonymous]
@@ -111,7 +113,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("{id:int}", Name = "obtenerVehiculo")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<VehicleDTO>> Get(int id)
         {
             var vehicle = await context.Vehicles.FirstOrDefaultAsync(x => x.VehicleIdx == id);
@@ -151,6 +153,7 @@ namespace APIControlNet.Controllers
                 (x => x.VehicleId == vehicleDTO.VehicleId && x.CustomerId == vehicleDTO.CustomerId);
 
             var dbveh = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == vehicleDTO.CustomerId);
+            var tabla = context.Model.FindEntityType(typeof(Vehicle)).GetTableName();
 
             var vehicle = mapper.Map<Vehicle>(vehicleDTO);
             vehicle.CustomerId = customerId;
@@ -166,7 +169,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = vehicleDTO.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+                var Table = tabla;
+                await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
 
                 await context.SaveChangesAsync();
                 return Ok();
