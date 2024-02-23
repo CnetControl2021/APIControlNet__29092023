@@ -32,14 +32,15 @@ namespace APIControlNet.Controllers
         {
             var data = await (from ngnd in context.NetgroupNetDetails where ngnd.NetgroupNetId == netgroupnetId
                               join ngn in context.NetgroupNets on ngnd.NetgroupNetId equals ngn.NetgroupNetId
-                              join ngs in context.NetgroupStores on ngnd.StoreId equals ngs.StoreId
+                              join s in context.Stores on ngnd.StoreId equals s.StoreId
+                              //join ngs in context.NetgroupStores on ngnd.StoreId equals ngs.StoreId
                               
                               select new
                               {
                                   ngnd.NetgroupNetDetailIdx,
                                   ngnd.NetgroupNetId,
                                   ngnd.StoreId,
-                                  ngs.Name
+                                  s.Name
                               }).AsNoTracking().ToListAsync();
 
             var query = data.AsQueryable();

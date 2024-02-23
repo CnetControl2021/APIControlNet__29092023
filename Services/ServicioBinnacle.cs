@@ -15,7 +15,7 @@ namespace APIControlNet.Services
             this.context=context;
         }
 
-        public async Task AddBinnacle(string usuarioId, string Ip, string name, Guid? storeId)
+        public async Task AddBinnacle(string usuarioId, string Ip, string? name, Guid? storeId)
         {
             var addr = "";
             foreach (NetworkInterface n in NetworkInterface.GetAllNetworkInterfaces())
@@ -145,6 +145,42 @@ namespace APIControlNet.Services
                 StoreId = storeId,
                 Name = "Actualizar",
                 Response = "Actualizacion " + name,
+                UserId = usuarioId,
+                BinnacleTypeId = 6,
+                Description = "controlVolumetrico",
+                ValueName = "edit",
+                IpAddress = Ip,
+                MacAddress = addr,
+                Date = DateTime.Now,
+                Updated = DateTime.Now,
+                Active = true,
+                Locked = false,
+                Deleted = false
+            };
+
+            context.Add(binnacle);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task EditBinnacle2(string usuarioId, string Ip, string name, Guid? storeId, string Table)
+        {
+            var addr = "";
+            foreach (NetworkInterface n in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (n.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                    n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 && n.OperationalStatus == OperationalStatus.Up)
+                {
+                    addr += n.GetPhysicalAddress().ToString();
+                    break;
+                }
+            }
+
+            var binnacle = new Binnacle
+            {
+                BinnacleId = Guid.NewGuid(),
+                StoreId = storeId,
+                Name = "Actualizar",
+                Response = "Actualizacion " + name + " de" + Table,
                 UserId = usuarioId,
                 BinnacleTypeId = 6,
                 Description = "controlVolumetrico",

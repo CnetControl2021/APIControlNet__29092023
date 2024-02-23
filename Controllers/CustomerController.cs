@@ -251,6 +251,7 @@ namespace APIControlNet.Controllers
             return mapper.Map<CustomerDTO>(Customer);
         }
 
+
         [HttpGet("byCustomerId/{custommerId}", Name = "byGui")]
         //[AllowAnonymous]
         public async Task<ActionResult<CustomerDTO>> Get4(Guid custommerId)
@@ -265,6 +266,7 @@ namespace APIControlNet.Controllers
 
             return mapper.Map<CustomerDTO>(Customer);
         }
+
 
         [HttpGet("byGuid/{idPass:guid}", Name = "obtenerCustomer2")]
         //[AllowAnonymous]

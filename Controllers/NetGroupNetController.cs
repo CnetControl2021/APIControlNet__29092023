@@ -27,6 +27,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<NetgroupNetDTO>>> Get(int skip, int take, string searchTerm = "")
         {
             var data = await context.NetgroupNets.AsNoTracking().ToListAsync();
@@ -39,6 +40,16 @@ namespace APIControlNet.Controllers
             }
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
+        }
+
+        [HttpGet("Notpage")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<NetgroupNetDTO>>> Get(string userName)
+        {
+            var netGroup = context.NetgroupUsers.FirstOrDefault(x => x.Name == userName);
+
+            var data = await context.NetgroupNets.Where(x => x.NetgroupId == netGroup.NetgroupId).AsNoTracking().ToListAsync();
+            return Ok(data);
         }
 
         [HttpPost]
@@ -84,16 +95,23 @@ namespace APIControlNet.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id, Guid storeId)
         {
-            var existe = await context.NetgroupNets.AnyAsync(x => x.NetgroupNetIdx == id);
-            var tabla = context.Model.FindEntityType(typeof(NetgroupNet)).GetTableName();
-            if (!existe) { return NotFound(); }
+            var existe = await context.NetgroupNets.FirstOrDefaultAsync(x => x.NetgroupNetIdx == id);
 
-            var name2 = await context.NetgroupNets.FirstOrDefaultAsync(x => x.NetgroupNetIdx == id);
-            context.Remove(name2);
+            var tabla = context.Model.FindEntityType(typeof(NetgroupNet)).GetTableName();
+            if (existe is null) { return NotFound(); }
+
+            var exist2 = await context.Odrs.AnyAsync(x => x.NetgroupNetId == existe.NetgroupNetId);
+            if (exist2) { return BadRequest("Tiene datos relacionados"); }
+
+            var remove = await context.NetgroupNets.FirstOrDefaultAsync(x => x.NetgroupNetIdx == id);
+            context.Remove(remove);
+
+            var removenetgroDet = await context.NetgroupNetDetails.Where(x => x.NetgroupNetId == remove.NetgroupNetId).ToListAsync();
+            foreach (var removeStore in removenetgroDet) { context.RemoveRange(removenetgroDet); }
 
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
-            var name = name2.Name;
+            var name = remove.Name;
             var storeId2 = storeId;
             var Table = tabla;
             await servicioBinnacle.deleteBinnacle2(usuarioId, ipUser, name, storeId2, Table);

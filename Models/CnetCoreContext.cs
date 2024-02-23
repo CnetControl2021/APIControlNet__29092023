@@ -126,6 +126,7 @@ namespace APIControlNet.Models
         public virtual DbSet<NetgroupRewardProduct> NetgroupRewardProducts { get; set; }
         public virtual DbSet<NetgroupStore> NetgroupStores { get; set; }
         public virtual DbSet<NetgroupUser> NetgroupUsers { get; set; }
+        public virtual DbSet<NetgroupUserType> NetgroupUserTypes { get; set; }
         public virtual DbSet<Odr> Odrs { get; set; }
         public virtual DbSet<Operator> Operators { get; set; }
         public virtual DbSet<Page> Pages { get; set; }
@@ -198,6 +199,7 @@ namespace APIControlNet.Models
         public virtual DbSet<SupplierFuel> SupplierFuels { get; set; }
         public virtual DbSet<SupplierTransport> SupplierTransports { get; set; }
         public virtual DbSet<SupplierTransportRegister> SupplierTransportRegisters { get; set; }
+        public virtual DbSet<System> Systems { get; set; }
         public virtual DbSet<Tank> Tanks { get; set; }
         public virtual DbSet<TankBrand> TankBrands { get; set; }
         public virtual DbSet<TankCalibrationPoint> TankCalibrationPoints { get; set; }
@@ -229,7 +231,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
+          
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -5773,6 +5775,11 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
+
+                entity.Property(e => e.VersionApp)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasColumnName("version_app");
             });
 
             modelBuilder.Entity<NetgroupBalance>(entity =>
@@ -5855,6 +5862,9 @@ namespace APIControlNet.Models
                 entity.HasKey(e => e.NetgroupNetDetailIdx);
 
                 entity.ToTable("netgroup_net_detail");
+
+                entity.HasIndex(e => new { e.NetgroupNetId, e.StoreId }, "IX_netgroup_net_detail_compound")
+                    .IsUnique();
 
                 entity.Property(e => e.NetgroupNetDetailIdx).HasColumnName("netgroup_net_detail_idx");
 
@@ -6376,6 +6386,8 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Active).HasColumnName("active");
 
+                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+
                 entity.Property(e => e.Date)
                     .HasColumnType("datetime")
                     .HasColumnName("date");
@@ -6406,6 +6418,8 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.NetgroupUserId).HasColumnName("netgroup_user_id");
 
+                entity.Property(e => e.NetgroupUserTypeId).HasColumnName("netgroup_user_type_id");
+
                 entity.Property(e => e.Password)
                     .HasMaxLength(40)
                     .IsUnicode(false)
@@ -6429,6 +6443,40 @@ namespace APIControlNet.Models
                     .IsRequired()
                     .HasMaxLength(200)
                     .HasColumnName("user_id");
+            });
+
+            modelBuilder.Entity<NetgroupUserType>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupUserTypeIdx)
+                    .HasName("PK_netgroup_user_type_id ");
+
+                entity.ToTable("netgroup_user_type");
+
+                entity.HasIndex(e => e.NetgroupUserTypeId, "IX_netgroup_user_type_id")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupUserTypeIdx).HasColumnName("netgroup_user_type_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupUserTypeId).HasColumnName("netgroup_user_type_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<Odr>(entity =>
@@ -6475,6 +6523,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.OdrId).HasColumnName("odr_id");
 
                 entity.Property(e => e.OdrNumber).HasColumnName("odr_number");
+
+                entity.Property(e => e.OdrStoreId).HasColumnName("odr_store_id");
 
                 entity.Property(e => e.OperatorId1).HasColumnName("operator_id_1");
 
@@ -10252,6 +10302,39 @@ namespace APIControlNet.Models
                 entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
 
                 entity.Property(e => e.SupplierTransportRegisterId).HasColumnName("supplier_transport_register_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<System>(entity =>
+            {
+                entity.HasKey(e => e.SystemIdx);
+
+                entity.ToTable("system");
+
+                entity.HasIndex(e => e.SystemId, "IX_system_id")
+                    .IsUnique();
+
+                entity.Property(e => e.SystemIdx).HasColumnName("system_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.SystemId).HasColumnName("system_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")

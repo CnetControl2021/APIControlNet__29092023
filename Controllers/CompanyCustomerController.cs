@@ -116,50 +116,56 @@ namespace APIControlNet.Controllers
                 context.Add(compCust);
 
                 var dbCl = await context.CustomerLimits.FirstOrDefaultAsync(x => x.CustomerId == compCustDTO.CustomerId);
-
-                if (dbCl is null) 
+                try
                 {
-                    CustomerLimit cl = new CustomerLimit();
-                    cl.CustomerId = compCust.CustomerId;
-                    cl.AmountCreditLimit = 0;
-                    cl.CreditDays = 0;          
-                    cl.Date = DateTime.Now;
-                    cl.Updated = DateTime.Now;
-                    cl.Active = true;
-                    cl.Locked = false; cl.Deleted = false; cl.FolioOdrNumber = 0;
-                    context.Add(cl);
+                    if (dbCl is null)
+                    {
+                        CustomerLimit cl = new CustomerLimit();
+                        cl.CustomerId = compCust.CustomerId;
+                        cl.AmountCreditLimit = 0;
+                        cl.CreditDays = 0;
+                        cl.Date = DateTime.Now;
+                        cl.Updated = DateTime.Now;
+                        cl.Active = true;
+                        cl.Locked = false; cl.Deleted = false; cl.FolioOdrNumber = 0;
+                        context.Add(cl);
 
-                    var usuarioId = obtenerUsuarioId();
-                    var ipUser = obtenetIP();
-                    var name = dbcustomer.Name;
-                    var storeId2 = storeId;
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+                        var usuarioId = obtenerUsuarioId();
+                        var ipUser = obtenetIP();
+                        var name = dbcustomer.Name;
+                        var storeId2 = storeId;
+                        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
 
-                    await context.SaveChangesAsync();
-                    return Ok();
+                        await context.SaveChangesAsync();
+                        return Ok();
+                    }
+                    else
+                    {
+
+                        dbCl.CustomerId = compCust.CustomerId;
+                        dbCl.AmountCreditLimit = 0;
+                        dbCl.CreditDays = 0;
+                        dbCl.FolioOdrNumber = 0;
+                        //dbCl.Date = DateTime.Now;
+                        dbCl.Updated = DateTime.Now;
+                        dbCl.Active = true;
+                        dbCl.Locked = false; dbCl.Deleted = false;
+                        context.Update(dbCl);
+
+                        var usuarioId = obtenerUsuarioId();
+                        var ipUser = obtenetIP();
+                        var name = dbcustomer.Name;
+                        var storeId2 = storeId;
+                        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+
+                        await context.SaveChangesAsync();
+                        return Ok();
+                    }
                 }
-                else
+                catch (Exception ex) 
                 {
-                    
-                    dbCl.CustomerId = compCust.CustomerId;
-                    dbCl.AmountCreditLimit = 0;
-                    dbCl.CreditDays = 0;
-                    dbCl.FolioOdrNumber = 0;
-                    //dbCl.Date = DateTime.Now;
-                    dbCl.Updated = DateTime.Now;
-                    dbCl.Active = true;
-                    dbCl.Locked = false; dbCl.Deleted = false;
-                    context.Update(dbCl);
-
-                    var usuarioId = obtenerUsuarioId();
-                    var ipUser = obtenetIP();
-                    var name = dbcustomer.Name;
-                    var storeId2 = storeId;
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-
-                    await context.SaveChangesAsync();
-                    return Ok();
-                }            
+                    return BadRequest(ex.Message + "Seleccione cliente");
+                }                     
             }
         }
 

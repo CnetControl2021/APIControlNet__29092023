@@ -487,6 +487,7 @@ namespace APIControlNet.Controllers
                 }
                 else
                 {
+                    await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
                     return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed);
                 }
             }
@@ -685,7 +686,7 @@ namespace APIControlNet.Controllers
                 new Claim(ClaimTypes.Name, credencialesUsuariosDTO.Email),
                 new Claim("emailConfirmed", credencialesUsuariosDTO.EmailConfirmed.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("id", usuarioId)
+                new Claim("id", usuarioId)           
             };
 
             foreach (var rol in roles)
@@ -708,7 +709,8 @@ namespace APIControlNet.Controllers
                 Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
                 Expiracion = expiracion,
                 EmailConfirmed = emailConfirmed,
-                dbComany = (Guid)dbComany
+                dbComany = (Guid)dbComany,
+                Roles = roles.ToList()
             };
         }
 
@@ -743,7 +745,8 @@ namespace APIControlNet.Controllers
             {
                 Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
                 Expiracion = expiracion,
-                EmailConfirmed = emailConfirmed
+                EmailConfirmed = emailConfirmed,
+                Roles = roles.ToList()
             };
         }
     }

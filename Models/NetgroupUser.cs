@@ -21,5 +21,7 @@ namespace APIControlNet.Models
         public string PasswordAspnet { get; set; }
         public string DeviceCode { get; set; }
         public string Phone { get; set; }
+        public int? NetgroupUserTypeId { get; set; }
+        public Guid? CustomerId { get; set; }
     }
 }

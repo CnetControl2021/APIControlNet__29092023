@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Xml.Linq;
 
 namespace APIControlNet.Controllers
 {
@@ -30,7 +32,7 @@ namespace APIControlNet.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<CustomerLimitDTO>> Get(Guid customerId)
         {
-            try 
+            try
             {
                 var data = await context.CustomerLimits.FirstOrDefaultAsync(x => x.CustomerId == customerId);
 
@@ -45,5 +47,35 @@ namespace APIControlNet.Controllers
                 return Content(ex.Message);
             }
         }
+
+        [HttpPut]
+        public async Task<IActionResult> Put(CustomerLimitDTO customerLimitDTO, Guid storeId)
+        {
+            var db = await context.CustomerLimits.FirstOrDefaultAsync(x => x.CustomerId == customerLimitDTO.CustomerId);
+            var tabla = context.Model.FindEntityType(typeof(CustomerLimit)).GetTableName();
+
+            if (db is null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                db = mapper.Map(customerLimitDTO, db);
+                var usuarioId = obtenerUsuarioId();
+                var ipUser = obtenetIP();
+                var name = customerLimitDTO.AmountCreditLimit.ToString();
+                var storeId2 = storeId;
+                var Table = tabla;
+                await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
+                await context.SaveChangesAsync();
+            }
+            catch
+            {
+                return BadRequest($"Ya existe {db.CustomerId} ");
+            }
+            return NoContent();
+        }
+
+
     }
 }

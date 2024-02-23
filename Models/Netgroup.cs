@@ -20,5 +20,6 @@ namespace APIControlNet.Models
         public int? IsEnableRaffle { get; set; }
         public Guid? NetgroupRaffleId { get; set; }
         public int? IsEnableReward { get; set; }
+        public string VersionApp { get; set; }
     }
 }

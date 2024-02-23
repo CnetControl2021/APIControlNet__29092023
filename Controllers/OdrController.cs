@@ -27,10 +27,10 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<OdrDTO>>> Get(int skip, int take, Guid customerId, string searchTerm = "")
+        public async Task<ActionResult<IEnumerable<OdrDTO>>> Get(int skip, int take, Guid customerId, Guid vehicleiD, string searchTerm = "")
         {
             var data = await (from o in context.Odrs
-                              where o.CustomerId == customerId
+                              where o.CustomerId == customerId && o.VehicleId == vehicleiD
                               select o).AsNoTracking().ToListAsync();
 
             var query = data.Skip(skip).Take(take).AsQueryable();
@@ -38,57 +38,64 @@ namespace APIControlNet.Controllers
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(c => c.CardOdr.ToLower().Contains(searchTerm)
-                || c.OdrNumber.ToString().ToLower().Contains(searchTerm) );
+                || c.OdrNumber.ToString().ToLower().Contains(searchTerm));
             }
 
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
         }
 
-        [HttpGet("presetType")]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<PresetTypeDTO>>> Get()
-        {
-            var queryable = context.SatEstados.AsQueryable();
-            var list = await queryable
-                .AsNoTracking().ToListAsync();
-            return mapper.Map<List<PresetTypeDTO>>(list);
-        }
-
-
-        [HttpGet("ValidateType")]
-        [AllowAnonymous]
-        public async Task<IEnumerable<OdrDTO>> Get4()
-        {
-            var data = await context.Odrs.ToListAsync();
-            return mapper.Map<IEnumerable<OdrDTO>>(data);
-        }
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] OdrDTO odrDTO, Guid customerId, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] OdrDTO odrDTO, Guid storeId)
         {
-            var db = await context.Odrs.FirstOrDefaultAsync(x => x.CustomerId == odrDTO.CustomerId && x.CustomerId == odrDTO.CustomerId);
-            var tabla = context.Model.FindEntityType(typeof(Odr)).GetTableName();
-
-            var data = mapper.Map<Odr>(odrDTO);
-
+            var db = await context.Odrs.FirstOrDefaultAsync(x => x.CustomerId == odrDTO.CustomerId && x.VehicleId == odrDTO.VehicleId
+            && x.OdrNumber == odrDTO.OdrNumber);
             if (db is not null)
             {
                 return BadRequest($"Ya existe {db.OdrNumber} ");
             }
-            else
-            {
-                context.Add(data);
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = odrDTO.OdrNumber.ToString();
-                var storeId2 = storeId;
-                var Table = tabla;
-                await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
 
-                await context.SaveChangesAsync();
-                return Ok();
-            }
+            var tabla = context.Model.FindEntityType(typeof(Odr)).GetTableName();
+
+            var cusNumDb = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == odrDTO.CustomerId);
+            var customerNumber = cusNumDb.CustomerNumber;
+
+            var productDb = await context.Products.FirstOrDefaultAsync(x => x.ProductId == odrDTO.ProductId);
+            var productCode = productDb.ProductCode;
+
+            var cuslimitDb = await context.CustomerLimits.Where(x => x.CustomerId == odrDTO.CustomerId).FirstOrDefaultAsync();
+            var folio = cuslimitDb.FolioOdrNumber;
+            if (folio is null) { folio = 0; }
+            folio++;
+
+            var data = mapper.Map<Odr>(odrDTO);
+            //Odr data = new();
+            data.OdrId = Guid.NewGuid();
+            data.OdrNumber = folio++;
+            data.CardOdr = "17" + customerNumber.ToString("00000000") + data.OdrNumber?.ToString("D7");
+            data.NetgroupNetId = odrDTO.NetgroupNetId;
+            data.CustomerId = odrDTO.CustomerId;
+            data.VehicleId = odrDTO.VehicleId;
+            data.ProductId = odrDTO.ProductId;
+            data.ProductCode = productCode;
+            data.PresetType = odrDTO.PresetType;
+            data.PresetQuantity = odrDTO.PresetQuantity;
+            context.Odrs.Add(data);
+
+            cuslimitDb.FolioOdrNumber = data.OdrNumber;
+            context.Update(cuslimitDb);
+
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = odrDTO.OdrNumber.ToString();
+            var storeId2 = storeId;
+            var Table = tabla;
+            await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
+
+            await context.SaveChangesAsync();
+            return Ok();
+
         }
     }
 }

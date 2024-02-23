@@ -51,10 +51,10 @@ namespace APIControlNet.Controllers
                     var data2 = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.Name == userName);
                     if (data2 != null)
                     {
-                        var datauser = data2!.NetgroupId;
-                        var data = await context.Netgroups.Where(x => x.NetgroupId == datauser).AsNoTracking().ToListAsync();
-                    //var query = data.AsQueryable();
-                    var query = data.Skip(skip).Take(take).AsQueryable();
+                        var netGroupId = data2.NetgroupId;
+                        var data = await context.Netgroups.Where(x => x.NetgroupId == netGroupId).ToListAsync();
+                    var query = data.AsQueryable();
+                    //var query = data.Skip(skip).Take(take).AsQueryable();
 
                     if (!string.IsNullOrWhiteSpace(searchTerm))
                         {
@@ -151,16 +151,26 @@ namespace APIControlNet.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id, Guid storeId)
         {
-            var existe = await context.Netgroups.AnyAsync(x => x.NetgroupIdx == id);
+            var existe = await context.Netgroups.FirstOrDefaultAsync(x => x.NetgroupIdx == id);
             var tabla = context.Model.FindEntityType(typeof(Netgroup)).GetTableName();
-            if (!existe) { return NotFound(); }
+            if (existe is null) { return NotFound(); }
 
-            var name2 = await context.Netgroups.FirstOrDefaultAsync(x => x.NetgroupIdx == id);
-            context.Remove(name2);
+            var exist2 = await context.NetgroupNets.AnyAsync(x => x.NetgroupId == existe.NetgroupId);
+            if (exist2) { return BadRequest("Tiene datos relacionados"); }
 
+            var remove = await context.Netgroups.FirstOrDefaultAsync(x => x.NetgroupIdx == id);
+            context.Remove(remove);
+
+            var remove3 = await context.NetgroupStores.Where(x => x.NetgroupId == remove.NetgroupId).ToListAsync();
+            foreach (var item in remove3) { context.RemoveRange(remove3); }
+
+            var remove2 = await context.NetgroupUsers.Where(x => x.NetgroupId == remove.NetgroupId).ToListAsync();
+            foreach (var item in remove2) { context.RemoveRange(remove2); }
+
+           
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
-            var name = name2.NetgroupName;
+            var name = remove.NetgroupName;
             var storeId2 = storeId;
             var Table = tabla;
             await servicioBinnacle.deleteBinnacle2(usuarioId, ipUser, name, storeId2, Table);

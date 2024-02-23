@@ -6,5 +6,7 @@
         public DateTime Expiracion { get; set; }
         public bool EmailConfirmed { get; set; }
         public Guid dbComany { get; set; }
+        public List<string> Roles { get; set; }
+
     }
 }

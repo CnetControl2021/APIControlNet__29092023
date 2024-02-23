@@ -9,6 +9,12 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<NetgroupUserTypeDTO, NetgroupUserType>();
+            CreateMap<NetgroupUserType, NetgroupUserTypeDTO>();
+
+            CreateMap<PresetTypeDTO, PresetType>();
+            CreateMap<PresetType, PresetTypeDTO>();
+
             CreateMap<CustomerLimitDTO, CustomerLimit>();
             CreateMap<CustomerLimit, CustomerLimitDTO>();
 

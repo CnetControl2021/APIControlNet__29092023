@@ -57,11 +57,19 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("ValidateType")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IEnumerable<ValidateTypeDTO>> Get4()
         {
             var data = await context.ValidateTypes.ToListAsync();
             return mapper.Map<IEnumerable<ValidateTypeDTO>>(data);
+        }
+
+        [HttpGet("PresetType")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<PresetTypeDTO>> Get5()
+        {
+            var data = await context.PresetTypes.ToListAsync();
+            return mapper.Map<IEnumerable<PresetTypeDTO>>(data);
         }
 
 

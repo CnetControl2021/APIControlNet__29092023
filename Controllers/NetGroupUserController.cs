@@ -5,6 +5,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,9 +20,11 @@ namespace APIControlNet.Controllers
         private readonly CnetCoreContext context;
         private readonly IMapper mapper;
         private readonly ServicioBinnacle servicioBinnacle;
+        private readonly UserManager<IdentityUser> userManager;
 
-        public NetGroupUserController(CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle)
+        public NetGroupUserController(UserManager<IdentityUser> userManager, CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle)
         {
+            this.userManager = userManager;
             this.context = context;
             this.mapper = mapper;
             this.servicioBinnacle = servicioBinnacle;
@@ -37,11 +40,15 @@ namespace APIControlNet.Controllers
             return Ok(new { query, ntotal });
         }
 
+
         [HttpPost]
         public async Task<ActionResult> Post([FromBody] NetgroupUserDTO netgroupUserDTO, Guid storeId)
         {
             var dbNguser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.NetgroupId == netgroupUserDTO.NetgroupId && x.UserId == netgroupUserDTO.UserId);
             var tabla = context.Model.FindEntityType(typeof(NetgroupUser)).GetTableName();
+
+            var usuario = await userManager.FindByIdAsync(netgroupUserDTO.UserId);
+            var roles = await userManager.GetRolesAsync(usuario);
 
             var netgu = mapper.Map<NetgroupUser>(netgroupUserDTO);
 
@@ -51,6 +58,7 @@ namespace APIControlNet.Controllers
             }
             else
             {
+                netgu.Description = roles.First();
                 context.Add(netgu);
                 var usuarioId = obtenerUsuarioId();
                 var ipUser = obtenetIP();
@@ -64,10 +72,11 @@ namespace APIControlNet.Controllers
             }
         }
 
+
         [HttpDelete]
         public async Task<IActionResult> Delete(int id, Guid storeId, Guid netgroupId)
         {
-            var existe = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.NetgroupUserIdx == id 
+            var existe = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.NetgroupUserIdx == id
             && x.NetgroupId == netgroupId);
             var tabla = context.Model.FindEntityType(typeof(NetgroupUser)).GetTableName();
             if (existe is null) { return NotFound(); }
@@ -82,6 +91,15 @@ namespace APIControlNet.Controllers
             context.Remove(existe);
             await context.SaveChangesAsync();
             return NoContent();
+        }
+
+
+        [HttpGet("Types")]
+        //[AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<NetgroupUserTypeDTO>>> Get()
+        {
+            var data = await context.NetgroupUserTypes.AsNoTracking().ToListAsync();
+            return mapper.Map<List<NetgroupUserTypeDTO>>(data);
         }
 
     }

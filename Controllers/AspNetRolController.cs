@@ -36,6 +36,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult> Crear(AspNetRolesDTO aspNetRolesDTO)
         {
             var resultado = await roleManager.CreateAsync(new IdentityRole(aspNetRolesDTO.Name));
@@ -131,17 +132,16 @@ namespace APIControlNet.Controllers
         public async Task<ActionResult<IEnumerable<AspNetRolesDTO>>> Get5()
         {
             var data = await (from rol in roleManager.Roles        
-                              join rolPer in context.RolePermissions on rol.Id equals rolPer.RoleId
+                              //join rolPer in context.RolePermissions on rol.Id equals rolPer.RoleId
                               select new AspNetRolesDTO
                               {
                                   Id = rol.Id,
                                   Name = rol.Name,
-                                  RoleId = rolPer.RoleId,
-                                  Description = rolPer.Description
+                                  //RoleId = rolPer.RoleId,
+                                  //Description = rolPer.Description
                               }).AsNoTracking().ToListAsync();
             return data;
         }
-
 
 
         [HttpGet("{id}", Name = "obtenerRol")]
