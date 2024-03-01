@@ -1,8 +1,8 @@
 ﻿namespace APIControlNet.DTOs
 {
-    public class CompanyCustomerDTO
+    public class NetgroupCustomerDTO
     {
-        public int CompanyCustomerIdx { get; set; }
+        public int NetgroupCustomerIdx { get; set; }
         public Guid CompanyId { get; set; }
         public Guid CustomerId { get; set; }
         public DateTime? Date { get; set; }
@@ -12,8 +12,8 @@
         public bool? Deleted { get; set; }
 
         public string CustomerName { get; set; }
-        public string CustomerEmail { get; set; }
         public string CustomerRFC { get; set; }
+        public string CustomerEmail { get; set; }
 
     }
 }

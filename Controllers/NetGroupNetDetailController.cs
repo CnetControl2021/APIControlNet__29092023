@@ -30,24 +30,27 @@ namespace APIControlNet.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<NetgroupNetDetailDTO>>> Get(int skip, int take, Guid netgroupnetId, string searchTerm = "")
         {
-            var data = await (from ngnd in context.NetgroupNetDetails where ngnd.NetgroupNetId == netgroupnetId
+            var data = await (from ngnd in context.NetgroupNetDetails where ngnd.NetgroupNetId == netgroupnetId                         
                               join ngn in context.NetgroupNets on ngnd.NetgroupNetId equals ngn.NetgroupNetId
+                              join ng in context.Netgroups on ngn.NetgroupId equals ng.NetgroupId
                               join s in context.Stores on ngnd.StoreId equals s.StoreId
-                              //join ngs in context.NetgroupStores on ngnd.StoreId equals ngs.StoreId
+
                               
-                              select new
+                              select new NetgroupNetDetailDTO
                               {
-                                  ngnd.NetgroupNetDetailIdx,
-                                  ngnd.NetgroupNetId,
-                                  ngnd.StoreId,
-                                  s.Name
+                                  NetgroupNetDetailIdx = ngnd.NetgroupNetDetailIdx,
+                                  NetgroupNetId = ngnd.NetgroupNetId,
+                                  StoreId = ngnd.StoreId,
+                                  StoreName = s.Name,
+                                  NameNgn = ngn.Name,
+                                  NameNg = ng.NetgroupName
                               }).AsNoTracking().ToListAsync();
 
             var query = data.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(c => c.Name.ToLower().Contains(searchTerm));
+                query = query.Where(c => c.StoreName.ToLower().Contains(searchTerm));
             }
             var ntotal = query.Count();
             return Ok(new { query, ntotal });
@@ -84,7 +87,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(int id, Guid storeId)
+        public async Task<IActionResult> Delete(int id, Guid? storeId)
         {
             var existe = await context.NetgroupNetDetails.AnyAsync(x => x.NetgroupNetDetailIdx == id);
             var tabla = context.Model.FindEntityType(typeof(NetgroupNetDetail)).GetTableName();

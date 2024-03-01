@@ -30,7 +30,6 @@ namespace APIControlNet.Models
         public virtual DbSet<ClienteProveedorCvol> ClienteProveedorCvols { get; set; }
         public virtual DbSet<Company> Companies { get; set; }
         public virtual DbSet<CompanyAddress> CompanyAddresses { get; set; }
-        public virtual DbSet<CompanyCustomer> CompanyCustomers { get; set; }
         public virtual DbSet<CompanyFiel> CompanyFiels { get; set; }
         public virtual DbSet<ComposicionGasNaturalOcondensado> ComposicionGasNaturalOcondensados { get; set; }
         public virtual DbSet<CompraComplementoMesSat> CompraComplementoMesSats { get; set; }
@@ -114,6 +113,7 @@ namespace APIControlNet.Models
         public virtual DbSet<MovementType> MovementTypes { get; set; }
         public virtual DbSet<Netgroup> Netgroups { get; set; }
         public virtual DbSet<NetgroupBalance> NetgroupBalances { get; set; }
+        public virtual DbSet<NetgroupCustomer> NetgroupCustomers { get; set; }
         public virtual DbSet<NetgroupNet> NetgroupNets { get; set; }
         public virtual DbSet<NetgroupNetDetail> NetgroupNetDetails { get; set; }
         public virtual DbSet<NetgroupNews> NetgroupNews { get; set; }
@@ -231,7 +231,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-          
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -929,36 +929,6 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.CompanyId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_company_address_company1");
-            });
-
-            modelBuilder.Entity<CompanyCustomer>(entity =>
-            {
-                entity.HasKey(e => e.CompanyCustomerIdx);
-
-                entity.ToTable("company_customer");
-
-                entity.HasIndex(e => new { e.CompanyId, e.CustomerId }, "IX_company_customer")
-                    .IsUnique();
-
-                entity.Property(e => e.CompanyCustomerIdx).HasColumnName("company_customer_idx");
-
-                entity.Property(e => e.Active).HasColumnName("active");
-
-                entity.Property(e => e.CompanyId).HasColumnName("company_id");
-
-                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("datetime")
-                    .HasColumnName("date");
-
-                entity.Property(e => e.Deleted).HasColumnName("deleted");
-
-                entity.Property(e => e.Locked).HasColumnName("locked");
-
-                entity.Property(e => e.Updated)
-                    .HasColumnType("datetime")
-                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<CompanyFiel>(entity =>
@@ -2027,6 +1997,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Date)
                     .HasColumnType("datetime")
                     .HasColumnName("date");
+
+                entity.Property(e => e.DefaultHoseIdi).HasColumnName("default_hose_idi");
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
@@ -5819,6 +5791,37 @@ namespace APIControlNet.Models
                 entity.Property(e => e.RewardPoints)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("reward_points");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<NetgroupCustomer>(entity =>
+            {
+                entity.HasKey(e => e.NetgroupCustomerIdx)
+                    .HasName("PK_company_customer");
+
+                entity.ToTable("netgroup_customer");
+
+                entity.HasIndex(e => new { e.CompanyId, e.CustomerId }, "IX_company_customer")
+                    .IsUnique();
+
+                entity.Property(e => e.NetgroupCustomerIdx).HasColumnName("netgroup_customer_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")

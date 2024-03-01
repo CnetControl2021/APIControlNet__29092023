@@ -53,7 +53,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] NetgroupNetDTO ngnDTO, Guid storeId, string userName)
+        public async Task<ActionResult> Post([FromBody] NetgroupNetDTO ngnDTO, Guid? storeId, string userName)
         {
             try
             {

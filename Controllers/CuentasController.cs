@@ -3,25 +3,16 @@ using APIControlNet.Models;
 using APIControlNet.Services;
 using APIControlNet.Utilidades;
 using AutoMapper;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace APIControlNet.Controllers
@@ -74,6 +65,119 @@ namespace APIControlNet.Controllers
         //    //return Ok(users);
         //}
 
+        [HttpGet("ByRolNG")]
+        //[AllowAnonymous]
+        public async Task<ActionResult> ListUsersByRole(int skip, int take, string searchTerm = "")
+        {
+            try
+            {
+                var usersQuery = userManager.Users.AsQueryable();
+                var rolesQuery = roleManager.Roles.AsQueryable();
+
+                var result = from user in usersQuery
+                             join userRole in context.UserRoles on user.Id equals userRole.UserId
+                             join role in rolesQuery on userRole.RoleId equals role.Id
+                             where role.Name == "RolByNetGroup"
+                             select new
+                             {
+                                 Id = user.Id,
+                                 UserName = user.UserName,
+                                 Email = user.Email,
+                                 RoleName = role.Name
+                             };
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    result = result.Where(c => c.Email.ToLower().Contains(searchTerm) || c.UserName.ToLower().Contains(searchTerm));
+                }
+
+                var query = await result.Skip(skip).Take(take).OrderByDescending(x => x.UserName).ToListAsync();
+                var ntotal = await result.CountAsync();
+
+                return Ok(new { query, ntotal });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("registrarNG")]
+        [AllowAnonymous]
+        public async Task<ActionResult<RespuestaAutenticacionDTO>> RegistrarNG(CredencialesUsuariosDTO credencialesUsuariosDTO,
+          int? netgroupidi, string? netgroupname, int? netgroupUserTypeId)
+        {
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    var aspNetUserDb = await context.Users.AnyAsync(x => x.Email == credencialesUsuariosDTO.Email);
+                    if (aspNetUserDb) { return BadRequest("Usuario ya existe"); }
+
+                    var usuario = new IdentityUser
+                    {
+                        UserName = credencialesUsuariosDTO.Email,
+                        Email = credencialesUsuariosDTO.Email,
+                    };
+
+                    var resultado = await userManager.CreateAsync(usuario, credencialesUsuariosDTO.Password); //Respuesta Identity
+                    usuario.EmailConfirmed = true;
+                    var emailconfimed = usuario.EmailConfirmed;
+
+                    string roleName = "RolByNetGroup"; //  rol RolByNetGroup
+
+                    await userManager.AddToRoleAsync(usuario, roleName);
+
+                    //context.SaveChanges();
+
+                    //Netgroup oNg = new()
+                    //{
+                    //    NetgroupId = Guid.NewGuid(),
+                    //    NetgroupIdi = netgroupidi,
+                    //    NetgroupName = netgroupname,
+                    //    ShortDescription = netgroupname,
+                    //    Date = DateTime.Now,
+                    //    Updated = DateTime.Now,
+                    //    Active = true,
+                    //    Locked = false,
+                    //    Deleted = false
+                    //};
+                    //context.Netgroups.Add(oNg);
+                    ////context.SaveChanges();
+
+                    //NetgroupUser oNgUser = new()
+                    //{
+                    //    NetgroupId = oNg.NetgroupId,
+                    //    UserId = usuario.Id,
+                    //    NetgroupUserId = Guid.NewGuid(),
+                    //    Name = usuario.Email,
+                    //    Description = roleName,
+                    //    NetgroupUserTypeId = netgroupUserTypeId,
+                    //    Date = DateTime.Now,
+                    //    Updated = DateTime.Now,
+                    //    Active = true,
+                    //    Locked = false,
+                    //    Deleted = false
+                    //};
+                    //context.NetgroupUsers.Add(oNgUser);
+
+                    context.SaveChanges();
+                    await transaccion.CommitAsync();
+
+                    if (resultado.Succeeded)
+                    {
+                        return ConstruirToken2(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, usuario.Id);
+                    }
+                    return Ok(resultado);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message /*+ "Revisar que empresa y sucursal existan"*/);
+            }
+        }
+
 
         [HttpGet("listadoUsuarios")]
         [AllowAnonymous]
@@ -91,7 +195,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IActionResult> Get(Guid storeId)
         {
             var storeDb = await context.Stores.FirstOrDefaultAsync(x => x.StoreId == storeId);
@@ -128,11 +232,11 @@ namespace APIControlNet.Controllers
             {
                 var result = await (from u in context.Users
                                     orderby u.Email
-                            select new
-                            {
-                                u.Id,
-                                u.Email,
-                            }).ToListAsync();
+                                    select new
+                                    {
+                                        u.Id,
+                                        u.Email,
+                                    }).ToListAsync();
 
 
                 return Ok(result);
@@ -143,18 +247,33 @@ namespace APIControlNet.Controllers
             }
         }
 
-        [HttpGet("byName/{textSearch?}")] // BlazoredTypeahead
+        [HttpGet("byName/{textSearch?}")] // BlazoredTypeaheadNG
         [AllowAnonymous]
         public async Task<ActionResult<List<CredencialesUsuariosDTO>>> Get2(string textSearch)
         {
-            var queryable = userManager.Users.AsQueryable();
+            //var queryable = userManager.Users.AsQueryable();
+
+            var usersQuery = userManager.Users.AsQueryable();
+            var rolesQuery = roleManager.Roles.AsQueryable();
+
+            var result = from user in usersQuery
+                         join userRole in context.UserRoles on user.Id equals userRole.UserId
+                         join role in rolesQuery on userRole.RoleId equals role.Id
+                         where role.Name == "RolByNetGroup"
+                         select new CredencialesUsuariosDTO
+                         {
+                             Id = user.Id,
+                             EmailConfirmed = user.EmailConfirmed,
+                             Email = user.Email,
+                             Roles = new List<string> { role.Name }
+                         };
 
             if (!string.IsNullOrEmpty(textSearch))
             {
-                queryable = queryable.Where(x => x.Email.ToLower().Contains(textSearch) || x.UserName.ToLower().Contains(textSearch));
+                result = result.Where(x => x.Email.ToLower().Contains(textSearch));
 
             }
-            var s = await queryable
+            var s = await result
                .AsNoTracking().ToListAsync();
             return Ok(s);
         }
@@ -374,7 +493,7 @@ namespace APIControlNet.Controllers
                 if (resultado.Succeeded)
                 {
 
-                    return ConstruirToken2(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed);
+                    return ConstruirToken2(credencialesUsuariosDTO, new List<string>(), usuario.Id, emailconfimed, usuario.Id);
                     //return Ok(resultado);
                 }
                 else
@@ -477,18 +596,23 @@ namespace APIControlNet.Controllers
                 var roles = await userManager.GetRolesAsync(usuario);
                 var emailConfirmed = usuario.EmailConfirmed;
 
-                if (credencialesUsuariosDTO.Email != "masterSupport@controlnet.com.mx")
+                if (credencialesUsuariosDTO.Email != "masterSupport@controlnet.com.mx" && roles.FirstOrDefault() != "RolByNetGroup")
                 {
                     var dbUserStore = await context.UserStores.FirstOrDefaultAsync(x => x.UserId == usuarioIni.Id);
-                    var dbComany = dbUserStore.CompanyId;
+                    var dbComany = dbUserStore!.CompanyId;
                     await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
 
                     return ConstruirToken(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed, dbComany);
                 }
+                else if (roles.FirstOrDefault() == "RolByNetGroup")
+                {
+                    await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
+                    return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed, usuario.Id);
+                }
                 else
                 {
                     await servicioBinnacle.loginBinnacle(usuarioId, ipUser, name);
-                    return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed);
+                    return ConstruirToken2(credencialesUsuariosDTO, roles, usuario.Id, emailConfirmed, usuario.Id);
                 }
             }
             else
@@ -618,8 +742,9 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpDelete("{id}/{storeId?}")]
-        public async Task<IActionResult> Delete(string id, Guid storeId)
+        //[HttpDelete("{id}/{storeId?}")]
+        [HttpDelete]
+        public async Task<IActionResult> Delete(string id, Guid? storeId)
         {
             //var existe = await context.Stores.AnyAsync(x => x.StoreIdx == id);
             var user = await userManager.Users.FirstOrDefaultAsync(claim => claim.Id == id);
@@ -686,7 +811,7 @@ namespace APIControlNet.Controllers
                 new Claim(ClaimTypes.Name, credencialesUsuariosDTO.Email),
                 new Claim("emailConfirmed", credencialesUsuariosDTO.EmailConfirmed.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("id", usuarioId)           
+                new Claim("id", usuarioId)
             };
 
             foreach (var rol in roles)
@@ -715,7 +840,7 @@ namespace APIControlNet.Controllers
         }
 
         private RespuestaAutenticacionDTO ConstruirToken2(CredencialesUsuariosDTO credencialesUsuariosDTO,
-            IList<string> roles, string usuarioId, bool emailConfirmed)
+            IList<string> roles, string usuarioId, bool emailConfirmed, string? userId)
         {
             var claims = new List<Claim>()
             {
@@ -746,8 +871,10 @@ namespace APIControlNet.Controllers
                 Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
                 Expiracion = expiracion,
                 EmailConfirmed = emailConfirmed,
+                userId = userId,
                 Roles = roles.ToList()
             };
         }
+
     }
 }

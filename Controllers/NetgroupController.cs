@@ -4,6 +4,7 @@ using APIControlNet.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -16,61 +17,61 @@ namespace APIControlNet.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class NetgroupController : CustomBaseController
     {
+        private readonly UserManager<IdentityUser> userManager;
         private readonly CnetCoreContext context;
         private readonly IMapper mapper;
         private readonly ServicioBinnacle servicioBinnacle;
 
-        public NetgroupController(CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle)
+        public NetgroupController(CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle, UserManager<IdentityUser> userManager)
         {
             this.context = context;
             this.mapper = mapper;
             this.servicioBinnacle = servicioBinnacle;
+            this.userManager = userManager;
         }
 
-        //var data2 = await query.Skip(skip).Take(take).ToListAsync();
+
         [HttpGet]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<NetgroupDTO>>> Get(int skip, int take, string userName, string searchTerm = "")
+        //[AllowAnonymous]
+        public async Task<ActionResult<NetgroupDTO>> Get(int skip, int take, string userName, string searchTerm = "")
         {
-                if (userName is null || userName == "masterSupport@controlnet.com.mx")
+            var usuario = await userManager.FindByEmailAsync(userName);
+            var rolesUsuario = await userManager.GetRolesAsync(usuario);
+            //foreach (var rol in rolesUsuario)
+            //{
+            //    Console.WriteLine($"Rol: {rol}");
+            //}
+
+            var netgroupuser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.UserId == usuario.Id);
+            if (usuario.Email is "usuarioPrincipalSistemaNetGroup@controlnet.com.mx")
+            {
+                var data = await context.Netgroups.AsNoTracking().ToListAsync();
+                var query = data.Skip(skip).Take(take).AsQueryable();
+                if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    var data = await context.Netgroups.AsNoTracking().ToListAsync();
-
-                    var query = data.Skip(skip).Take(take).AsQueryable();
-                    if (!string.IsNullOrWhiteSpace(searchTerm))
-                    {
-                        query = query.Where(c => c.NetgroupName.ToLower().Contains(searchTerm)
-                        || c.ShortDescription.ToLower().Contains(searchTerm));
-                    }
-
-                    var ntotal = query.Count();
-                    return Ok(new { query, ntotal });
+                    query = query.Where(c => c.NetgroupName.ToLower().Contains(searchTerm)
+                    || c.ShortDescription.ToLower().Contains(searchTerm));
                 }
-                else
+                var ntotal = query.Count();
+                return Ok(new { query, ntotal });
+            }
+            else
+            {
+                var data = await context.Netgroups.Where(x => x.NetgroupId == netgroupuser.NetgroupId).AsNoTracking().ToListAsync();
+                var query = data.Skip(skip).Take(take).AsQueryable();
+                if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    var data2 = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.Name == userName);
-                    if (data2 != null)
-                    {
-                        var netGroupId = data2.NetgroupId;
-                        var data = await context.Netgroups.Where(x => x.NetgroupId == netGroupId).ToListAsync();
-                    var query = data.AsQueryable();
-                    //var query = data.Skip(skip).Take(take).AsQueryable();
-
-                    if (!string.IsNullOrWhiteSpace(searchTerm))
-                        {
-                            query = query.Where(c => c.NetgroupName.ToLower().Contains(searchTerm)
-                            || c.ShortDescription.ToLower().Contains(searchTerm));
-                        }
-                        var ntotal = query.Count();
-                        return Ok(new { query, ntotal });
-                    }
-                return NoContent();
-            }           
+                    query = query.Where(c => c.NetgroupName.ToLower().Contains(searchTerm)
+                    || c.ShortDescription.ToLower().Contains(searchTerm));
+                }
+                var ntotal = query.Count();
+                return Ok(new { query, ntotal });
+            }
         }
 
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] NetgroupDTO netgroupDTO, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] NetgroupDTO netgroupDTO, Guid? storeId)
         {
             var dbNg = await context.Netgroups.FirstOrDefaultAsync(x => x.NetgroupId == netgroupDTO.NetgroupId && x.NetgroupIdi == netgroupDTO.NetgroupIdi);
 
@@ -83,11 +84,11 @@ namespace APIControlNet.Controllers
             else
             {
                 context.Add(netg);
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = netgroupDTO.NetgroupName;
-                var storeId2 = storeId;
-                await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+                //var usuarioId = obtenerUsuarioId();
+                //var ipUser = obtenetIP();
+                //var name = netgroupDTO.NetgroupName;
+                //var storeId2 = storeId;
+                //await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
 
                 await context.SaveChangesAsync();
                 return Ok();
@@ -149,7 +150,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(int id, Guid storeId)
+        public async Task<IActionResult> Delete(int id, Guid? storeId)
         {
             var existe = await context.Netgroups.FirstOrDefaultAsync(x => x.NetgroupIdx == id);
             var tabla = context.Model.FindEntityType(typeof(Netgroup)).GetTableName();

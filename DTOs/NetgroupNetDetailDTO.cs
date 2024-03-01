@@ -10,6 +10,8 @@
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-        public string? Name { get; set; }
+        public string StoreName { get; set; }
+        public string NameNg { get; set; }
+        public string NameNgn { get; set; }
     }
 }

@@ -15,13 +15,13 @@ namespace APIControlNet.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class CompanyCustomerController : CustomBaseController
+    public class NetgroupCustomerController : CustomBaseController
     {
         private readonly CnetCoreContext context;
         private readonly IMapper mapper;
         private readonly ServicioBinnacle servicioBinnacle;
 
-        public CompanyCustomerController(CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle)
+        public NetgroupCustomerController(CnetCoreContext context, IMapper mapper, ServicioBinnacle servicioBinnacle)
         {
             this.context = context;
             this.mapper = mapper;
@@ -30,13 +30,13 @@ namespace APIControlNet.Controllers
 
         [HttpGet]
         //[AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<CompanyCustomerDTO>>> Get(int skip, int take, Guid companyId, string searchTerm = "")
+        public async Task<ActionResult<IEnumerable<NetgroupCustomerDTO>>> Get(int skip, int take, Guid companyId, string searchTerm = "")
         {
-            var data = await (from cc in context.CompanyCustomers
+            var data = await (from cc in context.NetgroupCustomers
                               join c in context.Customers on cc.CustomerId equals c.CustomerId
-                              select new CompanyCustomerDTO
+                              select new NetgroupCustomerDTO
                               {
-                                  CompanyCustomerIdx = cc.CompanyCustomerIdx,
+                                  NetgroupCustomerIdx = cc.NetgroupCustomerIdx,
                                   CompanyId = cc.CustomerId,
                                   CustomerId = cc.CustomerId,
                                   CustomerName = c.Name,
@@ -79,9 +79,9 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("{id:int}/{idGuid}", Name = "newCompCust")]
-        public async Task<ActionResult<CompanyCustomerDTO>> Get(int id, Guid idGuid)
+        public async Task<ActionResult<NetgroupCustomerDTO>> Get(int id, Guid idGuid)
         {
-            var compCust = await context.CompanyCustomers.FirstOrDefaultAsync(x => x.CompanyCustomerIdx == id);
+            var compCust = await context.NetgroupCustomers.FirstOrDefaultAsync(x => x.NetgroupCustomerIdx == id);
             var dbcustomer = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == compCust.CustomerId);
 
             if (compCust == null)
@@ -89,20 +89,20 @@ namespace APIControlNet.Controllers
                 return NotFound();
             }
 
-            var customer = mapper.Map<CompanyCustomerDTO>(compCust);
+            var customer = mapper.Map<NetgroupCustomerDTO>(compCust);
             customer.CustomerName = dbcustomer.Name;
 
             return Ok(customer);
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] CompanyCustomerDTO compCustDTO, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] NetgroupCustomerDTO compCustDTO, Guid storeId)
         {
-            var existe = await context.CompanyCustomers.AnyAsync
+            var existe = await context.NetgroupCustomers.AnyAsync
                 (x => x.CompanyId == compCustDTO.CompanyId && x.CustomerId == compCustDTO.CustomerId);
             var dbcustomer = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == compCustDTO.CustomerId);
 
-            var compCust = mapper.Map<CompanyCustomer>(compCustDTO);
+            var compCust = mapper.Map<NetgroupCustomer>(compCustDTO);
             //suppTransp.StoreId = storeId;
             //suppTransp.Name = dbSupplier.Name;
             //suppTransp.Rfc = dbSupplier.Rfc;
@@ -172,7 +172,7 @@ namespace APIControlNet.Controllers
         [HttpDelete("{id}/{storeId?}")]
         public async Task<IActionResult> Delete(int id, Guid? storeId)
         {
-            var existe = await context.CompanyCustomers.FirstOrDefaultAsync(x => x.CompanyCustomerIdx == id);
+            var existe = await context.NetgroupCustomers.FirstOrDefaultAsync(x => x.NetgroupCustomerIdx == id);
 
             if (existe is null) { return NotFound(); }
 

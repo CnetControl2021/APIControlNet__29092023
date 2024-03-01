@@ -27,6 +27,7 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
         public int? Subtype { get; set; }
         public string UniqueId { get; set; }
+        public int? DefaultHoseIdi { get; set; }
 
         public virtual DispensaryBrand DispensaryBrand { get; set; }
         public virtual Store Store { get; set; }

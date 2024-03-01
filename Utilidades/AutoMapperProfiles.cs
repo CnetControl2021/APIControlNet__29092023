@@ -9,6 +9,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<NetgroupCustomerDTO, NetgroupCustomer>();
+            CreateMap<NetgroupCustomer, NetgroupCustomerDTO>();
+
             CreateMap<NetgroupUserTypeDTO, NetgroupUserType>();
             CreateMap<NetgroupUserType, NetgroupUserTypeDTO>();
 
@@ -44,9 +47,6 @@ namespace APIControlNet.Utilidades
 
             CreateMap<SqlReportDTO, SqlReport>();
             CreateMap<SqlReport, SqlReportDTO>();
-
-            CreateMap<CompanyCustomerDTO, CompanyCustomer>();
-            CreateMap<CompanyCustomer, CompanyCustomerDTO>();
 
             CreateMap<SupplierDTO, Supplier>();
             CreateMap<Supplier, SupplierDTO>();

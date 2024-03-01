@@ -31,7 +31,7 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<IEnumerable<NetgroupUserDTO>>> Get(int skip, int take, Guid netgroupId)
         {
             var data = await context.NetgroupUsers.Where(x => x.NetgroupId == netgroupId).AsNoTracking().ToListAsync();
@@ -40,9 +40,21 @@ namespace APIControlNet.Controllers
             return Ok(new { query, ntotal });
         }
 
+        [HttpGet("byId")]
+        [AllowAnonymous]
+        public async Task<ActionResult<NetgroupUserDTO>> Get(string id)
+        {
+            var netgroupuser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.UserId == id);
+            if (netgroupuser == null)
+            {
+                return NotFound();
+            }
+            return Ok(netgroupuser);
+        }
+
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] NetgroupUserDTO netgroupUserDTO, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] NetgroupUserDTO netgroupUserDTO, Guid? storeId)
         {
             var dbNguser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.NetgroupId == netgroupUserDTO.NetgroupId && x.UserId == netgroupUserDTO.UserId);
             var tabla = context.Model.FindEntityType(typeof(NetgroupUser)).GetTableName();
@@ -60,12 +72,12 @@ namespace APIControlNet.Controllers
             {
                 netgu.Description = roles.First();
                 context.Add(netgu);
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = netgroupUserDTO.Name;
-                var storeId2 = storeId;
-                var Table = tabla;
-                await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
+                //var usuarioId = obtenerUsuarioId();
+                //var ipUser = obtenetIP();
+                //var name = netgroupUserDTO.Name;
+                //var storeId2 = storeId;
+                //var Table = tabla;
+                //await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return Ok();
