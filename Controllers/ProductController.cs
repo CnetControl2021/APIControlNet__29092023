@@ -92,13 +92,17 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("activeSinPag")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<ProductDTO>> Get([FromQuery] string nombre)
+        [AllowAnonymous]
+        public async Task<IEnumerable<ProductDTO>> Get([FromQuery] string nombre, bool? isFuel)
         {
             var queryable = context.Products.Where(x => x.Active == true).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
             {
                 queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+            }
+            if (isFuel is true)
+            {
+                queryable = queryable.Where(x => x.IsFuel == true);
             }
             var products = await queryable
                 .AsNoTracking()

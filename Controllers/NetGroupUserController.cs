@@ -52,10 +52,25 @@ namespace APIControlNet.Controllers
             return Ok(netgroupuser);
         }
 
+        [HttpGet("byName")]
+        public async Task<ActionResult<NetgroupUserDTO>> Get2(string user)
+        {
+            var netgroupuser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.Name == user);
+            if (netgroupuser == null)
+            {
+                return NotFound();
+            }
+            return Ok(netgroupuser);
+        }
+
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] NetgroupUserDTO netgroupUserDTO, Guid? storeId)
+        public async Task<ActionResult> Post([FromBody] NetgroupUserDTO netgroupUserDTO, Guid? customerId, Guid? storeId)
         {
+            if(netgroupUserDTO.NetgroupUserTypeId == 3 && customerId == Guid.Empty)
+            {
+                return BadRequest("Seleccionar cliente para usuario");
+            }
             var dbNguser = await context.NetgroupUsers.FirstOrDefaultAsync(x => x.NetgroupId == netgroupUserDTO.NetgroupId && x.UserId == netgroupUserDTO.UserId);
             var tabla = context.Model.FindEntityType(typeof(NetgroupUser)).GetTableName();
 
@@ -63,6 +78,7 @@ namespace APIControlNet.Controllers
             var roles = await userManager.GetRolesAsync(usuario);
 
             var netgu = mapper.Map<NetgroupUser>(netgroupUserDTO);
+            netgu.CustomerId = customerId;
 
             if (dbNguser is not null)
             {

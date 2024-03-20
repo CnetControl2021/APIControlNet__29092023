@@ -16,6 +16,7 @@ namespace APIControlNet.Models
             : base(options)
         {
         }
+
         public virtual DbSet<AuthorizationSet> AuthorizationSets { get; set; }
         public virtual DbSet<AutoTanque> AutoTanques { get; set; }
         public virtual DbSet<BankCard> BankCards { get; set; }
@@ -30,6 +31,7 @@ namespace APIControlNet.Models
         public virtual DbSet<ClienteProveedorCvol> ClienteProveedorCvols { get; set; }
         public virtual DbSet<Company> Companies { get; set; }
         public virtual DbSet<CompanyAddress> CompanyAddresses { get; set; }
+        public virtual DbSet<CompanyCustomer> CompanyCustomers { get; set; }
         public virtual DbSet<CompanyFiel> CompanyFiels { get; set; }
         public virtual DbSet<ComposicionGasNaturalOcondensado> ComposicionGasNaturalOcondensados { get; set; }
         public virtual DbSet<CompraComplementoMesSat> CompraComplementoMesSats { get; set; }
@@ -154,6 +156,7 @@ namespace APIControlNet.Models
         public virtual DbSet<ReportModuleDetail> ReportModuleDetails { get; set; }
         public virtual DbSet<RolePermission> RolePermissions { get; set; }
         public virtual DbSet<SaleOrder> SaleOrders { get; set; }
+        public virtual DbSet<SaleOrderInventory> SaleOrderInventories { get; set; }
         public virtual DbSet<SaleOrderPayment> SaleOrderPayments { get; set; }
         public virtual DbSet<SaleOrderPhoto> SaleOrderPhotos { get; set; }
         public virtual DbSet<SaleSuborder> SaleSuborders { get; set; }
@@ -231,7 +234,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-
+        
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -543,6 +546,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Date)
                     .HasColumnType("datetime")
                     .HasColumnName("date");
+
+                entity.Property(e => e.Delay).HasColumnName("delay");
 
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
@@ -929,6 +934,34 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.CompanyId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_company_address_company1");
+            });
+
+            modelBuilder.Entity<CompanyCustomer>(entity =>
+            {
+                entity.HasKey(e => e.CompanyCustomerIdx)
+                    .HasName("PK_company_customer_1");
+
+                entity.ToTable("company_customer");
+
+                entity.Property(e => e.CompanyCustomerIdx).HasColumnName("company_customer_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+                entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<CompanyFiel>(entity =>
@@ -4842,6 +4875,10 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.HoseIdi).HasColumnName("hose_idi");
 
+                entity.Property(e => e.InventoryIsRead)
+                    .HasColumnName("inventory_is_read")
+                    .HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.LoadPositionIdi).HasColumnName("load_position_idi");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
@@ -5804,14 +5841,9 @@ namespace APIControlNet.Models
 
                 entity.ToTable("netgroup_customer");
 
-                entity.HasIndex(e => new { e.CompanyId, e.CustomerId }, "IX_company_customer")
-                    .IsUnique();
-
                 entity.Property(e => e.NetgroupCustomerIdx).HasColumnName("netgroup_customer_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
-
-                entity.Property(e => e.CompanyId).HasColumnName("company_id");
 
                 entity.Property(e => e.CustomerId).HasColumnName("customer_id");
 
@@ -5822,6 +5854,8 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -7001,6 +7035,8 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("device_name");
 
+                entity.Property(e => e.InUse).HasColumnName("in_use");
+
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
                 entity.Property(e => e.PortIdi).HasColumnName("port_idi");
@@ -7894,6 +7930,41 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.StoreId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_sale_order_store");
+            });
+
+            modelBuilder.Entity<SaleOrderInventory>(entity =>
+            {
+                entity.HasKey(e => e.SaleOrderInventoryIdx)
+                    .HasName("PK_sale_order_inventory_idx");
+
+                entity.ToTable("sale_order_inventory");
+
+                entity.HasIndex(e => new { e.SaleOrderId, e.TankIdi }, "IX_sale_order_inventory_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.SaleOrderInventoryIdx).HasColumnName("sale_order_inventory_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Height).HasColumnName("height");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
+
+                entity.Property(e => e.TankIdi).HasColumnName("tank_idi");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+
+                entity.Property(e => e.Volume).HasColumnName("volume");
             });
 
             modelBuilder.Entity<SaleOrderPayment>(entity =>
@@ -9154,6 +9225,8 @@ namespace APIControlNet.Models
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("amount");
 
+                entity.Property(e => e.CapsuleNumber).HasColumnName("capsule_number");
+
                 entity.Property(e => e.Date)
                     .HasColumnType("datetime")
                     .HasColumnName("date");
@@ -9211,6 +9284,10 @@ namespace APIControlNet.Models
                     .HasMaxLength(80)
                     .IsUnicode(false)
                     .HasColumnName("name");
+
+                entity.Property(e => e.ScheduledDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("scheduled_date");
 
                 entity.Property(e => e.ShiftDate)
                     .HasColumnType("datetime")

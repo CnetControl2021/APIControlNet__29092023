@@ -71,7 +71,7 @@ namespace APIControlNet.Controllers
         {
             try
             {
-                var usersQuery = userManager.Users.AsQueryable();
+                var usersQuery = userManager.Users.Where(x => x.Email != "usuarioConRolNetGroup@controlnet.com.mx").AsQueryable();
                 var rolesQuery = roleManager.Roles.AsQueryable();
 
                 var result = from user in usersQuery
@@ -253,7 +253,7 @@ namespace APIControlNet.Controllers
         {
             //var queryable = userManager.Users.AsQueryable();
 
-            var usersQuery = userManager.Users.AsQueryable();
+            var usersQuery = userManager.Users.Where(x => x.Email != "usuarioPrincipalSistemaNetGroup@controlnet.com.mx").AsQueryable();
             var rolesQuery = roleManager.Roles.AsQueryable();
 
             var result = from user in usersQuery

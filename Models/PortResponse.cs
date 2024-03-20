@@ -20,5 +20,6 @@ namespace APIControlNet.Models
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
         public string Response2 { get; set; }
+        public int? InUse { get; set; }
     }
 }

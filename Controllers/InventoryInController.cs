@@ -695,16 +695,17 @@ namespace APIControlNet.Controllers
                                 InventoryInIdx = iI.InventoryInIdx,
                                 InventoryInId = iI.InventoryInId,
                                 InventoryInNumber = iI.InventoryInNumber,
+                                TankIdi = iI.TankIdi,
                                 StoreId = iI.StoreId,
                                 Date = iI.Date,
                                 StartDate = iI.StartDate,
                                 Volume = iI.Volume,
-
-                                ProductName = pd.Name,
+                                VolumeTc = iI.VolumeTc,
+                                ProductName = pd.Name
                                 //TankName = tk.Name,
                                 //Price = iIdoc.Price
 
-                            }).AsNoTracking().ToListAsync();
+                            }).OrderByDescending(x => x.Date).AsNoTracking().ToListAsync();
             return Ok(listSO);
         }
 

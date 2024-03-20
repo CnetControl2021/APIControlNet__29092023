@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace APIControlNet.Controllers
 {
@@ -73,7 +75,7 @@ namespace APIControlNet.Controllers
 
         [HttpGet("active")]
         //[AllowAnonymous]
-        public async Task<IEnumerable<IslandDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
+        public async Task<IEnumerable<IslandDTO>> Get2([FromQuery] string nombre, Guid storeId)
         {
             var queryable = context.Islands.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
             if (!string.IsNullOrEmpty(nombre))
@@ -84,12 +86,37 @@ namespace APIControlNet.Controllers
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var island = await queryable.OrderByDescending(x => x.IslandIdx).Paginar(paginacionDTO)
-                .Include(x => x.Store)
+            var data = await queryable.OrderBy(x => x.IslandIdi)
+                //.Include(x => x.Store)
                 .AsNoTracking()
                 .ToListAsync();
-            return mapper.Map<List<IslandDTO>>(island);
+            return mapper.Map<List<IslandDTO>>(data);
+        }
+
+        [HttpGet("skipTake")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetTake(int skip, int take, Guid? storeId, string searchTerm = "")
+        {
+            IQueryable<Island> query = context.Islands.AsNoTracking();
+
+            if (storeId.HasValue && storeId != Guid.Empty)
+            {
+                query = query.Where(x => x.StoreId == storeId);
+            }
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                query = query.Where(c => c.Name.ToLower().Contains(searchTerm) || (c.Description != null && c.Description.ToLower().Contains(searchTerm)));
+            }
+
+            var ntotal = await query.CountAsync();
+            var result = await query.Skip(skip).Take(take).OrderBy(x => x.IslandIdi).ToListAsync(); // Aplica paginado después de todos los filtros
+
+            return Ok(new
+            {
+                Total = ntotal,
+                Data = mapper.Map<List<IslandDTO>>(result)
+            });
         }
 
 

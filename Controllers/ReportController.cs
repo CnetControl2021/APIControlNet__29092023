@@ -47,7 +47,6 @@ namespace APIControlNet.Controllers
             //// Ejecutar la consulta SQL
             //var result = context.Set<Report>().FromSqlRaw(query).ToListAsync();
             //return Ok(result);
-
         }
 
 

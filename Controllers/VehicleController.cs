@@ -155,30 +155,29 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] VehicleDTO vehicleDTO, Guid customerId, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] VehicleDTO vehicleDTO, Guid customerId, Guid? storeId)
         {
-            var existe = await context.Vehicles.AnyAsync
-                (x => x.VehicleId == vehicleDTO.VehicleId && x.CustomerId == vehicleDTO.CustomerId);
+            var existe = await context.Vehicles.FirstOrDefaultAsync
+                (x => x.VehicleNumber == vehicleDTO.VehicleNumber && x.CustomerId == customerId);
 
-            var dbveh = await context.Customers.FirstOrDefaultAsync(x => x.CustomerId == vehicleDTO.CustomerId);
             var tabla = context.Model.FindEntityType(typeof(Vehicle)).GetTableName();
 
             var vehicle = mapper.Map<Vehicle>(vehicleDTO);
             vehicle.CustomerId = customerId;
 
-            if (existe)
+            if (existe != null)
             {
-                return BadRequest($"Ya existe {dbveh.Name} ");
+                return BadRequest($"Ya existe {existe.VehicleNumber} ");
             }
             else
             {
                 context.Add(vehicle);
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = vehicleDTO.Name;
-                var storeId2 = storeId;
-                var Table = tabla;
-                await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
+                //var usuarioId = obtenerUsuarioId();
+                //var ipUser = obtenetIP();
+                //var name = vehicleDTO.Name;
+                //var storeId2 = storeId;
+                //var Table = tabla;
+                //await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
 
                 await context.SaveChangesAsync();
                 return Ok();
@@ -215,9 +214,13 @@ namespace APIControlNet.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, Guid storeId)
         {
-            var existe = await context.Vehicles.AnyAsync(x => x.VehicleIdx == id);
+            var existe = await context.Vehicles.FirstOrDefaultAsync(x => x.VehicleIdx == id);
             var tabla = context.Model.FindEntityType(typeof(Netgroup)).GetTableName();
-            if (!existe) { return NotFound(); }
+            if (existe is null) { return NotFound(); }
+            
+            var dbOdr = await context.Odrs.FirstOrDefaultAsync(x => x.VehicleId == existe.VehicleId);
+
+            if (dbOdr?.VehicleId != null) { return BadRequest("Odr relacionada"); }
 
             var name2 = await context.Vehicles.FirstOrDefaultAsync(x => x.VehicleIdx == id);
             context.Remove(name2);

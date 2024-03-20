@@ -29,6 +29,7 @@ namespace APIControlNet.Controllers
             _configuration = configuration;
         }
 
+
         [HttpGet("noPage")]
         [AllowAnonymous]
         public async Task<IEnumerable<SqlReportDTO>> Get()

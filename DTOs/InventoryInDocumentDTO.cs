@@ -30,7 +30,7 @@ namespace APIControlNet.DTOs
         public string JsonTipoComplementoId { get; set; }
         public string JsonClaveUnidadMedidaId { get; set; }
         public string SatAclaracion { get; set; }
-        public DateTime? Updated { get; set; }
+        public DateTime? Updated { get; set; } 
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }

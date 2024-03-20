@@ -47,7 +47,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult> Post([FromBody] OdrDTO odrDTO, Guid storeId)
+        public async Task<ActionResult> Post([FromBody] OdrDTO odrDTO, Guid? storeId)
         {
             var db = await context.Odrs.FirstOrDefaultAsync(x => x.CustomerId == odrDTO.CustomerId && x.VehicleId == odrDTO.VehicleId
             && x.OdrNumber == odrDTO.OdrNumber);
@@ -86,12 +86,12 @@ namespace APIControlNet.Controllers
             cuslimitDb.FolioOdrNumber = data.OdrNumber;
             context.Update(cuslimitDb);
 
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = odrDTO.OdrNumber.ToString();
-            var storeId2 = storeId;
-            var Table = tabla;
-            await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
+            //var usuarioId = obtenerUsuarioId();
+            //var ipUser = obtenetIP();
+            //var name = odrDTO.OdrNumber.ToString();
+            //var storeId2 = storeId;
+            //var Table = tabla;
+            //await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, Table);
 
             await context.SaveChangesAsync();
             return Ok();

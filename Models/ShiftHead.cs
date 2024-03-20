@@ -17,5 +17,6 @@ namespace APIControlNet.Models
         public byte? Locked { get; set; }
         public byte? Deleted { get; set; }
         public string Name { get; set; }
+        public DateTime? ScheduledDate { get; set; }
     }
 }

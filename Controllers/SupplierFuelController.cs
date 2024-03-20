@@ -33,34 +33,30 @@ namespace APIControlNet.Controllers
         }
 
 
-        //[HttpGet("active")]
+        [HttpGet("active")]
         //[AllowAnonymous]
-        //public async Task<IEnumerable<SupplierFuelDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, 
-        //    Guid storeId, Guid id2)
-        //{
-        //    var queryable = context.SupplierFuels.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
-        //    if (!string.IsNullOrEmpty(nombre))
-        //    {
-        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-        //    }
-        //    if (storeId != Guid.Empty)
-        //    {
-        //        queryable = queryable.Where(x => x.StoreId == storeId);
-        //    }
-        //    if (id2 != Guid.Empty)
-        //    {  
-        //        queryable = queryable.Where(x => x.SupplierId == id2);
-        //    }
-        //    await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-        //    var suppliersFuel = await queryable.Paginar(paginacionDTO).AsNoTracking().ToListAsync();
-        //    return mapper.Map<List<SupplierFuelDTO>>(suppliersFuel);
-        //}
+        public async Task<IEnumerable<SupplierFuelDTO>> Get2([FromQuery]
+            Guid storeId, Guid id2)
+        {
+            var queryable = context.SupplierFuels.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+
+            if (storeId != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.StoreId == storeId);
+            }
+            if (id2 != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.SupplierId == id2);
+            }
+            var suppliersFuel = await queryable.AsNoTracking().ToListAsync();
+            return mapper.Map<List<SupplierFuelDTO>>(suppliersFuel);
+        }
 
         [HttpGet("GetOK")]
         //[AllowAnonymous]
         public async Task<ActionResult<ApiRespSupplierFuelDTO>> Get5(int skip, int take, Guid storeId, string searchTerm = "")
         {
-            var query = context.SupplierFuels.Where(x => x.StoreId == storeId ).AsQueryable();
+            var query = context.SupplierFuels.Where(x => x.StoreId == storeId).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -109,7 +105,7 @@ namespace APIControlNet.Controllers
         {
             var existe = await context.SupplierFuels.AnyAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId && x.StoreId == storeId);
             var dbSupplier = await context.Suppliers.FirstOrDefaultAsync(x => x.SupplierId == SupplierFuelDTO.SupplierId);
-            
+
             var suppFuel = mapper.Map<SupplierFuel>(SupplierFuelDTO);
             suppFuel.StoreId = storeId;
             suppFuel.Name = dbSupplier.Name;

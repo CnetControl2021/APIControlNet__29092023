@@ -18,5 +18,6 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public float? Delay { get; set; }
     }
 }

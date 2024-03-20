@@ -181,7 +181,6 @@ namespace APIControlNet.Controllers
         //    return Ok(list);
         //}
 
-
         [HttpPost("{storeId}")]
         //[AllowAnonymous]
         public async Task<ActionResult> Post([FromBody] InvInDoc_Invoice invInDoc_Invoice, Guid storeId)
@@ -259,7 +258,7 @@ namespace APIControlNet.Controllers
                         var iiDoc2 = await context.InventoryInDocuments.FirstOrDefaultAsync  //inventory_in_document  COMPRAdetalle
                         (x => x.InventoryInId == invInDoc_Invoice.NInventoryInDocumentDTO.InventoryInId);
 
-                        var oInvoice = await context.Invoices.FirstOrDefaultAsync (x => x.InvoiceId == dataDB.InvoiceId);
+                        var oInvoice = await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == dataDB.InvoiceId);
                         //oIvoice.InvoiceId = Guid.NewGuid();
                         //oIvoice.StoreId = storeId;
                         //oIvoice.InvoiceSerieId = invInDoc_Invoice.NInvoiceDTO.InvoiceSerieId;
@@ -278,7 +277,7 @@ namespace APIControlNet.Controllers
 
                         //context.Invoices.Update(oInvoice);
                         var oInvDetail = await context.InvoiceDetails.Where(x => x.InvoiceId == dataDB.InvoiceId)
-                            .OrderBy(x =>x.InvoiceDetailIdi).LastOrDefaultAsync();
+                            .OrderBy(x => x.InvoiceDetailIdi).LastOrDefaultAsync();
                         var idi = oInvDetail.InvoiceDetailIdi++;
 
                         InvoiceDetail invoiceDetail = new();
@@ -316,6 +315,81 @@ namespace APIControlNet.Controllers
                         iiDoc.Active = true;
                         iiDoc.Deleted = false;
                         iiDoc.Locked = false;
+
+                        context.InventoryInDocuments.Update(iiDoc);
+                        context.SaveChanges();
+                    }
+                    await transaccion.CommitAsync();
+                }
+            }
+            catch (Exception)
+            {
+                return BadRequest("Revisar datos");
+            }
+            return Ok();
+        }
+
+        [HttpPost("station/{storeId}")]
+        //[AllowAnonymous]
+        public async Task<ActionResult> Post2([FromBody] InventoryInDocumentDTO inventoryInDocumentDTO, Guid storeId)
+        {
+            if (storeId == Guid.Empty)
+            {
+                return BadRequest("Sucursal no valida");
+            }
+            try
+            {
+                using (var transaccion = await context.Database.BeginTransactionAsync())
+                {
+                    var dataDB = await context.InventoryInDocuments.FirstOrDefaultAsync(x => x.InventoryInDocumentIdx == inventoryInDocumentDTO.InventoryInDocumentIdx);
+
+                    if (dataDB is null )
+                    {
+                        
+                        InventoryInDocument iiDoc = new();
+                        iiDoc.StoreId = storeId;
+                        iiDoc.InventoryInId = inventoryInDocumentDTO.InventoryInId;
+                        iiDoc.InventoryInIdi = inventoryInDocumentDTO.InventoryInIdi;
+                        iiDoc.Date = inventoryInDocumentDTO.Date;
+                        iiDoc.Type = inventoryInDocumentDTO.Type;
+                        iiDoc.Folio = inventoryInDocumentDTO.Folio;
+                        iiDoc.Vehicle = inventoryInDocumentDTO.Vehicle;
+                        iiDoc.Volume = inventoryInDocumentDTO.Volume;
+                        iiDoc.SupplierFuelIdi = inventoryInDocumentDTO.SupplierFuelIdi;
+                        iiDoc.SupplierTransportIdi = inventoryInDocumentDTO.SupplierTransportIdi;
+                        iiDoc.TerminalStorage = inventoryInDocumentDTO.TerminalStorage;
+                        iiDoc.Price = inventoryInDocumentDTO.Price;
+                        iiDoc.Uuid = inventoryInDocumentDTO.Uuid;
+                        iiDoc.Updated = inventoryInDocumentDTO.Updated;
+                        iiDoc.Active = true;
+                        iiDoc.Locked = false;
+                        iiDoc.Deleted = false;
+
+                        context.InventoryInDocuments.Add(iiDoc);
+                        context.SaveChanges();
+                    }
+                    else
+                    {
+                        var iiDoc = await context.InventoryInDocuments.FirstOrDefaultAsync
+                        (x => x.InventoryInDocumentIdx == inventoryInDocumentDTO.InventoryInDocumentIdx);
+
+                        iiDoc.StoreId = inventoryInDocumentDTO.StoreId;
+                        iiDoc.InventoryInId = inventoryInDocumentDTO.InventoryInId;
+                        iiDoc.InventoryInIdi = inventoryInDocumentDTO.InventoryInIdi;
+                        iiDoc.Date = inventoryInDocumentDTO.Date;
+                        iiDoc.Type = inventoryInDocumentDTO.Type;
+                        iiDoc.Folio = inventoryInDocumentDTO.Folio;
+                        iiDoc.Vehicle = inventoryInDocumentDTO.Vehicle;
+                        iiDoc.Volume = inventoryInDocumentDTO.Volume;
+                        iiDoc.SupplierFuelIdi = inventoryInDocumentDTO.SupplierFuelIdi;
+                        iiDoc.SupplierTransportIdi = inventoryInDocumentDTO.SupplierTransportIdi;
+                        iiDoc.TerminalStorage = inventoryInDocumentDTO.TerminalStorage;
+                        iiDoc.Price = inventoryInDocumentDTO.Price;
+                        iiDoc.Uuid = inventoryInDocumentDTO.Uuid;
+                        iiDoc.Updated = DateTime.Now;
+                        iiDoc.Active = true;
+                        iiDoc.Locked = false;
+                        iiDoc.Deleted = false;
 
                         context.InventoryInDocuments.Update(iiDoc);
                         context.SaveChanges();
