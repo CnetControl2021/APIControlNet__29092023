@@ -93,6 +93,7 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<IslandDTO>>(data);
         }
 
+
         [HttpGet("skipTake")]
         [AllowAnonymous]
         public async Task<ActionResult> GetTake(int skip, int take, Guid? storeId, string searchTerm = "")
@@ -122,13 +123,9 @@ namespace APIControlNet.Controllers
 
         [HttpGet("activeSinPag")]
         //[AllowAnonymous]
-        public async Task<IEnumerable<IslandDTO>> Get3([FromQuery] string nombre, Guid storeId)
+        public async Task<IEnumerable<IslandDTO>> Get3([FromQuery] Guid storeId)
         {
             var queryable = context.Islands.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
@@ -152,31 +149,135 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post(IslandDTO IslandDTO, Guid storeId)
+        //[HttpPost("{storeId?}")]
+        //public async Task<ActionResult> Post(IslandDTO IslandDTO, Guid storeId)
+        //{
+        //    var existeIDYNombre = await context.Islands.AnyAsync(x => x.IslandIdi == IslandDTO.IslandIdi && x.StoreId == IslandDTO.StoreId);
+
+        //    var island = mapper.Map<Island>(IslandDTO);
+
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = island.Name;
+        //    var storeId2 = storeId;
+
+        //    if (existeIDYNombre)
+        //    {
+        //        return BadRequest($"Ya existe {IslandDTO.IslandIdi} en esa sucursal ");
+        //    }
+        //    else
+        //    {
+        //        context.Add(island);
+        //        await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //        await context.SaveChangesAsync();
+        //    }
+
+        //    var IslandDTO2 = mapper.Map<IslandDTO>(island);
+        //    return CreatedAtRoute("obtenerIsla", new { id = island.IslandIdx }, IslandDTO2);
+        //}
+
+        //[HttpPost]
+        //public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islands)
+        //{
+        //    if (islands == null || !islands.Any())
+        //    {
+        //        return BadRequest("La lista de islas está vacía o nula.");
+        //    }
+
+        //    foreach (var dto in islands)
+        //    {
+        //        if (dto.IslandIdx.HasValue)
+        //        {
+        //            var entity = await context.Islands.FindAsync(dto.IslandIdx.Value);
+
+        //            if (entity != null)
+        //            {
+        //                entity.IslandIdi = dto.IslandIdi;
+        //                entity.StoreId = dto.StoreId;
+        //                entity.Name = dto.Name;
+        //                entity.Description = dto.Description;
+        //                entity.Date = dto.Date ?? DateTime.Now;
+        //                entity.Updated = DateTime.Now;
+        //                entity.Active = dto.Active ?? true;
+        //                entity.Locked = dto.Locked ?? false;
+        //                entity.Deleted = dto.Deleted ?? false;
+        //            }
+        //        }
+        //        if (dto.IslandIdx == 0)
+        //        {
+        //            // Lógica para añadir nuevos registros
+        //            var newEntity = new Island
+        //            {
+        //                IslandIdi = dto.IslandIdi,
+        //                StoreId = storeId,
+        //                Name = dto.Name,
+        //                Description = dto.Description,
+        //                Date = dto.Date ?? DateTime.Now,
+        //                Updated = DateTime.Now,
+        //                Active = dto.Active ?? true,
+        //                Locked = dto.Locked ?? false,
+        //                Deleted = dto.Deleted ?? false
+        //            };
+        //            context.Islands.Add(newEntity);
+        //        }
+        //    }
+
+        //    await context.SaveChangesAsync();
+        //    return Ok();
+        //}
+
+
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islands)
         {
-            var existeIDYNombre = await context.Islands.AnyAsync(x => x.IslandIdi == IslandDTO.IslandIdi && x.StoreId == IslandDTO.StoreId);
-
-            var island = mapper.Map<Island>(IslandDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = island.Name;
-            var storeId2 = storeId;
-
-            if (existeIDYNombre)
+            if (islands == null || !islands.Any())
             {
-                return BadRequest($"Ya existe {IslandDTO.IslandIdi} en esa sucursal ");
-            }
-            else
-            {
-                context.Add(island);
-                await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                await context.SaveChangesAsync();
+                return BadRequest("La lista de islas está vacía o nula.");
             }
 
-            var IslandDTO2 = mapper.Map<IslandDTO>(island);
-            return CreatedAtRoute("obtenerIsla", new { id = island.IslandIdx }, IslandDTO2);
+            foreach (var dto in islands)
+            {
+                var existingEntity = await context.Islands
+                    .FirstOrDefaultAsync(i => i.IslandIdx == dto.IslandIdx);
+
+                if (existingEntity != null)
+                {
+                    context.Islands.Remove(existingEntity);
+                    await context.SaveChangesAsync(); 
+
+                    var newEntity = new Island
+                    {
+                        IslandIdi = dto.IslandIdi,
+                        StoreId = storeId, 
+                        Name = dto.Name,
+                        Description = dto.Description,
+                        Date = dto.Date ?? DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = dto.Active ?? true,
+                        Locked = dto.Locked ?? false,
+                        Deleted = dto.Deleted ?? false
+                    };
+                    context.Islands.Add(newEntity);
+                }
+                else if (!dto.IslandIdx.HasValue || dto.IslandIdx == 0)
+                {
+                    var newEntity = new Island
+                    {
+                        IslandIdi = dto.IslandIdi,
+                        StoreId = storeId,
+                        Name = dto.Name,
+                        Description = dto.Description,
+                        Date = dto.Date ?? DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = dto.Active ?? true,
+                        Locked = dto.Locked ?? false,
+                        Deleted = dto.Deleted ?? false
+                    };
+                    context.Islands.Add(newEntity);
+                }
+            }
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
 
@@ -236,20 +337,28 @@ namespace APIControlNet.Controllers
         {
             try
             {
-                var existe = await context.Islands.AnyAsync(x => x.IslandIdx == id);
-                if (!existe) { return NotFound(); }
+                var existe = await context.Islands.FirstOrDefaultAsync(x => x.IslandIdx == id);
+                if (existe is null) { return NotFound(); }
 
-                var name2 = await context.Islands.FirstOrDefaultAsync(x => x.IslandIdx == id);
-                context.Remove(name2);
+                var lp = await context.LoadPositions.FirstOrDefaultAsync(x => x.IslandIdi == existe.IslandIdi && x.StoreId == storeId);
+                
+                if (lp is not null) { return BadRequest("Posicion de carga relacionada"); }
+                else
+                {
+                    var name2 = await context.Islands.FirstOrDefaultAsync(x => x.IslandIdx == id);
+                    context.Remove(name2);
 
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = name2.Name;
-                var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                    var usuarioId = obtenerUsuarioId();
+                    var ipUser = obtenetIP();
+                    var name = name2.Name;
+                    var storeId2 = storeId;
+                    await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
 
-                await context.SaveChangesAsync();
-                return NoContent();
+                    await context.SaveChangesAsync();
+                    return NoContent();
+                }
+                
+                
             }
             catch
             {

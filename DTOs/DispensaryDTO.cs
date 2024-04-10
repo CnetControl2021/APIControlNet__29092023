@@ -4,11 +4,11 @@ namespace APIControlNet.DTOs
 {
     public class DispensaryDTO
     {
-        public DispensaryDTO()
-        {
-            LoadPositions = new HashSet<LoadPositionDTO>();
-        }
-        public int DispensaryIdx { get; set; }
+        //public DispensaryDTO()
+        //{
+        //    LoadPositions = new HashSet<LoadPositionDTO>();
+        //}
+        public int? DispensaryIdx { get; set; }
         public int DispensaryIdi { get; set; }
         public Guid StoreId { get; set; }
         public string Name { get; set; }
@@ -23,9 +23,12 @@ namespace APIControlNet.DTOs
         public bool? Active { get; set; } = true;
         public bool? Locked { get; set; } = false;
         public bool? Deleted { get; set; } = false;
+        public int? Subtype { get; set; }
+        public string UniqueId { get; set; }
+        public int? DefaultHoseIdi { get; set; }
 
-        public virtual DispensaryBrandDTO DispensaryBrand { get; set; }
-        public virtual StoreDTO Store { get; set; }
-        public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
+        //public virtual DispensaryBrandDTO DispensaryBrand { get; set; }
+        //public virtual StoreDTO Store { get; set; }
+        //public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
     }
 }

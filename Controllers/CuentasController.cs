@@ -194,6 +194,7 @@ namespace APIControlNet.Controllers
             return Ok(usuarios);
         }
 
+
         [HttpGet]
         //[AllowAnonymous]
         public async Task<IActionResult> Get(Guid storeId)

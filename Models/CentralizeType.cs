@@ -3,19 +3,17 @@ using System.Collections.Generic;
 
 namespace APIControlNet.Models
 {
-    public partial class Island
+    public partial class CentralizeType
     {
-        public int IslandIdx { get; set; }
-        public int IslandIdi { get; set; }
-        public Guid StoreId { get; set; }
-        public string Name { get; set; }
+        public int CentralizeTypeIdx { get; set; }
+        public int CentralizeTypeId { get; set; }
         public string Description { get; set; }
+        public Guid NetgroupId { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-
-        public virtual Store Store { get; set; }
+        public int ItIsToGetInformation { get; set; }
     }
 }

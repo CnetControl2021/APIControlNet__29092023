@@ -49,7 +49,6 @@ namespace APIControlNet.Models
         public int? PointSaleIdi { get; set; }
 
         public virtual Dispensary Dispensary { get; set; }
-        public virtual Island Island { get; set; }
         public virtual Port Port { get; set; }
         public virtual Store Store { get; set; }
         public virtual ICollection<Hose> Hoses { get; set; }

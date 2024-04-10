@@ -5,12 +5,12 @@ namespace APIControlNet.DTOs
 {
     public class IslandDTO
     {
-        public IslandDTO()
-        {
-            LoadPositions = new HashSet<LoadPositionDTO>();
-        }
+        //public IslandDTO()
+        //{
+        //    LoadPositions = new HashSet<LoadPositionDTO>();
+        //}
 
-        public int IslandIdx { get; set; }
+        public int? IslandIdx { get; set; }
         public int IslandIdi { get; set; }
         public Guid StoreId { get; set; }
         public string Name { get; set; }
@@ -21,8 +21,8 @@ namespace APIControlNet.DTOs
         public bool? Locked { get; set; }=false;
         public bool? Deleted { get; set; }=false ;
 
-        public virtual StoreDTO Store { get; set; }
-        public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
+        //public virtual StoreDTO Store { get; set; }
+        //public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
     }
 
 

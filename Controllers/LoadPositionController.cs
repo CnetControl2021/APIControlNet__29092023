@@ -44,7 +44,7 @@ namespace APIControlNet.Controllers
             var loadPosition = await queryable.OrderByDescending(x => x.LoadPositionIdi).Paginar(paginacionDTO)
                 .Include(x => x.Dispensary)
                 .Include(x => x.Port)
-                .Include(x => x.Island)
+                //.Include(x => x.Island)
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<LoadPositionDTO>>(loadPosition);
@@ -68,7 +68,7 @@ namespace APIControlNet.Controllers
             var loadPosition = await queryable.OrderByDescending(x => x.LoadPositionIdi).Paginar(paginacionDTO)
                 .Include(x => x.Dispensary)
                 .Include(x => x.Port)
-                .Include(x => x.Island)
+                //.Include(x => x.Island)
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<LoadPositionDTO>>(loadPosition);

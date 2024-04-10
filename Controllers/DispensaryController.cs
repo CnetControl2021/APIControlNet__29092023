@@ -26,7 +26,7 @@ namespace APIControlNet.Controllers
         {
             this.context = context;
             this.mapper = mapper;
-            this.servicioBinnacle=servicioBinnacle;
+            this.servicioBinnacle = servicioBinnacle;
         }
 
 
@@ -38,62 +38,56 @@ namespace APIControlNet.Controllers
             {
                 queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
             }
-            if (storeId!= Guid.Empty)
-            {
-                queryable = queryable.Where(x => x.StoreId==storeId);
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var dispensary = await queryable.Paginar(paginacionDTO)
-                .Include(x => x.Store)
-                .Include(x => x.DispensaryBrand)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<DispensaryDTO>>(dispensary);
-        }
-
-
-        [HttpGet("Active")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<DispensaryDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
-        {
-            var queryable = context.Dispensaries.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
-            if (storeId != Guid.Empty)
-            {
-                queryable = queryable.Where(x => x.StoreId==storeId);
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var dispensary = await queryable.Paginar(paginacionDTO)
-                .Include(x => x.Store)
-                .Include(x => x.DispensaryBrand)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<DispensaryDTO>>(dispensary);
-        }
-
-        [HttpGet("ActiveSinPag")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<DispensaryDTO>> Get3([FromQuery] string nombre, Guid storeId)
-        {
-            var queryable = context.Dispensaries.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            var dispensary = await queryable.OrderByDescending(x => x.DispensaryIdx)
+            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
+            var dispensary = await queryable.Paginar(paginacionDTO)
                 .Include(x => x.Store)
                 .Include(x => x.DispensaryBrand)
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<DispensaryDTO>>(dispensary);
         }
+
+        [HttpGet("activeSinPag")]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<DispensaryDTO>> Get3([FromQuery] Guid storeId)
+        {
+            var queryable = context.Dispensaries.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+            if (storeId != Guid.Empty)
+            {
+                queryable = queryable.Where(x => x.StoreId == storeId);
+            }
+            var dp = await queryable.OrderBy(x => x.DispensaryIdi)
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<DispensaryDTO>>(dp);
+        }
+
+
+
+        //[HttpGet("ActiveSinPag")]
+        ////[AllowAnonymous]
+        //public async Task<IEnumerable<DispensaryDTO>> Get3([FromQuery] string nombre, Guid storeId)
+        //{
+        //    var queryable = context.Dispensaries.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+        //    if (!string.IsNullOrEmpty(nombre))
+        //    {
+        //        queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
+        //    }
+        //    if (storeId != Guid.Empty)
+        //    {
+        //        queryable = queryable.Where(x => x.StoreId == storeId);
+        //    }
+        //    var dispensary = await queryable.OrderByDescending(x => x.DispensaryIdx)
+        //        .Include(x => x.Store)
+        //        .Include(x => x.DispensaryBrand)
+        //        .AsNoTracking()
+        //        .ToListAsync();
+        //    return mapper.Map<List<DispensaryDTO>>(dispensary);
+        //}
 
 
         [HttpGet("{id:int}", Name = "obtenerDispensary")]
@@ -119,43 +113,87 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<DispensaryDTO>>(RSs);
         }
 
-
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] DispensaryDTO dispensaryDTO, Guid storeId)
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<DispensaryDTO> dispensaries)
         {
-
-            var existeid = await context.Dispensaries.AnyAsync(x => x.DispensaryIdx == dispensaryDTO.DispensaryIdx);
-
-            var Dispensary = mapper.Map<Dispensary>(dispensaryDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = Dispensary.Name;
-            var storeId2 = storeId;
-
-            if (existeid)
+            if (dispensaries == null || !dispensaries.Any())
             {
-                context.Update(Dispensary);
-                await context.SaveChangesAsync();
+                return BadRequest("La lista está vacía o nula.");
             }
-            else
-            {
-                var existe = await context.Dispensaries.AnyAsync(x => x.DispensaryIdi == (dispensaryDTO.DispensaryIdi) && x.StoreId == dispensaryDTO.StoreId);
 
-                if (existe)
+            foreach (var dto in dispensaries)
+            {
+                var existingEntity = await context.Dispensaries
+                    .FindAsync(dto.DispensaryIdx);
+
+                if (existingEntity != null)
                 {
-                    return BadRequest($"Ya existe {dispensaryDTO.DispensaryIdi} en esa sucursal ");
+                    
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.Dispensaries.Update(existingEntity);
                 }
-                else
+                else if (!dto.DispensaryIdx.HasValue || dto.DispensaryIdx == 0)
                 {
-                    context.Add(Dispensary);
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                    await context.SaveChangesAsync();
+                    var newEntity = new Dispensary
+                    {
+                        DispensaryIdi = dto.DispensaryIdi,
+                        StoreId = storeId,
+                        Name = dto.Name,
+                        SatMeasurementType = dto.SatMeasurementType,
+                        SatMeasurementPercentageUncertainty = dto.SatMeasurementPercentageUncertainty,
+                        SatCalibrationDate = dto.SatCalibrationDate,
+                        DispensaryBrandId = dto.DispensaryBrandId,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false,
+                        UniqueId = Guid.NewGuid().ToString()
+                    };
+                    context.Dispensaries.Add(newEntity);
                 }
             }
-            var DispensaryDTO2 = mapper.Map<DispensaryDTO>(Dispensary);
-            return CreatedAtRoute("obtenerDispensary", new { id = Dispensary.DispensaryIdx }, DispensaryDTO2);
+            await context.SaveChangesAsync();
+            return Ok();
         }
+
+        //[HttpPost("{storeId?}")]
+        //public async Task<ActionResult> Post([FromBody] DispensaryDTO dispensaryDTO, Guid storeId)
+        //{
+
+        //    var existeid = await context.Dispensaries.AnyAsync(x => x.DispensaryIdx == dispensaryDTO.DispensaryIdx);
+
+        //    var Dispensary = mapper.Map<Dispensary>(dispensaryDTO);
+
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = Dispensary.Name;
+        //    var storeId2 = storeId;
+
+        //    if (existeid)
+        //    {
+        //        context.Update(Dispensary);
+        //        await context.SaveChangesAsync();
+        //    }
+        //    else
+        //    {
+        //        var existe = await context.Dispensaries.AnyAsync(x => x.DispensaryIdi == (dispensaryDTO.DispensaryIdi) && x.StoreId == dispensaryDTO.StoreId);
+
+        //        if (existe)
+        //        {
+        //            return BadRequest($"Ya existe {dispensaryDTO.DispensaryIdi} en esa sucursal ");
+        //        }
+        //        else
+        //        {
+        //            context.Add(Dispensary);
+        //            await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //            await context.SaveChangesAsync();
+        //        }
+        //    }
+        //    var DispensaryDTO2 = mapper.Map<DispensaryDTO>(Dispensary);
+        //    return CreatedAtRoute("obtenerDispensary", new { id = Dispensary.DispensaryIdx }, DispensaryDTO2);
+        //}
 
 
         [HttpPut("{storeId?}")]
@@ -184,7 +222,7 @@ namespace APIControlNet.Controllers
             {
                 return BadRequest($"Ya existe dispensario {dispensaryDTO.DispensaryIdi} en esa sucursal ");
             }
-            
+
         }
 
 
@@ -214,20 +252,26 @@ namespace APIControlNet.Controllers
         {
             try
             {
-                var existe = await context.Dispensaries.AnyAsync(x => x.DispensaryIdx == id);
-                if (!existe) { return NotFound(); }
+                var existe = await context.Dispensaries.FirstOrDefaultAsync(x => x.DispensaryIdx == id);
+                if (existe is null) { return NotFound(); }
 
-                var name2 = await context.Dispensaries.FirstOrDefaultAsync(x => x.DispensaryIdx == id);
-                context.Remove(name2);
+                var lp = await context.LoadPositions.FirstOrDefaultAsync(x => x.DispensaryIdi == existe.DispensaryIdi && x.StoreId == storeId);
 
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var name = name2.Name;
-                var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                if (lp is not null) { return BadRequest("Posicion de carga relacionada"); }
+                else
+                {
+                    var name2 = await context.Dispensaries.FirstOrDefaultAsync(x => x.DispensaryIdx == id);
+                    context.Remove(name2);
 
-                await context.SaveChangesAsync();
-                return NoContent();
+                    var usuarioId = obtenerUsuarioId();
+                    var ipUser = obtenetIP();
+                    var name = name2.Name;
+                    var storeId2 = storeId;
+                    await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+
+                    await context.SaveChangesAsync();
+                    return NoContent();
+                }
             }
             catch
             {
@@ -236,5 +280,12 @@ namespace APIControlNet.Controllers
 
         }
 
+        [HttpGet("/typeSistemMedition/noPage")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<JsonTipoSistemaMedicion>>> Get5()
+        {
+            var tipoSistemaMedicion = await context.JsonTipoSistemaMedicions.ToListAsync();
+            return Ok(tipoSistemaMedicion);
+        }
     }
 }

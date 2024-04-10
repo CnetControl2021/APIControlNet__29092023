@@ -28,6 +28,9 @@ namespace APIControlNet.Models
         public virtual DbSet<ButtonPerUser> ButtonPerUsers { get; set; }
         public virtual DbSet<Card> Cards { get; set; }
         public virtual DbSet<CardType> CardTypes { get; set; }
+        public virtual DbSet<CentralizeStore> CentralizeStores { get; set; }
+        public virtual DbSet<CentralizeTable> CentralizeTables { get; set; }
+        public virtual DbSet<CentralizeType> CentralizeTypes { get; set; }
         public virtual DbSet<ClienteProveedorCvol> ClienteProveedorCvols { get; set; }
         public virtual DbSet<Company> Companies { get; set; }
         public virtual DbSet<CompanyAddress> CompanyAddresses { get; set; }
@@ -184,6 +187,7 @@ namespace APIControlNet.Models
         public virtual DbSet<Shift> Shifts { get; set; }
         public virtual DbSet<ShiftDeposit> ShiftDeposits { get; set; }
         public virtual DbSet<ShiftHead> ShiftHeads { get; set; }
+        public virtual DbSet<ShiftIsland> ShiftIslands { get; set; }
         public virtual DbSet<SqlReport> SqlReports { get; set; }
         public virtual DbSet<StatusDispenser> StatusDispensers { get; set; }
         public virtual DbSet<StatusIsland> StatusIslands { get; set; }
@@ -234,7 +238,7 @@ namespace APIControlNet.Models
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
-        
+
             modelBuilder.Entity<AuthorizationSet>(entity =>
             {
                 entity.HasKey(e => e.AuthorizationSetIdx)
@@ -755,6 +759,160 @@ namespace APIControlNet.Models
                     .HasMaxLength(80)
                     .IsUnicode(false)
                     .HasColumnName("name");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<CentralizeStore>(entity =>
+            {
+                entity.HasKey(e => e.CentralizeStoreIdx)
+                    .HasName("PK_centralize_store_idx");
+
+                entity.ToTable("centralize_store");
+
+                entity.HasIndex(e => new { e.StoreId, e.CentralizeTypeId }, "IX_centralize_store_compound")
+                    .IsUnique();
+
+                entity.Property(e => e.CentralizeStoreIdx).HasColumnName("centralize_store_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CentralizeTypeId).HasColumnName("centralize_type_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.IsEnableToSend).HasColumnName("is_enable_to_send");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("password");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+
+                entity.Property(e => e.Url)
+                    .HasMaxLength(300)
+                    .IsUnicode(false)
+                    .HasColumnName("url");
+
+                entity.Property(e => e.UserId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("user_id");
+            });
+
+            modelBuilder.Entity<CentralizeTable>(entity =>
+            {
+                entity.HasKey(e => e.CentralizeTableIdx)
+                    .HasName("PK_centralize table_idx");
+
+                entity.ToTable("centralize_table");
+
+                entity.HasIndex(e => new { e.CentralizeTypeId, e.TableName }, "IX_centralize_table")
+                    .IsUnique();
+
+                entity.HasIndex(e => e.CentralizeTableId, "IX_centralize_table_id")
+                    .IsUnique();
+
+                entity.Property(e => e.CentralizeTableIdx).HasColumnName("centralize_table_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CentralizeTableId).HasColumnName("centralize_table_id");
+
+                entity.Property(e => e.CentralizeTypeId).HasColumnName("centralize_type_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.FieldToInsert)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("field_to_insert");
+
+                entity.Property(e => e.FieldToUpdate)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("field_to_update");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Query)
+                    .HasColumnType("text")
+                    .HasColumnName("query");
+
+                entity.Property(e => e.TableKey)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("table_key");
+
+                entity.Property(e => e.TableName)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("table_name");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<CentralizeType>(entity =>
+            {
+                entity.HasKey(e => e.CentralizeTypeIdx)
+                    .HasName("PK_centralize_type_idx");
+
+                entity.ToTable("centralize_type");
+
+                entity.HasIndex(e => e.CentralizeTypeId, "IX_centralize_type_id")
+                    .IsUnique();
+
+                entity.Property(e => e.CentralizeTypeIdx).HasColumnName("centralize_type_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CentralizeTypeId).HasColumnName("centralize_type_id");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.ItIsToGetInformation).HasColumnName("it_is_to_get_information");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -1799,9 +1957,7 @@ namespace APIControlNet.Models
                 entity.HasIndex(e => new { e.CustomerId, e.NetgroupNetId }, "IX_customer_netgroup_net_compound")
                     .IsUnique();
 
-                entity.Property(e => e.CustomerNetgroupNetIdx)
-                    .ValueGeneratedNever()
-                    .HasColumnName("customer_netgroup_net_idx");
+                entity.Property(e => e.CustomerNetgroupNetIdx).HasColumnName("customer_netgroup_net_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
 
@@ -5005,6 +5161,8 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("name");
 
+                entity.Property(e => e.Pause).HasColumnName("pause");
+
                 entity.Property(e => e.Price)
                     .HasColumnType("decimal(11, 4)")
                     .HasColumnName("price");
@@ -5229,12 +5387,6 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => new { d.StoreId, d.DispensaryIdi })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_load_position_dispensary");
-
-                entity.HasOne(d => d.Island)
-                    .WithMany(p => p.LoadPositions)
-                    .HasPrincipalKey(p => new { p.StoreId, p.IslandIdi })
-                    .HasForeignKey(d => new { d.StoreId, d.IslandIdi })
-                    .HasConstraintName("FK_load_position_island");
 
                 entity.HasOne(d => d.Port)
                     .WithMany(p => p.LoadPositions)
@@ -5840,6 +5992,9 @@ namespace APIControlNet.Models
                     .HasName("PK_company_customer");
 
                 entity.ToTable("netgroup_customer");
+
+                entity.HasIndex(e => new { e.NetgroupId, e.CustomerId }, "IX_netgroup_customer_compound")
+                    .IsUnique();
 
                 entity.Property(e => e.NetgroupCustomerIdx).HasColumnName("netgroup_customer_idx");
 
@@ -9298,6 +9453,47 @@ namespace APIControlNet.Models
                 entity.Property(e => e.ShiftHeadId).HasColumnName("shift_head_id");
 
                 entity.Property(e => e.ShiftNumber).HasColumnName("shift_number");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ShiftIsland>(entity =>
+            {
+                entity.ToTable("shift_island");
+
+                entity.Property(e => e.ShiftIslandId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("shift_island_id");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(10, 3)")
+                    .HasColumnName("amount");
+
+                entity.Property(e => e.AmountPayment)
+                    .HasColumnType("decimal(10, 3)")
+                    .HasColumnName("amount_payment");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Difference)
+                    .HasColumnType("decimal(10, 3)")
+                    .HasColumnName("difference");
+
+                entity.Property(e => e.IslandIdi).HasColumnName("island_idi");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ShiftIslandIdx).HasColumnName("shift_island_idx");
 
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
