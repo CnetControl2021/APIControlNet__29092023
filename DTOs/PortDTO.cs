@@ -5,13 +5,13 @@ namespace APIControlNet.DTOs
 {
     public class PortDTO
     {
-        public PortDTO()
-        {
-            LoadPositions = new HashSet<LoadPositionDTO>();
-            Tanks = new HashSet<TankDTO>();
-        }
+        //public PortDTO()
+        //{
+        //    LoadPositions = new HashSet<LoadPositionDTO>();
+        //    Tanks = new HashSet<TankDTO>();
+        //}
 
-        public int PortIdx { get; set; }
+        public int? PortIdx { get; set; }
         public Guid StoreId { get; set; }
         public int PortIdi { get; set; }
         public string Name { get; set; }
@@ -27,9 +27,9 @@ namespace APIControlNet.DTOs
         public bool? Locked { get; set; }=false;
         public bool? Deleted { get; set; }=false ;
 
-        public virtual PortTypeDTO PortTypeIdiNavigation { get; set; }
-        public virtual StoreDTO Store { get; set; }
-        public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
-        public virtual ICollection<TankDTO> Tanks { get; set; }
+        //public virtual PortTypeDTO PortTypeIdiNavigation { get; set; }
+        //public virtual StoreDTO Store { get; set; }
+        //public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
+        //public virtual ICollection<TankDTO> Tanks { get; set; }
     }
 }

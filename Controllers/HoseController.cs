@@ -52,26 +52,30 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet("Active")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<HoseDTO>> Get2(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+        [HttpGet("notPage")]
+        public async Task<IEnumerable<HoseDTO>> Get3([FromQuery] Guid storeId)  
         {
             var queryable = context.Hoses.Where(x => x.Active == true).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var hose = await queryable.OrderByDescending(x => x.HoseIdi).Paginar(paginacionDTO)
-                .Include(x => x.LoadPosition)
-                .Include(x => x.ProductStore).ThenInclude(x => x.Product)
+            var h = await queryable.OrderBy(x => x.HoseIdi)
                 .AsNoTracking()
                 .ToListAsync();
-            return mapper.Map<List<HoseDTO>>(hose);
+            return mapper.Map<List<HoseDTO>>(h);
+        }
+
+        [HttpGet("/hose/productIsFuel")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<ProductDTO>> Product()
+        {
+            var queryable = context.Products.Where(x => x.Active == true && x.IsFuel == true).AsQueryable();
+
+            var p = await queryable.OrderBy(x => x.ProductIdx)
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<ProductDTO>>(p);
         }
 
 

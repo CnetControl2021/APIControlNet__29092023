@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 
 namespace APIControlNet.Controllers
@@ -78,20 +79,14 @@ namespace APIControlNet.Controllers
 
         [HttpGet("ActiveSinPag")]
         //[AllowAnonymous]
-        public async Task<IEnumerable<PortDTO>> Get3([FromQuery] string nombre, Guid storeId)
+        public async Task<IEnumerable<PortDTO>> Get3([FromQuery] Guid storeId)
         {
             var queryable = context.Ports.Where(x => x.Active == true).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            var port = await queryable.OrderByDescending(x => x.PortIdx)
-                .Include(x => x.Store)
-                .Include(x => x.PortTypeIdiNavigation)
+            var port = await queryable.OrderBy(x => x.PortIdi)
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<PortDTO>>(port);
@@ -121,71 +116,113 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<PortDTO>>(RSs);
         }
 
-
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] PortDTO portDTO, Guid storeId)
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<PortDTO> portDTOs)
         {
-            var existeid = await context.Ports.AnyAsync(x => x.PortIdx == portDTO.PortIdx);
-
-            var portMap = mapper.Map<Port>(portDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = portMap.Name;
-            var storeId2 = storeId;
-
-            if (existeid)
+            if (portDTOs == null || !portDTOs.Any())
             {
-                context.Update(portMap);
-                await context.SaveChangesAsync();
+                return BadRequest("La lista está vacía o nula.");
             }
-            else
-            {
-                var existe = await context.Ports.AnyAsync(x => x.PortIdi == (portMap.PortIdi) && x.StoreId == portMap.StoreId);
 
-                if (existe)
+            foreach (var dto in portDTOs)
+            {
+                var existingEntity = await context.Ports
+                    .FindAsync(dto.PortIdx);
+
+                if (existingEntity != null)
                 {
-                    return BadRequest($"Ya existe {portMap.PortIdi} en esa sucursal ");
+
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.Ports.Update(existingEntity);
                 }
-                else
+                else if (!dto.PortIdx.HasValue || dto.PortIdx == 0)
                 {
-                    context.Add(portMap);
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                    await context.SaveChangesAsync();
+                    var newEntity = new Port
+                    {
+                        PortIdi = dto.PortIdi,
+                        StoreId = storeId,
+                        Name = dto.Name,
+                        NameLinux = dto.NameLinux,
+                        BaudRate = dto.BaudRate,
+                        PortTypeIdi = dto.PortTypeIdi,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+                    context.Ports.Add(newEntity);
                 }
             }
-            var portDTO2 = mapper.Map<Port>(portMap);
-            return CreatedAtRoute("obtenerPort", new { id = portMap.PortIdx }, portDTO2);
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
+        //[HttpPost("{storeId?}")]
+        //public async Task<ActionResult> Post([FromBody] PortDTO portDTO, Guid storeId)
+        //{
+        //    var existeid = await context.Ports.AnyAsync(x => x.PortIdx == portDTO.PortIdx);
 
-        [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(PortDTO portDTO, Guid storeId)
-        {
-            var portDB = await context.Ports.FirstOrDefaultAsync(c => c.PortIdx == portDTO.PortIdx);
+        //    var portMap = mapper.Map<Port>(portDTO);
 
-            if (portDB is null)
-            {
-                return NotFound();
-            }
-            try
-            {
-                portDB = mapper.Map(portDTO, portDB);
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = portMap.Name;
+        //    var storeId2 = storeId;
 
-                var storeId2 = storeId;
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var tableName = portDB.Name;
-                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
-                await context.SaveChangesAsync();
+        //    if (existeid)
+        //    {
+        //        context.Update(portMap);
+        //        await context.SaveChangesAsync();
+        //    }
+        //    else
+        //    {
+        //        var existe = await context.Ports.AnyAsync(x => x.PortIdi == (portMap.PortIdi) && x.StoreId == portMap.StoreId);
 
-            }
-            catch
-            {
-                return BadRequest($"Ya existe {portDTO.PortIdi} ");
-            }
-            return NoContent();
-        }
+        //        if (existe)
+        //        {
+        //            return BadRequest($"Ya existe {portMap.PortIdi} en esa sucursal ");
+        //        }
+        //        else
+        //        {
+        //            context.Add(portMap);
+        //            await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //            await context.SaveChangesAsync();
+        //        }
+        //    }
+        //    var portDTO2 = mapper.Map<Port>(portMap);
+        //    return CreatedAtRoute("obtenerPort", new { id = portMap.PortIdx }, portDTO2);
+        //}
+
+
+        //[HttpPut("{storeId?}")]
+        //public async Task<IActionResult> Put(PortDTO portDTO, Guid storeId)
+        //{
+        //    var portDB = await context.Ports.FirstOrDefaultAsync(c => c.PortIdx == portDTO.PortIdx);
+
+        //    if (portDB is null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    try
+        //    {
+        //        portDB = mapper.Map(portDTO, portDB);
+
+        //        var storeId2 = storeId;
+        //        var usuarioId = obtenerUsuarioId();
+        //        var ipUser = obtenetIP();
+        //        var tableName = portDB.Name;
+        //        await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
+        //        await context.SaveChangesAsync();
+
+        //    }
+        //    catch
+        //    {
+        //        return BadRequest($"Ya existe {portDTO.PortIdi} ");
+        //    }
+        //    return NoContent();
+        //}
 
 
         [HttpDelete("logicDelete/{id}/{storeId?}")]
@@ -234,6 +271,14 @@ namespace APIControlNet.Controllers
                 return BadRequest("ERROR DE DATOS RELACIONADOS");
             }
 
+        }
+
+        [HttpGet("/portType/noPage")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<PortTypeDTO>>> Get5()
+        {
+            var pt = await context.PortTypes.ToListAsync();
+            return mapper.Map<List<PortTypeDTO>>(pt);
         }
 
     }

@@ -74,23 +74,88 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<LoadPositionDTO>>(loadPosition);
         }
 
-        [HttpGet("ActiveSinPag")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<LoadPositionDTO>> Get3([FromQuery] string nombre, Guid storeId)
+
+        [HttpGet("notPage")]
+        [AllowAnonymous]
+        public async Task<IEnumerable<LoadPositionDTO>> Get3([FromQuery] Guid storeId)
         {
             var queryable = context.LoadPositions.Where(x => x.Active == true).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            var loadPosition = await queryable.OrderByDescending(x => x.LoadPositionIdi)
+            var loadPosition = await queryable.OrderBy(x => x.LoadPositionIdi)
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<LoadPositionDTO>>(loadPosition);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<LoadPositionDTO> loadPositionDTOs)
+        {
+            if (loadPositionDTOs == null || !loadPositionDTOs.Any())
+            {
+                return BadRequest("La lista está vacía o nula.");
+            }
+
+            foreach (var dto in loadPositionDTOs)
+            {
+                var existingEntity = await context.LoadPositions
+                    .FindAsync(dto.LoadPositionIdx);
+
+                if (existingEntity != null)
+                {
+
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.LoadPositions.Update(existingEntity);
+                }
+                else if (!dto.LoadPositionIdx.HasValue || dto.LoadPositionIdx == 0)
+                {
+                    var newEntity = new LoadPosition
+                    {
+                        StoreId = storeId,
+                        LoadPositionIdi = dto.LoadPositionIdi,
+                        Name = dto.Name,
+                        DispensaryIdi = dto.DispensaryIdi,
+                        PortIdi = dto.PortIdi,
+                        IslandIdi = dto.IslandIdi,
+                        CpuAddress = dto.CpuAddress,
+                        CpuNumberLoop = dto.CpuNumberLoop,
+                        FactorSetQuantity = dto.FactorSetQuantity,
+                        FactorSetCurrency = dto.FactorSetCurrency,
+                        FactorSetPrice = dto.FactorSetPrice,
+                        FactorGetQuantity = dto.FactorGetQuantity,
+                        FactorGetCurrency = dto.FactorGetCurrency,
+                        FactorGetPrice = dto.FactorGetPrice,
+                        FactorGetTotalQuantity = dto.FactorGetTotalQuantity,
+                        FactorGetTotalCurrency = dto.FactorGetTotalCurrency,
+                        FactorPulseWayne = dto.FactorPulseWayne,
+                        DispensingMode = dto.DispensingMode,
+                        IsSecurityEnabled = dto.IsSecurityEnabled,
+                        PriceLevel = dto.PriceLevel,
+                        MaximumQuantity = dto.MaximumQuantity,
+                        MaximumAmount = dto.MaximumAmount,
+                        DefaultQuantity = dto.DefaultQuantity,
+                        MinimumQuantity = dto.MinimumQuantity,
+                        MinimumAmount = dto.MinimumAmount,
+                        QuantityPrefix = dto.QuantityPrefix,
+                        IsStopCancelled = dto.IsStopCancelled,
+                        IsEnableSaveToZero = dto.IsEnableSaveToZero,
+                        AutomaticPrintingIsEnabled = dto.AutomaticPrintingIsEnabled,
+                        PointSaleIdi = dto.PointSaleIdi,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+                    context.LoadPositions.Add(newEntity);
+                }
+            }
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
 
@@ -118,42 +183,42 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] LoadPositionDTO loadPositionDTO, Guid storeId)
-        {
+        //[HttpPost("{storeId?}")]
+        //public async Task<ActionResult> Post([FromBody] LoadPositionDTO loadPositionDTO, Guid storeId)
+        //{
 
-            var existeid = await context.LoadPositions.AnyAsync(x => x.LoadPositionIdx == loadPositionDTO.LoadPositionIdx);
+        //    var existeid = await context.LoadPositions.AnyAsync(x => x.LoadPositionIdx == loadPositionDTO.LoadPositionIdx);
 
-            var loadPosition = mapper.Map<LoadPosition>(loadPositionDTO);
+        //    var loadPosition = mapper.Map<LoadPosition>(loadPositionDTO);
 
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = loadPosition.Name;
-            var storeId2 = storeId;
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = loadPosition.Name;
+        //    var storeId2 = storeId;
 
-            if (existeid)
-            {
-                context.Update(loadPosition);
-                await context.SaveChangesAsync();
-            }
-            else
-            {
-                var existe = await context.LoadPositions.AnyAsync(x => x.LoadPositionIdi == (loadPosition.LoadPositionIdi) && x.StoreId == loadPosition.StoreId);
+        //    if (existeid)
+        //    {
+        //        context.Update(loadPosition);
+        //        await context.SaveChangesAsync();
+        //    }
+        //    else
+        //    {
+        //        var existe = await context.LoadPositions.AnyAsync(x => x.LoadPositionIdi == (loadPosition.LoadPositionIdi) && x.StoreId == loadPosition.StoreId);
 
-                if (existe)
-                {
-                    return BadRequest($"Ya existe {loadPosition.LoadPositionIdi} en esa sucursal ");
-                }
-                else
-                {
-                    context.Add(loadPosition);
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                    await context.SaveChangesAsync();
-                }
-            }
-            var LoadPositionDTO2 = mapper.Map<LoadPositionDTO>(loadPosition);
-            return CreatedAtRoute("obtenerPort", new { id = loadPositionDTO.LoadPositionIdx }, LoadPositionDTO2);
-        }
+        //        if (existe)
+        //        {
+        //            return BadRequest($"Ya existe {loadPosition.LoadPositionIdi} en esa sucursal ");
+        //        }
+        //        else
+        //        {
+        //            context.Add(loadPosition);
+        //            await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
+        //            await context.SaveChangesAsync();
+        //        }
+        //    }
+        //    var LoadPositionDTO2 = mapper.Map<LoadPositionDTO>(loadPosition);
+        //    return CreatedAtRoute("obtenerPort", new { id = loadPositionDTO.LoadPositionIdx }, LoadPositionDTO2);
+        //}
 
 
         [HttpPut("{storeId?}")]
@@ -210,8 +275,11 @@ namespace APIControlNet.Controllers
         {
             try
             {
-                var existe = await context.LoadPositions.AnyAsync(x => x.LoadPositionIdx == id);
-                if (!existe) { return NotFound(); }
+                var existe = await context.LoadPositions.FirstOrDefaultAsync(x => x.LoadPositionIdx == id);
+                if (existe is null) { return NotFound(); }
+
+                var exist = await context.Hoses.FirstOrDefaultAsync(x => x.LoadPositionIdi == existe.LoadPositionIdi);
+                if (exist is not null) { return BadRequest("Manguera relacionada"); }   
 
                 var name2 = await context.LoadPositions.FirstOrDefaultAsync(x => x.LoadPositionIdx == id);
                 context.Remove(name2);

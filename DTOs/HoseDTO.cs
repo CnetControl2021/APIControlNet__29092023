@@ -15,15 +15,11 @@ namespace APIControlNet.DTOs
         public int? CpuAddressHose { get; set; }
         public int? Position { get; set; }
         public decimal? SlowFlow { get; set; }
-        public DateTime? Date { get; set; } = DateTime.Now;
-        public DateTime? Updated { get; set; } = DateTime.Now;
-        public bool? Active { get; set; } = true;
-        public bool? Locked { get; set; } = false;
-        public bool? Deleted { get; set; } = false;
-
-        public virtual LoadPositionDTO LoadPosition { get; set; }
-        public virtual ProductStoreDTO ProductStore { get; set; }
-        public virtual StoreDTO Store { get; set; }
+        public DateTime? Date { get; set; }
+        public DateTime? Updated { get; set; }
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
 
     }
 }
