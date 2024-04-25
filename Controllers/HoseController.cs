@@ -28,9 +28,8 @@ namespace APIControlNet.Controllers
         }
 
 
-
         [HttpGet]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<HoseDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
         {
             var queryable = context.Hoses.AsQueryable();
@@ -53,6 +52,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("notPage")]
+        [AllowAnonymous]
         public async Task<IEnumerable<HoseDTO>> Get3([FromQuery] Guid storeId)  
         {
             var queryable = context.Hoses.Where(x => x.Active == true).AsQueryable();
@@ -65,6 +65,7 @@ namespace APIControlNet.Controllers
                 .ToListAsync();
             return mapper.Map<List<HoseDTO>>(h);
         }
+
 
         [HttpGet("/hose/productIsFuel")]
         [AllowAnonymous]
@@ -92,71 +93,48 @@ namespace APIControlNet.Controllers
             return mapper.Map<HoseDTO>(hose);
         }
 
-
-
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] HoseDTO hoseDTO, Guid storeId)
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<HoseDTO> hoseDTOs)
         {
-
-            var existeid = await context.Hoses.AnyAsync(x => x.HoseIdx == hoseDTO.HoseIdx);
-
-            var hoseMap = mapper.Map<Hose>(hoseDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = hoseMap.Name;
-            var storeId2 = storeId;
-
-            if (existeid)
+            if (hoseDTOs == null || !hoseDTOs.Any())
             {
-                context.Update(hoseMap);
-                await context.SaveChangesAsync();
+                return BadRequest("Sin datos");
             }
-            else
+            foreach (var dto in hoseDTOs)
             {
-                var existe = await context.Hoses.AnyAsync(x => x.HoseIdi == hoseMap.HoseIdi && x.StoreId == hoseMap.StoreId);
+                var existingEntity = await context.Hoses
+                    .FindAsync(dto.HoseIdx);
 
-                if (existe)
+                if (existingEntity != null)
                 {
-                    return BadRequest($"Ya existe {hoseMap.HoseIdi} en esa sucursal ");
+
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.Hoses.Update(existingEntity);
                 }
-                else
+                else if (!dto.HoseIdx.HasValue || dto.HoseIdx == 0)
                 {
-                    context.Add(hoseMap);
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                    await context.SaveChangesAsync();
+                    var newEntity = new Hose
+                    {
+                        StoreId = storeId,
+                        HoseIdi = dto.HoseIdi,
+                        Name = dto.Name,
+                        LoadPositionIdi = dto.LoadPositionIdi,
+                        ProductId = dto.ProductId,
+                        CpuAddressHose = dto.CpuAddressHose,
+                        Position = dto.Position,
+                        SlowFlow = dto.SlowFlow,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+                    context.Hoses.Add(newEntity);
                 }
             }
-            var HoseDTO2 = mapper.Map<HoseDTO>(hoseMap);
-            return CreatedAtRoute("obtHose", new { id = hoseMap.HoseIdx }, HoseDTO2);
-        }
-
-
-        [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(HoseDTO hoseDTO, Guid storeId)
-        {
-            var hoseDB = await context.Hoses.FirstOrDefaultAsync(c => c.HoseIdx == hoseDTO.HoseIdx);
-
-            if (hoseDB is null)
-            {
-                return NotFound();
-            }
-            try
-            {
-                hoseDB = mapper.Map(hoseDTO, hoseDB);
-
-                var storeId2 = storeId;
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var tableName = hoseDB.Name;
-                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
-                await context.SaveChangesAsync();
-            }
-            catch
-            {
-                return BadRequest($"Ya existe {hoseDTO.HoseIdi} ");
-            }
-            return NoContent();
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
 

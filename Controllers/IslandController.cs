@@ -228,36 +228,24 @@ namespace APIControlNet.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islands)
+        public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islandDTOs)
         {
-            if (islands == null || !islands.Any())
+            if (islandDTOs == null || !islandDTOs.Any())
             {
-                return BadRequest("La lista de islas está vacía o nula.");
+                return BadRequest("La lista está vacía o nula.");
             }
 
-            foreach (var dto in islands)
+            foreach (var dto in islandDTOs)
             {
                 var existingEntity = await context.Islands
-                    .FirstOrDefaultAsync(i => i.IslandIdx == dto.IslandIdx);
+                    .FindAsync(dto.IslandIdx);
 
                 if (existingEntity != null)
                 {
-                    context.Islands.Remove(existingEntity);
-                    await context.SaveChangesAsync(); 
 
-                    var newEntity = new Island
-                    {
-                        IslandIdi = dto.IslandIdi,
-                        StoreId = storeId, 
-                        Name = dto.Name,
-                        Description = dto.Description,
-                        Date = dto.Date ?? DateTime.Now,
-                        Updated = DateTime.Now,
-                        Active = dto.Active ?? true,
-                        Locked = dto.Locked ?? false,
-                        Deleted = dto.Deleted ?? false
-                    };
-                    context.Islands.Add(newEntity);
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.Islands.Update(existingEntity);
                 }
                 else if (!dto.IslandIdx.HasValue || dto.IslandIdx == 0)
                 {
@@ -272,6 +260,7 @@ namespace APIControlNet.Controllers
                         Active = dto.Active ?? true,
                         Locked = dto.Locked ?? false,
                         Deleted = dto.Deleted ?? false
+
                     };
                     context.Islands.Add(newEntity);
                 }
@@ -279,6 +268,59 @@ namespace APIControlNet.Controllers
             await context.SaveChangesAsync();
             return Ok();
         }
+
+        //[HttpPost]
+        //public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islands)
+        //{
+        //    if (islands == null || !islands.Any())
+        //    {
+        //        return BadRequest("La lista de islas está vacía o nula.");
+        //    }
+
+        //    foreach (var dto in islands)
+        //    {
+        //        var existingEntity = await context.Islands
+        //            .FirstOrDefaultAsync(i => i.IslandIdx == dto.IslandIdx);
+
+        //        if (existingEntity != null)
+        //        {
+        //            context.Islands.Remove(existingEntity);
+        //            await context.SaveChangesAsync(); 
+
+        //            var newEntity = new Island
+        //            {
+        //                IslandIdi = dto.IslandIdi,
+        //                StoreId = storeId, 
+        //                Name = dto.Name,
+        //                Description = dto.Description,
+        //                Date = dto.Date ?? DateTime.Now,
+        //                Updated = DateTime.Now,
+        //                Active = dto.Active ?? true,
+        //                Locked = dto.Locked ?? false,
+        //                Deleted = dto.Deleted ?? false
+        //            };
+        //            context.Islands.Add(newEntity);
+        //        }
+        //        else if (!dto.IslandIdx.HasValue || dto.IslandIdx == 0)
+        //        {
+        //            var newEntity = new Island
+        //            {
+        //                IslandIdi = dto.IslandIdi,
+        //                StoreId = storeId,
+        //                Name = dto.Name,
+        //                Description = dto.Description,
+        //                Date = dto.Date ?? DateTime.Now,
+        //                Updated = DateTime.Now,
+        //                Active = dto.Active ?? true,
+        //                Locked = dto.Locked ?? false,
+        //                Deleted = dto.Deleted ?? false
+        //            };
+        //            context.Islands.Add(newEntity);
+        //        }
+        //    }
+        //    await context.SaveChangesAsync();
+        //    return Ok();
+        //}
 
 
         [HttpPut("{storeId?}")]

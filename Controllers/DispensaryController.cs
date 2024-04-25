@@ -52,10 +52,10 @@ namespace APIControlNet.Controllers
         }
 
         [HttpGet("activeSinPag")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IEnumerable<DispensaryDTO>> Get3([FromQuery] Guid storeId)
         {
-            var queryable = context.Dispensaries.Where(x => x.Active == true && x.Deleted == false).AsQueryable();
+            var queryable = context.Dispensaries.Where(x => x.Active == true).AsQueryable();
             if (storeId != Guid.Empty)
             {
                 queryable = queryable.Where(x => x.StoreId == storeId);

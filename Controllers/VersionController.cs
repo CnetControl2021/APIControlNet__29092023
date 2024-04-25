@@ -122,7 +122,7 @@ namespace APIControlNet.Controllers
             {
                 var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.4");
                 db.Updated = DateTime.Now;
-                db.Hash512 = "16c8aa26b872f23980d2ff47ea3c97eb04abeb1f1ff23a8ec977bf9b4fd46e55857ba59a606be2e724418aeb292bf9bf96f093b142ac9a581cea91ce2e087bc3";
+                db.Hash512 = "41e0b8e0ba9d49abeea38f194a41de7c4b11c19798fe4f8331bb3dd7d9be37ddacdd1033760e7f358fbeed70a21db7475f5be4b7e6b30af9be6527dd13e82e93";
                 context.Update(db);
                 context.SaveChanges();
             }

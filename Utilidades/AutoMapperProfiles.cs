@@ -9,6 +9,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<PortResponseDTO, PortResponse>();
+            CreateMap<PortResponse, PortResponseDTO>();
+
             CreateMap<CompanyCustomerDTO, CompanyCustomer>();
             CreateMap<CompanyCustomer, CompanyCustomerDTO>();
 

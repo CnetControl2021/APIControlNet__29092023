@@ -27,25 +27,22 @@ namespace APIControlNet.Controllers
             this.servicioBinnacle = servicioBinnacle;
         }
 
-        [HttpGet]
+
+        [HttpGet("notPage")]
         [AllowAnonymous]
-        public async Task<IEnumerable<TankDTO>> Get([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre, Guid storeId)
+        public async Task<IEnumerable<TankDTO>> Get3([FromQuery] Guid storeId)
         {
-            var queryable = context.Tanks.AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
+            var queryable = context.Tanks.Where(x => x.Active == true).AsQueryable();
             if (storeId != Guid.Empty)
             {
-                queryable = queryable.Where(x => x.StoreId==storeId);
+                queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var tanks = await queryable.OrderByDescending(x => x.TankIdx).Paginar(paginacionDTO)
+            var t = await queryable.OrderBy(x => x.TankIdi)
                 .AsNoTracking()
                 .ToListAsync();
-            return mapper.Map<List<TankDTO>>(tanks);
+            return mapper.Map<List<TankDTO>>(t);
         }
+
 
         [HttpGet("byStore/{id2}")] //por store
         //[AllowAnonymous]
@@ -77,70 +74,72 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<TankDTO>>(RSs);
         }
 
-
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] TankDTO tankDTO, Guid storeId)
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<TankDTO> tankDTOs)
         {
-            var existeid = await context.Tanks.AnyAsync(x => x.TankIdi == tankDTO.TankIdi);
-
-            var tankMap = mapper.Map<Tank>(tankDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = tankMap.Name;
-            var storeId2 = storeId;
-
-            if (existeid)
+            if (tankDTOs == null || !tankDTOs.Any())
             {
-                context.Update(tankMap);
-                await context.SaveChangesAsync();
+                return BadRequest("Sin datos");
             }
-            else
+            foreach (var dto in tankDTOs)
             {
-                var existe = await context.Tanks.AnyAsync(x => x.TankIdi == (tankMap.TankIdi) && x.StoreId == tankMap.StoreId);
+                var existingEntity = await context.Tanks
+                    .FindAsync(dto.TankIdx);
 
-                if (existe)
+                if (existingEntity != null)
                 {
-                    return BadRequest($"Ya existe {tankMap.TankIdi} en esa sucursal ");
+
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.Tanks.Update(existingEntity);
                 }
-                else
+                else if (!dto.TankIdx.HasValue || dto.TankIdx == 0)
                 {
-                    context.Add(tankMap);
-                    await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                    await context.SaveChangesAsync();
+                    var newEntity = new Tank
+                    {
+                        StoreId = storeId,
+                        TankIdi = dto.TankIdi,
+                        ProductId = dto.ProductId,
+                        TankCpuAddress = dto.TankCpuAddress,
+                        PortIdi = dto.PortIdi,
+                        TankBrandId = dto.TankBrandId,
+                        Name = dto.Name,
+                        CapacityTotal = dto.CapacityTotal,
+                        CapacityOperational = dto.CapacityOperational,
+                        CapacityMinimumOperating = dto.CapacityMinimumOperating,
+                        CapacityUseful = dto.CapacityUseful,
+                        Fondage = dto.Fondage,
+                        SatDateCalibration = dto.SatDateCalibration,
+                        SatTypeMeasurement = dto.SatTypeMeasurement,
+                        SatTankType = dto.SatTankType,
+                        SatTypeMediumStorage = dto.SatTypeMediumStorage,
+                        SatDescriptionMeasurement = dto.SatDescriptionMeasurement,
+                        SatPercentageUncertaintyMeasurement = dto.SatPercentageUncertaintyMeasurement,
+                        EnableGetInventory = dto.EnableGetInventory,
+                        Date = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false,
+                        UtilityPercentaje = dto.UtilityPercentaje,
+                        TankShapeId = dto.TankShapeId,
+                        DiameterOrWidth = dto.DiameterOrWidth,
+                        Length = dto.Length,
+                        Height = dto.Height,
+                        HeightStart = dto.HeightStart,
+                        HeightNotFuel = dto.HeightNotFuel,
+                        MultiplicationFactor = dto.MultiplicationFactor,
+                        CalculateQuantityWithTable = dto.CalculateQuantityWithTable,
+                        TankCpuAddressNew = dto.TankCpuAddressNew,
+                        CapacityGastalon = dto.CapacityGastalon
+                    };
+                    context.Tanks.Add(newEntity);
                 }
             }
-            var tankDTO2 = mapper.Map<Tank>(tankMap);
-            return CreatedAtRoute("obtenerTank", new { id = tankMap.TankIdx }, tankDTO2);
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
-        [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(TankDTO tankDTO, Guid storeId)
-        {
-            var tankDB = await context.Tanks.FirstOrDefaultAsync(c => c.TankIdx == tankDTO.TankIdx);
-
-            if (tankDB is null)
-            {
-                return NotFound();
-            }
-            try
-            {
-                tankDB = mapper.Map(tankDTO, tankDB);
-
-                var storeId2 = storeId;
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var tableName = tankDB.Name;
-                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
-                await context.SaveChangesAsync();
-                return Ok();
-
-            }
-            catch(Exception)
-            {
-                return BadRequest($"Ya existe {tankDTO.TankIdi} ");
-            }
-        }
 
 
         [HttpDelete("logicDelete/{id}/{storeId?}")]
@@ -189,6 +188,21 @@ namespace APIControlNet.Controllers
                 return BadRequest("ERROR DE DATOS RELACIONADOS");
             }
 
+        }
+
+        [HttpGet("/tankShape/noPage")]
+        public async Task<ActionResult<IEnumerable<TankShape>>> Get5()
+        {
+            var ts = await context.TankShapes.ToListAsync();
+            return Ok(ts);
+        }
+
+        [HttpGet("/tankBrand/noPage")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<TankBrand>>> Get6()
+        {
+            var tb = await context.TankBrands.ToListAsync();
+            return Ok(tb);
         }
     }
 }

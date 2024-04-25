@@ -28,47 +28,6 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpGet]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<PointSaleDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
-        {
-            var queryable = context.PointSales.AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
-            if (storeId != Guid.Empty)
-            {
-                queryable = queryable.Where(x => x.StoreId == storeId);
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var pointsale = await queryable.OrderByDescending(x => x.PointSaleIdi).Paginar(paginacionDTO)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<PointSaleDTO>>(pointsale);
-        }
-
-
-        [HttpGet("Active")]
-        //[AllowAnonymous]
-        public async Task<IEnumerable<PointSaleDTO>> Get2(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
-        {
-            var queryable = context.PointSales.Where(x => x.Active == true).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Name.ToLower().Contains(nombre));
-            }
-            if (storeId != Guid.Empty)
-            {
-                queryable = queryable.Where(x => x.StoreId == storeId);
-            }
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var pointsale = await queryable.OrderByDescending(x => x.PointSaleIdi).Paginar(paginacionDTO)
-                .AsNoTracking()
-                .ToListAsync();
-            return mapper.Map<List<PointSaleDTO>>(pointsale);
-        }
-
         [HttpGet("sinPag/{nombre}")]
         ////[AllowAnonymous]
         public async Task<IEnumerable<PointSaleDTO>> Get(Guid storeId, string nombre)
@@ -103,60 +62,65 @@ namespace APIControlNet.Controllers
         }
 
 
-        [HttpPost("{storeId?}")]
-        public async Task<ActionResult> Post([FromBody] PointSaleDTO PointSaleDTO, Guid? storeId)
+        [HttpPost]
+        public async Task<IActionResult> Post(Guid storeId, List<PointSaleDTO> pointSaleDTOs)
         {
-            var existeid = await context.PointSales.AnyAsync(x => x.PointSaleIdi == PointSaleDTO.PointSaleIdi && x.StoreId == PointSaleDTO.StoreId);
-
-            var pointsaleMap = mapper.Map<PointSale>(PointSaleDTO);
-
-            var usuarioId = obtenerUsuarioId();
-            var ipUser = obtenetIP();
-            var name = pointsaleMap.Name;
-            var storeId2 = storeId;
-
-            if (existeid)
+            if (pointSaleDTOs == null || !pointSaleDTOs.Any())
             {
-                return BadRequest($"Ya existe {PointSaleDTO.StoreId} en esa empresa");
+                return BadRequest("Sin datos");
             }
-            else
+            foreach (var dto in pointSaleDTOs)
             {
-                context.Add(pointsaleMap);
+                var existingEntity = await context.PointSales
+                    .FindAsync(dto.PointSaleIdx);
 
-                await servicioBinnacle.AddBinnacle(usuarioId, ipUser, name, storeId2);
-                await context.SaveChangesAsync();
+                if (existingEntity != null)
+                {
+                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    existingEntity.Updated = DateTime.Now;
+                    context.PointSales.Update(existingEntity);
+                }
+                else if (!dto.PointSaleIdx.HasValue || dto.PointSaleIdx == 0)
+                {
+                    var newEntity = new PointSale
+                    {
+                        StoreId = storeId,
+                        PointSaleIdi = dto.PointSaleIdi,
+                        PortIdi = dto.PortIdi,
+                        Name = dto.Name,
+                        Type = dto.Type,
+                        Subtype = dto.Subtype,
+                        Address = dto.Address,
+                        PrinterBaudRate = dto.PrinterBaudRate,
+                        PrinterBrandId = dto.PrinterBrandId,
+                        PrinterIdi = dto.PrinterIdi,
+                        TypeAuthorization = dto.TypeAuthorization,
+                        PointSaleUnique = dto.PointSaleUnique,
+                        InvoiceSerieId = dto.InvoiceSerieId,
+                        IsEnabledPrintToPrinterIdi = dto.IsEnabledPrintToPrinterIdi,
+                        Active = true,
+                        Locked = false,
+                        Deleted = false
+                    };
+                    context.PointSales.Add(newEntity);
+                }
             }
+            await context.SaveChangesAsync();
             return Ok();
-            //var storeDTO2 = mapper.Map<PointSaleDTO>(employeeMap);
-            //return CreatedAtRoute("getEmployee", new { id = employeeMap.EmployeeId }, storeDTO2);
         }
 
-
-        [HttpPut("{storeId?}")]
-        public async Task<IActionResult> Put(PointSaleDTO PointSaleDTO, Guid storeId)
+        [HttpGet("notPage")]
+        public async Task<IEnumerable<PointSaleDTO>> Get3([FromQuery] Guid storeId)
         {
-            var pointsaleDB = await context.PointSales.FirstOrDefaultAsync(c => c.PointSaleIdx == PointSaleDTO.PointSaleIdx);
-
-            if (pointsaleDB is null)
+            var queryable = context.PointSales.Where(x => x.Active == true).AsQueryable();
+            if (storeId != Guid.Empty)
             {
-                return NotFound();
+                queryable = queryable.Where(x => x.StoreId == storeId);
             }
-            try
-            {
-                pointsaleDB = mapper.Map(PointSaleDTO, pointsaleDB);
-
-                var storeId2 = storeId;
-                var usuarioId = obtenerUsuarioId();
-                var ipUser = obtenetIP();
-                var tableName = pointsaleDB.Name;
-                await servicioBinnacle.EditBinnacle(usuarioId, ipUser, tableName, storeId2);
-                await context.SaveChangesAsync();
-            }
-            catch
-            {
-                return BadRequest($"Ya existe {PointSaleDTO.Name} ");
-            }
-            return NoContent();
+            var tps = await queryable.OrderBy(x => x.PointSaleIdi)
+                .AsNoTracking()
+                .ToListAsync();
+            return mapper.Map<List<PointSaleDTO>>(tps);
         }
 
 
@@ -205,6 +169,14 @@ namespace APIControlNet.Controllers
             {
                 return BadRequest("ERROR DE DATOS RELACIONADOS");
             }
+        }
+
+        [HttpGet("/printerBrand/noPage")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<PrinterBrand>>> Get6()
+        {
+            var pb = await context.PrinterBrands.ToListAsync();
+            return Ok(pb);
         }
     }
 }

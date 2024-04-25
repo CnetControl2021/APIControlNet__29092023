@@ -17,7 +17,7 @@ namespace APIControlNet.DTOs
         public string Name { get; set; }
         public int DispensaryIdi { get; set; }
         public int PortIdi { get; set; }
-        public int? IslandIdi { get; set; }
+        public int IslandIdi { get; set; }
         public int? CpuAddress { get; set; }
         public int? CpuNumberLoop { get; set; }
         public decimal? FactorSetQuantity { get; set; }

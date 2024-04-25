@@ -5,7 +5,7 @@ namespace APIControlNet.DTOs
 {
     public class HoseDTO
     {
-        public int HoseIdx { get; set; }
+        public int? HoseIdx { get; set; }
         public Guid StoreId { get; set; }
         public int? HoseIdi { get; set; }
         public string Name { get; set; }
@@ -20,6 +20,5 @@ namespace APIControlNet.DTOs
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
-
     }
 }

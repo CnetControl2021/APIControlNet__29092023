@@ -5,7 +5,7 @@ namespace APIControlNet.DTOs
 {
     public class TankDTO
     {
-        public int TankIdx { get; set; }
+        public int? TankIdx { get; set; }
         public Guid StoreId { get; set; }
         public int TankIdi { get; set; }
         public Guid ProductId { get; set; }
