@@ -213,7 +213,8 @@ namespace APIControlNet.Controllers
             var ipUser = obtenetIP();
             var name = name2.Name;
             var storeId2 = storeId;
-            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+            var tabla = "SupplierTransports";
+            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
             dbSupplier.IsSupplierOfTransport = false;
             await context.SaveChangesAsync();
             return NoContent();

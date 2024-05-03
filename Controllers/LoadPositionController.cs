@@ -94,6 +94,12 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<LoadPositionDTO> loadPositionDTOs)
         {
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = loadPositionDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "LoadPosition";
+
             if (loadPositionDTOs == null || !loadPositionDTOs.Any())
             {
                 return BadRequest("La lista está vacía o nula.");
@@ -110,6 +116,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.LoadPositions.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.LoadPositionIdx.HasValue || dto.LoadPositionIdx == 0)
                 {
@@ -152,6 +159,7 @@ namespace APIControlNet.Controllers
                         Deleted = false
                     };
                     context.LoadPositions.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
@@ -288,7 +296,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = name2.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                var tabla = "LoadPositions";
+                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return NoContent();

@@ -762,18 +762,15 @@ namespace APIControlNet.Controllers
                 context.Remove(db);
             }
 
-
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
             var name = user.Email;
             var storeId2 = storeId;
-            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+            var tabla = "AspNetUsers";
+            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
             var resultado = await userManager.DeleteAsync(user);
 
-
-            //context.Remove(new Store { StoreIdx = id });
-            //await context.SaveChangesAsync();
             return NoContent();
         }
 

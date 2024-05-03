@@ -1,6 +1,7 @@
 ﻿using APIControlNet.Models;
 using System.Net.NetworkInformation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 
 
@@ -180,7 +181,7 @@ namespace APIControlNet.Services
                 BinnacleId = Guid.NewGuid(),
                 StoreId = storeId,
                 Name = "Actualizar",
-                Response = "Actualizacion " + name + " de" + Table,
+                Response = "Actualizacion " + name + " de " + Table,
                 UserId = usuarioId,
                 BinnacleTypeId = 6,
                 Description = "controlVolumetrico",
@@ -198,7 +199,7 @@ namespace APIControlNet.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task deleteBinnacle(string usuarioId, string Ip, string name, Guid? storeId)
+        public async Task deleteBinnacle(string usuarioId, string Ip, string name, Guid? storeId, string Table)
         {
             var addr = "";
             foreach (NetworkInterface n in NetworkInterface.GetAllNetworkInterfaces())
@@ -216,7 +217,7 @@ namespace APIControlNet.Services
                 BinnacleId = Guid.NewGuid(),
                 StoreId = storeId,
                 Name = "Elimino",
-                Response = "Se elimino registro " + name,
+                Response = "Se elimino registro " + name + " de " + Table,
                 UserId = usuarioId,
                 BinnacleTypeId = 6,
                 Description = "controlVolumetrico",

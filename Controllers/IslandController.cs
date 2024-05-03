@@ -230,6 +230,13 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islandDTOs)
         {
+
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = islandDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "Island";
+
             if (islandDTOs == null || !islandDTOs.Any())
             {
                 return BadRequest("La lista está vacía o nula.");
@@ -246,6 +253,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.Islands.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.IslandIdx.HasValue || dto.IslandIdx == 0)
                 {
@@ -263,11 +271,13 @@ namespace APIControlNet.Controllers
 
                     };
                     context.Islands.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
             return Ok();
         }
+
 
         //[HttpPost]
         //public async Task<IActionResult> Post(Guid storeId, List<IslandDTO> islands)
@@ -394,7 +404,8 @@ namespace APIControlNet.Controllers
                     var ipUser = obtenetIP();
                     var name = name2.Name;
                     var storeId2 = storeId;
-                    await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                    var tabla = "Island";
+                    await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                     await context.SaveChangesAsync();
                     return NoContent();

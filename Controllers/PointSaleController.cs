@@ -65,6 +65,12 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<PointSaleDTO> pointSaleDTOs)
         {
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = pointSaleDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "PointSales";
+
             if (pointSaleDTOs == null || !pointSaleDTOs.Any())
             {
                 return BadRequest("Sin datos");
@@ -79,6 +85,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.PointSales.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.PointSaleIdx.HasValue || dto.PointSaleIdx == 0)
                 {
@@ -103,6 +110,7 @@ namespace APIControlNet.Controllers
                         Deleted = false
                     };
                     context.PointSales.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
@@ -160,7 +168,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = name2.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                var tabla = "PointSales";
+                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return NoContent();

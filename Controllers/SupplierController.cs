@@ -280,7 +280,8 @@ namespace APIControlNet.Controllers
             var ipUser = obtenetIP();
             var name = name2.Name;
             var storeId2 = storeId;
-            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+            var tabla = "Suppliers";
+            await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
             await context.SaveChangesAsync();
             return NoContent();

@@ -119,6 +119,12 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<PortDTO> portDTOs)
         {
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = portDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "Port";
+
             if (portDTOs == null || !portDTOs.Any())
             {
                 return BadRequest("La lista está vacía o nula.");
@@ -135,6 +141,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.Ports.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.PortIdx.HasValue || dto.PortIdx == 0)
                 {
@@ -153,6 +160,7 @@ namespace APIControlNet.Controllers
                         Deleted = false
                     };
                     context.Ports.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
@@ -261,7 +269,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = name2.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                var tabla = "Ports";
+                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return NoContent();

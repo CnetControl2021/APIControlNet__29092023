@@ -77,6 +77,12 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<TankDTO> tankDTOs)
         {
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = tankDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "Tanks";
+
             if (tankDTOs == null || !tankDTOs.Any())
             {
                 return BadRequest("Sin datos");
@@ -92,6 +98,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.Tanks.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.TankIdx.HasValue || dto.TankIdx == 0)
                 {
@@ -134,6 +141,7 @@ namespace APIControlNet.Controllers
                         CapacityGastalon = dto.CapacityGastalon
                     };
                     context.Tanks.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
@@ -178,7 +186,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = name2.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                var tabla = "Tanks";
+                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return NoContent();

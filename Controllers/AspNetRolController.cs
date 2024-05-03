@@ -31,7 +31,6 @@ namespace APIControlNet.Controllers
             this.context = context;
             this.mapper = mapper;
             this.roleManager = roleManager;
-
         }
 
 

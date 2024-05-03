@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using APIControlNet.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace APIControlNet.DTOs
 {
@@ -6,8 +7,9 @@ namespace APIControlNet.DTOs
     {
         //public DispensaryDTO()
         //{
-        //    LoadPositions = new HashSet<LoadPositionDTO>();
+        //    LoadPositions = new HashSet<LoadPosition>();
         //}
+
         public int? DispensaryIdx { get; set; }
         public int DispensaryIdi { get; set; }
         public Guid StoreId { get; set; }
@@ -20,15 +22,15 @@ namespace APIControlNet.DTOs
         public string Description { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
-        public bool? Active { get; set; } = true;
-        public bool? Locked { get; set; } = false;
-        public bool? Deleted { get; set; } = false;
+        public bool? Active { get; set; }
+        public bool? Locked { get; set; }
+        public bool? Deleted { get; set; }
         public int? Subtype { get; set; }
         public string UniqueId { get; set; }
         public int? DefaultHoseIdi { get; set; }
 
-        //public virtual DispensaryBrandDTO DispensaryBrand { get; set; }
-        //public virtual StoreDTO Store { get; set; }
-        //public virtual ICollection<LoadPositionDTO> LoadPositions { get; set; }
+        //public virtual DispensaryBrand DispensaryBrand { get; set; }
+        //public virtual Store Store { get; set; }
+        //public virtual ICollection<LoadPosition> LoadPositions { get; set; }
     }
 }

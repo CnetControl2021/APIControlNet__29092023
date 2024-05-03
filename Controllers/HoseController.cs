@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-///hola
+
 namespace APIControlNet.Controllers
 {
     [Route("api/[controller]")]
@@ -96,6 +96,12 @@ namespace APIControlNet.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid storeId, List<HoseDTO> hoseDTOs)
         {
+            var usuarioId = obtenerUsuarioId();
+            var ipUser = obtenetIP();
+            var name = hoseDTOs.LastOrDefault().Name;
+            var storeId2 = storeId;
+            var tabla = "Hoses";
+
             if (hoseDTOs == null || !hoseDTOs.Any())
             {
                 return BadRequest("Sin datos");
@@ -111,6 +117,7 @@ namespace APIControlNet.Controllers
                     context.Entry(existingEntity).CurrentValues.SetValues(dto);
                     existingEntity.Updated = DateTime.Now;
                     context.Hoses.Update(existingEntity);
+                    await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
                 else if (!dto.HoseIdx.HasValue || dto.HoseIdx == 0)
                 {
@@ -131,6 +138,7 @@ namespace APIControlNet.Controllers
                         Deleted = false
                     };
                     context.Hoses.Add(newEntity);
+                    await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
             await context.SaveChangesAsync();
@@ -174,7 +182,8 @@ namespace APIControlNet.Controllers
                 var ipUser = obtenetIP();
                 var name = name2.Name;
                 var storeId2 = storeId;
-                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2);
+                var tabla = "Hoses";
+                await servicioBinnacle.deleteBinnacle(usuarioId, ipUser, name, storeId2, tabla);
 
                 await context.SaveChangesAsync();
                 return NoContent();
