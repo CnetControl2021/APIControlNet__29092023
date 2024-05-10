@@ -8,6 +8,7 @@ namespace APIControlNet.Models
         public int CentralizeTableIdx { get; set; }
         public int CentralizeTableId { get; set; }
         public int CentralizeTypeId { get; set; }
+        public int IsToReceive { get; set; }
         public string Description { get; set; }
         public string TableName { get; set; }
         public string TableKey { get; set; }

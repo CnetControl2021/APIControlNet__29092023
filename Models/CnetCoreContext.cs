@@ -68,11 +68,13 @@ namespace APIControlNet.Models
         public virtual DbSet<EventType> EventTypes { get; set; }
         public virtual DbSet<FielType> FielTypes { get; set; }
         public virtual DbSet<Folio> Folios { get; set; }
+        public virtual DbSet<FormaPagoCnetcore> FormaPagoCnetcores { get; set; }
         public virtual DbSet<Hose> Hoses { get; set; }
         public virtual DbSet<HoseCalibration> HoseCalibrations { get; set; }
         public virtual DbSet<Inventory> Inventories { get; set; }
         public virtual DbSet<InventoryIn> InventoryIns { get; set; }
         public virtual DbSet<InventoryInDocument> InventoryInDocuments { get; set; }
+        public virtual DbSet<InventoryInDocumentType> InventoryInDocumentTypes { get; set; }
         public virtual DbSet<InventoryInSaleOrder> InventoryInSaleOrders { get; set; }
         public virtual DbSet<Invoice> Invoices { get; set; }
         public virtual DbSet<InvoiceApplicationType> InvoiceApplicationTypes { get; set; }
@@ -188,6 +190,10 @@ namespace APIControlNet.Models
         public virtual DbSet<ShiftDeposit> ShiftDeposits { get; set; }
         public virtual DbSet<ShiftHead> ShiftHeads { get; set; }
         public virtual DbSet<ShiftIsland> ShiftIslands { get; set; }
+        public virtual DbSet<ShiftPayment> ShiftPayments { get; set; }
+        public virtual DbSet<ShiftPaymentDetail> ShiftPaymentDetails { get; set; }
+        public virtual DbSet<ShiftPaymentType> ShiftPaymentTypes { get; set; }
+        public virtual DbSet<Spent> Spents { get; set; }
         public virtual DbSet<SqlReport> SqlReports { get; set; }
         public virtual DbSet<StatusDispenser> StatusDispensers { get; set; }
         public virtual DbSet<StatusIsland> StatusIslands { get; set; }
@@ -717,6 +723,8 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("name");
 
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
@@ -772,12 +780,17 @@ namespace APIControlNet.Models
 
                 entity.ToTable("centralize_store");
 
-                entity.HasIndex(e => new { e.StoreId, e.CentralizeTypeId }, "IX_centralize_store_compound")
+                entity.HasIndex(e => new { e.StoreId, e.CentralizeStoreIdi }, "IX_centralize_store_compound")
+                    .IsUnique();
+
+                entity.HasIndex(e => new { e.StoreId, e.CentralizeTypeId, e.NetgroupId }, "IX_centralize_store_compound_2")
                     .IsUnique();
 
                 entity.Property(e => e.CentralizeStoreIdx).HasColumnName("centralize_store_idx");
 
                 entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.CentralizeStoreIdi).HasColumnName("centralize_store_idi");
 
                 entity.Property(e => e.CentralizeTypeId).HasColumnName("centralize_type_id");
 
@@ -792,28 +805,45 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("description");
 
-                entity.Property(e => e.IsEnableToSend).HasColumnName("is_enable_to_send");
+                entity.Property(e => e.IsFuelnet).HasColumnName("is_fuelnet");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
+
+                entity.Property(e => e.NotUpdatedFieldGeographic).HasColumnName("not_updated_field_geographic");
 
                 entity.Property(e => e.Password)
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("password");
 
+                entity.Property(e => e.Receive).HasColumnName("receive");
+
+                entity.Property(e => e.Send).HasColumnName("send");
+
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.TopRead).HasColumnName("top_read");
+
+                entity.Property(e => e.TopReadLow).HasColumnName("top_read_low");
+
+                entity.Property(e => e.TopSend).HasColumnName("top_send");
+
+                entity.Property(e => e.TopSendLow).HasColumnName("top_send_low");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
                     .HasColumnName("updated");
 
                 entity.Property(e => e.Url)
+                    .IsRequired()
                     .HasMaxLength(300)
                     .IsUnicode(false)
                     .HasColumnName("url");
 
                 entity.Property(e => e.UserId)
-                    .HasMaxLength(50)
+                    .HasMaxLength(100)
                     .IsUnicode(false)
                     .HasColumnName("user_id");
             });
@@ -821,11 +851,11 @@ namespace APIControlNet.Models
             modelBuilder.Entity<CentralizeTable>(entity =>
             {
                 entity.HasKey(e => e.CentralizeTableIdx)
-                    .HasName("PK_centralize table_idx");
+                    .HasName("PK_centralize_table_idx");
 
                 entity.ToTable("centralize_table");
 
-                entity.HasIndex(e => new { e.CentralizeTypeId, e.TableName }, "IX_centralize_table")
+                entity.HasIndex(e => new { e.CentralizeTypeId, e.IsToReceive, e.TableName }, "IX_centralize_table_compound")
                     .IsUnique();
 
                 entity.HasIndex(e => e.CentralizeTableId, "IX_centralize_table_id")
@@ -859,6 +889,8 @@ namespace APIControlNet.Models
                     .HasMaxLength(100)
                     .IsUnicode(false)
                     .HasColumnName("field_to_update");
+
+                entity.Property(e => e.IsToReceive).HasColumnName("is_to_receive");
 
                 entity.Property(e => e.Locked).HasColumnName("locked");
 
@@ -908,11 +940,7 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("description");
 
-                entity.Property(e => e.ItIsToGetInformation).HasColumnName("it_is_to_get_information");
-
                 entity.Property(e => e.Locked).HasColumnName("locked");
-
-                entity.Property(e => e.NetgroupId).HasColumnName("netgroup_id");
 
                 entity.Property(e => e.Updated)
                     .HasColumnType("datetime")
@@ -1862,6 +1890,8 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.Operator2Id).HasColumnName("operator2_id");
 
+                entity.Property(e => e.SaleOrderTypeId).HasColumnName("sale_order_type_id");
+
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
                 entity.Property(e => e.Updated)
@@ -2230,7 +2260,6 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Subtype).HasColumnName("subtype");
 
                 entity.Property(e => e.UniqueId)
-                    .IsRequired()
                     .HasMaxLength(80)
                     .IsUnicode(false)
                     .HasColumnName("unique_id")
@@ -2945,6 +2974,44 @@ namespace APIControlNet.Models
                     .HasConstraintName("FK_folio_store");
             });
 
+            modelBuilder.Entity<FormaPagoCnetcore>(entity =>
+            {
+                entity.HasKey(e => e.FormaPagoCnetcoreIdx)
+                    .HasName("PK_forma_pago_cnetcore_idx");
+
+                entity.ToTable("forma_pago_cnetcore");
+
+                entity.HasIndex(e => e.FormaPagoCnetcoreId, "IX_forma_pago_cnetcore_id")
+                    .IsUnique();
+
+                entity.Property(e => e.FormaPagoCnetcoreIdx).HasColumnName("forma_pago_cnetcore_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.FormaPagoCnetcoreId).HasColumnName("forma_pago_cnetcore_id");
+
+                entity.Property(e => e.IsOwnCard).HasColumnName("is_own_card");
+
+                entity.Property(e => e.IsVoucher).HasColumnName("is_voucher");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(80)
+                    .IsUnicode(false)
+                    .HasColumnName("name");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<Hose>(entity =>
             {
                 entity.HasKey(e => e.HoseIdx)
@@ -2971,6 +3038,11 @@ namespace APIControlNet.Models
                     .HasMaxLength(255)
                     .IsUnicode(false)
                     .HasColumnName("description");
+
+                entity.Property(e => e.HoseAdo)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasColumnName("hose_ado");
 
                 entity.Property(e => e.HoseIdi).HasColumnName("hose_idi");
 
@@ -3078,7 +3150,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
                 entity.Property(e => e.Height)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 5)")
                     .HasColumnName("height");
 
                 entity.Property(e => e.HeightWater)
@@ -3099,7 +3171,7 @@ namespace APIControlNet.Models
                     .HasColumnName("name");
 
                 entity.Property(e => e.Pressure)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 5)")
                     .HasColumnName("pressure");
 
                 entity.Property(e => e.ProductCodeVeeder).HasColumnName("product_code_veeder");
@@ -3399,6 +3471,44 @@ namespace APIControlNet.Models
                     .HasForeignKey(d => d.InventoryInId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_inventory_in_document_inventory_in");
+            });
+
+            modelBuilder.Entity<InventoryInDocumentType>(entity =>
+            {
+                entity.HasKey(e => e.InventoryInDocumentTypeIdx)
+                    .HasName("PK_inventory_in_document_type_idx");
+
+                entity.ToTable("inventory_in_document_type");
+
+                entity.HasIndex(e => e.Type, "IX_inventory_in_document_type")
+                    .IsUnique();
+
+                entity.Property(e => e.InventoryInDocumentTypeIdx).HasColumnName("inventory_in_document_type_idx");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.Type)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("type");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
             });
 
             modelBuilder.Entity<InventoryInSaleOrder>(entity =>
@@ -4796,7 +4906,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.Deleted).HasColumnName("deleted");
 
                 entity.Property(e => e.Height)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 5)")
                     .HasColumnName("height");
 
                 entity.Property(e => e.HeightWater)
@@ -4819,7 +4929,7 @@ namespace APIControlNet.Models
                     .HasColumnName("name");
 
                 entity.Property(e => e.Pressure)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 5)")
                     .HasColumnName("pressure");
 
                 entity.Property(e => e.ProductCodeVeeder).HasColumnName("product_code_veeder");
@@ -7417,6 +7527,11 @@ namespace APIControlNet.Models
                     .IsUnicode(false)
                     .HasColumnName("name");
 
+                entity.Property(e => e.ProductAdo)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasColumnName("product_ado");
+
                 entity.Property(e => e.ProductCategoryId).HasColumnName("product_category_id");
 
                 entity.Property(e => e.ProductCode)
@@ -9502,6 +9617,142 @@ namespace APIControlNet.Models
                     .HasColumnName("updated");
             });
 
+            modelBuilder.Entity<ShiftPayment>(entity =>
+            {
+                entity.HasKey(e => new { e.ShiftIslandId, e.ShiftPaymentTypeIdi })
+                    .HasName("PK__shift_pa__A1467287501404B5");
+
+                entity.ToTable("shift_payment");
+
+                entity.Property(e => e.ShiftIslandId).HasColumnName("shift_island_id");
+
+                entity.Property(e => e.ShiftPaymentTypeIdi).HasColumnName("shift_payment_type_idi");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(10, 3)")
+                    .HasColumnName("amount");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.IsCaptured).HasColumnName("is_captured");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ShiftPaymentId).HasColumnName("shift_payment_id");
+
+                entity.Property(e => e.ShiftPaymentIdx).HasColumnName("shift_payment_idx");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ShiftPaymentDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.ShiftPaymentId, e.ShiftPaymentTypeIdi, e.ShiftPaymentNumberReference })
+                    .HasName("PK__shift_pa__B64BFE81C3D6BBCA");
+
+                entity.ToTable("shift_payment_detail");
+
+                entity.Property(e => e.ShiftPaymentId).HasColumnName("shift_payment_id");
+
+                entity.Property(e => e.ShiftPaymentTypeIdi).HasColumnName("shift_payment_type_idi");
+
+                entity.Property(e => e.ShiftPaymentNumberReference).HasColumnName("shift_payment_number_reference");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(10, 3)")
+                    .HasColumnName("amount");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.IsCaptured).HasColumnName("is_captured");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.SaleOrderId).HasColumnName("sale_order_id");
+
+                entity.Property(e => e.ShiftPaymentDetailIdx).HasColumnName("shift_payment_detail_idx");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<ShiftPaymentType>(entity =>
+            {
+                entity.ToTable("shift_payment_type");
+
+                entity.Property(e => e.ShiftPaymentTypeId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("shift_payment_type_id");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.ShiftPaymentTypeIdx).HasColumnName("shift_payment_type_idx");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
+            modelBuilder.Entity<Spent>(entity =>
+            {
+                entity.ToTable("spent");
+
+                entity.Property(e => e.SpentId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("spent_id");
+
+                entity.Property(e => e.Active).HasColumnName("active");
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("datetime")
+                    .HasColumnName("date");
+
+                entity.Property(e => e.Deleted).HasColumnName("deleted");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("description");
+
+                entity.Property(e => e.Locked).HasColumnName("locked");
+
+                entity.Property(e => e.SpentIdx).HasColumnName("spent_idx");
+
+                entity.Property(e => e.StoreId).HasColumnName("store_id");
+
+                entity.Property(e => e.Updated)
+                    .HasColumnType("datetime")
+                    .HasColumnName("updated");
+            });
+
             modelBuilder.Entity<SqlReport>(entity =>
             {
                 entity.ToTable("sqlReport");
@@ -9707,6 +9958,11 @@ namespace APIControlNet.Models
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasColumnName("short_name");
+
+                entity.Property(e => e.StoreAdo)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("store_ado");
 
                 entity.Property(e => e.StoreId).HasColumnName("store_id");
 
@@ -10455,6 +10711,10 @@ namespace APIControlNet.Models
 
                 entity.Property(e => e.SupplierFuelIdi).HasColumnName("supplier_fuel_idi");
 
+                entity.Property(e => e.SupplierFuelIdiAdo)
+                    .HasColumnName("supplier_fuel_idi_ado")
+                    .HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
 
                 entity.Property(e => e.SupplierType)
@@ -10757,6 +11017,11 @@ namespace APIControlNet.Models
                     .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.TankIdi).HasColumnName("tank_idi");
+
+                entity.Property(e => e.TankIdiAdo)
+                    .HasMaxLength(5)
+                    .IsUnicode(false)
+                    .HasColumnName("tank_idi_ado");
 
                 entity.Property(e => e.TankShapeId)
                     .HasMaxLength(20)

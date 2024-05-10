@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 namespace APIControlNet.Models
 {
-    public partial class CentralizeType
+    public partial class InventoryInDocumentType
     {
-        public int CentralizeTypeIdx { get; set; }
-        public int CentralizeTypeId { get; set; }
+        public int InventoryInDocumentTypeIdx { get; set; }
+        public string Type { get; set; }
         public string Description { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }

@@ -17,6 +17,7 @@ namespace APIControlNet.Models
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
         public bool? AskVehicle { get; set; }
+        public Guid NetgroupId { get; set; }
 
         public virtual CardType CardType { get; set; }
     }

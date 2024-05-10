@@ -22,6 +22,7 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public int? SupplierFuelIdiAdo { get; set; }
 
         public virtual Supplier Supplier { get; set; }
     }

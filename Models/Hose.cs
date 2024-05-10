@@ -20,6 +20,7 @@ namespace APIControlNet.Models
         public bool? Active { get; set; }
         public bool? Locked { get; set; }
         public bool? Deleted { get; set; }
+        public string HoseAdo { get; set; }
 
         public virtual LoadPosition LoadPosition { get; set; }
         public virtual ProductStore ProductStore { get; set; }

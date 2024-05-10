@@ -47,6 +47,7 @@ namespace APIControlNet.Models
         public bool? Deleted { get; set; }
         public string Rfc { get; set; }
         public string ShortName { get; set; }
+        public string StoreAdo { get; set; }
 
         public virtual Company Company { get; set; }
         public virtual StoreSat StoreSat { get; set; }

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 
 namespace APIControlNet.Models
 {
-    public partial class CentralizeType
+    public partial class Spent
     {
-        public int CentralizeTypeIdx { get; set; }
-        public int CentralizeTypeId { get; set; }
+        public int SpentIdx { get; set; }
+        public Guid? StoreId { get; set; }
+        public int SpentId { get; set; }
         public string Description { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }

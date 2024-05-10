@@ -24,5 +24,6 @@ namespace APIControlNet.Models
         public byte? Active { get; set; }
         public byte? Locked { get; set; }
         public byte? Deleted { get; set; }
+        public int? SaleOrderTypeId { get; set; }
     }
 }

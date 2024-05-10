@@ -281,6 +281,16 @@ namespace APIControlNet.Utilidades
             //CreateMap<AspNetRolesDTO, AspNetRole>()
             //    .ForMember(AspNetRole => AspNetRole.ChPageRols, opciones => opciones.MapFrom(MapChpagRols));
             //CreateMap<AspNetRolesDTO, AspNetRole>();
+
+            // <$@m&>
+            CreateMap<ShiftHeadDTO, ShiftHead>();
+            CreateMap<ShiftHead, ShiftHeadDTO>();
+
+            CreateMap<ShiftDTO, Shift>();
+            CreateMap<Shift, ShiftDTO>();
+
+            CreateMap<ShiftPaymentDetailDTO, ShiftPaymentDetail>();
+            CreateMap<ShiftPaymentDetail, ShiftPaymentDetailDTO>();
         }
 
 

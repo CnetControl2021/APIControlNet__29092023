@@ -30,6 +30,7 @@ namespace APIControlNet.Models
         public string AppName { get; set; }
         public string Color { get; set; }
         public string JsonClaveUnidadMedidaId { get; set; }
+        public string ProductAdo { get; set; }
 
         public virtual ICollection<DailySummary> DailySummaries { get; set; }
         public virtual ICollection<MonthlySummary> MonthlySummaries { get; set; }

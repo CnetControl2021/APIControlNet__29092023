@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 namespace APIControlNet.Models
 {
-    public partial class CentralizeType
+    public partial class FormaPagoCnetcore
     {
-        public int CentralizeTypeIdx { get; set; }
-        public int CentralizeTypeId { get; set; }
-        public string Description { get; set; }
+        public int FormaPagoCnetcoreIdx { get; set; }
+        public int? FormaPagoCnetcoreId { get; set; }
+        public int? IsOwnCard { get; set; }
+        public int? IsVoucher { get; set; }
+        public string Name { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Updated { get; set; }
         public bool? Active { get; set; }
