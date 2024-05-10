@@ -24,14 +24,16 @@ namespace APIControlNet.Controllers
         private readonly IMapper mapper;
         private readonly UserManager<IdentityUser> userManager;
         private readonly ServicioBinnacle servicioBinnacle;
+        private readonly IConfiguration _configuration;
 
         public StoreController(CnetCoreContext context, IMapper mapper, UserManager<IdentityUser> userManager,
-                ServicioBinnacle servicioBinnacle)
+                ServicioBinnacle servicioBinnacle, IConfiguration configuration)
         {
             this.context = context;
             this.mapper = mapper;
             this.userManager = userManager;
             this.servicioBinnacle = servicioBinnacle;
+            this._configuration = configuration;
         }
 
         public const string gEmpty = "00000000-0000-0000-0000-000000000000";
@@ -62,15 +64,17 @@ namespace APIControlNet.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetHash512Async()
         {
-            string inputok = @"C:\inetpub\appCnet\wwwroot\_framework\FrontCnet.dll";   //windows dll
-            string inputok2 = "/var/www/blazorapp/wwwroot/_framework/FrontCnet.dll";     //linux dll 
+            string inputok = _configuration["FilePaths:FrontCnetPath"];
+            //string inputok = @"C:\inetpub\appCnet\wwwroot\_framework\FrontCnet.dll";   //windows dll
+            //string input2ok = @"C:\inetpub\appCnet2\wwwroot\_framework\FrontCnet.dll";   //windows dll
+            //string inputok2 = "/var/www/blazorapp/wwwroot/_framework/FrontCnet.dll";     //linux dll 
             //string inputok = "C:\\inetpub\\appCnet\\wwwroot\\_framework\\FrontCnet.dll";
             //var inputok2 = inputok.ToString();
 
             if (System.IO.File.Exists(inputok))
             {
                 // El archivo existe
-                Console.WriteLine(inputok + "Si exite archivo en ruta");
+                //Console.WriteLine(inputok + "Si exite archivo en ruta");
                 using (var fileStream = new FileStream(inputok, FileMode.Open))
                 {
                     using (var sha512 = SHA512.Create())
@@ -81,20 +85,36 @@ namespace APIControlNet.Controllers
                     }
                 }
             }
-            if (System.IO.File.Exists(inputok2))
-            {
-                // El archivo existe
-                Console.WriteLine(inputok2 + "Si exite archivo en ruta");
-                using (var fileStream = new FileStream(inputok2, FileMode.Open))
-                {
-                    using (var sha512 = SHA512.Create())
-                    {
-                        byte[] hashBytes = sha512.ComputeHash(fileStream);
-                        string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-                        return await Task.FromResult<IActionResult>(Ok(hashString));
-                    }
-                }
-            }
+
+            //if (System.IO.File.Exists(input2ok))
+            //{
+            //    // El archivo existe
+            //    Console.WriteLine(input2ok + "Si exite archivo en ruta");
+            //    using (var fileStream = new FileStream(input2ok, FileMode.Open))
+            //    {
+            //        using (var sha512 = SHA512.Create())
+            //        {
+            //            byte[] hashBytes = sha512.ComputeHash(fileStream);
+            //            string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            //            return await Task.FromResult<IActionResult>(Ok(hashString));
+            //        }
+            //    }
+            //}
+
+            //if (System.IO.File.Exists(inputok2))
+            //{
+            //    // El archivo existe
+            //    Console.WriteLine(inputok2 + "Si exite archivo en ruta");
+            //    using (var fileStream = new FileStream(inputok2, FileMode.Open))
+            //    {
+            //        using (var sha512 = SHA512.Create())
+            //        {
+            //            byte[] hashBytes = sha512.ComputeHash(fileStream);
+            //            string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            //            return await Task.FromResult<IActionResult>(Ok(hashString));
+            //        }
+            //    }
+            //}
             return Ok();
         }
 

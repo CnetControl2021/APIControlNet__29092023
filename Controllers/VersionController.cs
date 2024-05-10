@@ -127,6 +127,26 @@ namespace APIControlNet.Controllers
                 context.SaveChanges();
             }
 
+            var db8 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.5");
+
+            if (db8 is null)
+            {
+                await context.Database.ExecuteSqlInterpolatedAsync
+                ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
+                VALUES({"3"}, {"2.5"}, {"2.5"}, {"Control Volumetrico"}, {"ControlNet"}, 
+                {"Se cambio la captura de datos de configuracion inicial. Datos adicionales en la respuesta de la bitacora"}, 
+                {"c8ac30f27e01a0398a560778a4baecf45ca435fa4d4a6913ae53f591ec8b99a82e77e4dc305bd8337c55987a8412d5b487526900629e208dfac079fe1e4c27ff"},
+                {"2024-05-03"}, {"2024-05-03"}, {true}, {false}, {false})");
+            }
+            else
+            {
+                var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.5");
+                db.Updated = DateTime.Now;
+                db.Hash512 = "c8ac30f27e01a0398a560778a4baecf45ca435fa4d4a6913ae53f591ec8b99a82e77e4dc305bd8337c55987a8412d5b487526900629e208dfac079fe1e4c27ff";
+                context.Update(db);
+                context.SaveChanges();
+            }
+
             var hashdb = await context.Versions.FirstOrDefaultAsync(x => x.Hash512 == hashFDll);
 
             if (hashdb == null)
