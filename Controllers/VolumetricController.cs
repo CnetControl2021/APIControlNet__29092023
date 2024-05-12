@@ -18,11 +18,12 @@ using APIControlNet.Services;
 using AutoMapper;
 using APIControlNet.DTOs;
 using System.Security.AccessControl;
+using System.Diagnostics;
 
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-05-10 13:05
+    // $@m&: 2024-05-11 23:51
     // =========================
 
     [Route("api/[controller]")]
@@ -8730,6 +8731,7 @@ namespace APIControlNet.Controllers
         {
             public eTipoRespuesta TipoRespuesta { set; get; }
             public String Mensaje { set; get; }
+            public String Tiempo { set; get; }
             public List<stValidacionRecepEntXls> Validaciones { set; get; }
         }
 
@@ -8745,9 +8747,13 @@ namespace APIControlNet.Controllers
         [HttpPost("Importación de Recepciones y Entregas (Excel)")]
         public IActionResult CargaExcel(Guid? viNCompania, Guid? viNEstacion, String viTipoArchivo, IFormFile viArchivo)
         {
+            Stopwatch objTiempo = new Stopwatch();
+            objTiempo.Start();
+
             #region Constantes.
             const String TIPO_ARCHIVO_RECEPCION = "RECEPCION";
             const String TIPO_ARCHIVO_ENTREGA = "ENTREGA";
+            const String TIPO_ARCHIVO_INVENTARIO = "INVENTARIO";
 
             #region Hojas.
             const String HOJA_GENERAL = "GENERAL";
@@ -8844,6 +8850,16 @@ namespace APIControlNet.Controllers
             //const int RECEPCION_GRL_UUID = ;
             //const int RECEPCION_GRL_NUMERO_PROVEEDOR_TRANS = ;
             #endregion
+
+            #region Inventarios.
+            const int INVENTARIO_GRL_NUMERO_ESTACION = 0;
+            const int INVENTARIO_GRL_FECHA = 2;
+            const int INVENTARIO_GRL_NUMERO_TANQUE = 3;
+            const int INVENTARIO_GRL_NUMERO_PRODUCTO = 4;
+            const int INVENTARIO_GRL_CANTIDAD = 5;
+            const int INVENTARIO_GRL_HORA = 6;
+            const int INVENTARIO_GRL_CLAVE_UNICA = 7;
+            #endregion
             #endregion
             #endregion
 
@@ -8866,10 +8882,16 @@ namespace APIControlNet.Controllers
                 else if (viArchivo.FileName.EndsWith(".xlsx"))
                     objReader = ExcelReaderFactory.CreateOpenXmlReader(objStream);
                 else
-                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "El Formato del Archivo no es valido.", null));
+                {
+                    objTiempo.Stop();
+                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "El Formato del Archivo no es valido.", objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"), null));
+                }
 
                 if (!String.IsNullOrEmpty(objReader.ExceptionMessage))
-                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, objReader.ExceptionMessage, null));
+                {
+                    objTiempo.Stop();
+                    return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, objReader.ExceptionMessage, objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"), null));
+                }
 
                 String[] sNomArchivo = viArchivo.FileName.Split('_');
                 if (sNomArchivo.Length > 0)
@@ -8883,24 +8905,38 @@ namespace APIControlNet.Controllers
                 {
                     #region ADO.
                     case "ADO":
+                        #region Estacion Datos.
                         Store objEstacionDatos = new Store();
                         objEstacionDatos = (from e in objContext.Stores where e.CompanyId == viNCompania && e.StoreId == viNEstacion select e).FirstOrDefault();
 
                         if (String.IsNullOrEmpty(objEstacionDatos.StoreAdo))
                             return BadRequest("No se asignado la clave de Estación ADO.");
+                        #endregion
 
+                        #region Validación de Archivo Excel.
                         // Validamos el Archivo Excel que contenga los datos correctos.
-                        List <stValidacionRecepEntXls> lstValidaciones_ADO = this.ValidacionArchivoRecepEntXls_ADO(viNCompania: viNCompania, viNEstacion: viNEstacion, viNEstacionADO: objEstacionDatos.StoreAdo, viTipoArchivo: viTipoArchivo, viArchivo: dsArchivo);
+                        List<stValidacionRecepEntXls> lstValidaciones_ADO = this.ValidacionArchivoRecepEntXls_ADO(viNCompania: viNCompania, viNEstacion: viNEstacion, viNEstacionADO: objEstacionDatos.StoreAdo, viTipoArchivo: viTipoArchivo, viArchivo: dsArchivo);
 
                         if (lstValidaciones_ADO.Count > 0)
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Validacion, "", lstValidaciones_ADO));
+                        {
+                            objTiempo.Stop();
+                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Validacion, "", objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"), lstValidaciones_ADO));
+                        }
+                        #endregion
+
+                        List<Tank> lstTanqueDatos = null;
+                        List<Product> lstProductoDatos = (from p in objContext.Products
+                                                           join ps in objContext.ProductStores on new { p1 = viNEstacion.GetValueOrDefault(), p2 = p.ProductId} equals new { p1 = ps.StoreId, p2 = ps.ProductId }
+                                                           where p.IsFuel == true
+                                                           select p).ToList();
 
                         #region ADO: Llena y Guardado.
-                        switch (viTipoArchivo)
+                        switch (viTipoArchivo.ToUpper())
                         {
                             #region Entregas.
                             case TIPO_ARCHIVO_ENTREGA:
                                 SaleOrder objEntregDatos = null;
+                                List<Hose> lstMangueras = (from m in objContext.Hoses where m.StoreId == viNEstacion select m).ToList();
 
                                 foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows) {
                                     Guid gEntregaID = Guid.Empty,
@@ -8919,7 +8955,8 @@ namespace APIControlNet.Controllers
                                            sNVehiculo = drGeneral[ENTREGA_GRL_NUMERO_VEHICULO].ToString().Trim(),
                                            sUnidadMedida = String.Empty;
                                     DateTime dtFecha, dtUpdate = DateTime.Now;
-                                    int iNManguera = ((from m in objContext.Hoses where m.StoreId == viNEstacion && m.HoseAdo == sNManguera select m).FirstOrDefault()).HoseIdi.GetValueOrDefault();
+                                    //int iNManguera = ((from m in objContext.Hoses where m.StoreId == viNEstacion && m.HoseAdo == sNManguera select m).FirstOrDefault()).HoseIdi.GetValueOrDefault();
+                                    int iNManguera = lstMangueras.First(m => m.HoseAdo.Equals(sNManguera)).HoseIdi.GetValueOrDefault();
 
                                     int iNDocumento = 0;
                                     int.TryParse(drGeneral[ENTREGA_GRL_NUMERO_DOCUMENTO].ToString().Trim(), out iNDocumento);
@@ -8952,7 +8989,7 @@ namespace APIControlNet.Controllers
                                     #endregion
 
                                     Product objProductoDatos = new Product();
-                                    objProductoDatos = (from p in objContext.Products where p.ProductAdo == sNProducto select p).First();
+                                    objProductoDatos = lstProductoDatos.First(p => p.ProductAdo.Equals(sNProducto));
 
                                     gProductoID = objProductoDatos.ProductId;
                                     sUnidadMedida = objProductoDatos.JsonClaveUnidadMedidaId;
@@ -8967,13 +9004,13 @@ namespace APIControlNet.Controllers
                                         objEntregDatos.SaleOrderId = Guid.NewGuid();
                                         objEntregDatos.SaleOrderNumber = iNDocumento;//iNTransaccion;
                                         objEntregDatos.Name = String.Empty;
-                                        //objEntregDatos.EmployeeId = Guid.Empty;
+                                        objEntregDatos.EmployeeId = Guid.Empty;
                                         objEntregDatos.SaleOrderNumberStart = iNDocumento;//iNTransaccion;
-                                        //objEntregDatos.CustomerControlId = Guid.Empty;
+                                        objEntregDatos.CustomerControlId = Guid.Empty;
                                         objEntregDatos.HoseIdi = iNManguera;
-                                        //objEntregDatos.ShiftId = Guid.Empty;
+                                        objEntregDatos.ShiftId = Guid.Empty;
                                         objEntregDatos.VehicleId = gVehiculoID;
-                                        //objEntregDatos.CardEmployeeId = String.Empty;
+                                        objEntregDatos.CardEmployeeId = String.Empty;
                                         objEntregDatos.Amount = dImporte;
                                         objEntregDatos.StartDate = dtFecha;
                                         objEntregDatos.Date = dtFecha;
@@ -9037,16 +9074,19 @@ namespace APIControlNet.Controllers
                                     }
                                     #endregion
                                 }
+
+                                lstProductoDatos.Clear();
+                                lstMangueras.Clear();
                                 break;
                             #endregion
 
                             #region Recepciones.
                             case TIPO_ARCHIVO_RECEPCION:
                                 InventoryIn objRecepcionDato = null;
+                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                                List<SupplierFuel> lstProveedores = (from p in objContext.SupplierFuels where p.StoreId == viNEstacion select p).ToList();
 
-                                foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows)
-                                {
-
+                                foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows) {
                                     Guid gRecepcionID = Guid.Empty,
                                          gProductoID = Guid.Empty;
 
@@ -9075,8 +9115,8 @@ namespace APIControlNet.Controllers
                                     int iClaveUnica = 0;
                                     int.TryParse(drGeneral[RECEPCION_GRL_CLAVE_UNICA].ToString().Trim(), out iClaveUnica);
 
-                                    int iNTanque = (from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo == sNTanque select t.TankIdi).FirstOrDefault();
-                                    int iProveedorFuelID = (from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.SupplierFuelIdiAdo == iNProveedorComb select p.SupplierFuelIdi).FirstOrDefault();
+                                    int iNTanque = lstTanqueDatos.First(t => t.TankIdiAdo.Equals(sNTanque)).TankIdi;
+                                    int iProveedorFuelID = lstProveedores.First(p => p.SupplierFuelIdiAdo.Equals(iNProveedorComb)).SupplierFuelIdi;
 
                                     #region Fecha.
                                     if (drGeneral[RECEPCION_GRL_FECHA].GetType().Equals(typeof(Double)))
@@ -9091,7 +9131,7 @@ namespace APIControlNet.Controllers
                                     #endregion
 
                                     Product objProductoDatos = new Product();
-                                    objProductoDatos = (from p in objContext.Products where p.ProductAdo == sNProducto select p).First();
+                                    objProductoDatos = lstProductoDatos.First(p => p.ProductAdo.Equals(sNProducto));
 
                                     gProductoID = objProductoDatos.ProductId;
                                     sUnidadMedida = objProductoDatos.JsonClaveUnidadMedidaId;
@@ -9106,7 +9146,7 @@ namespace APIControlNet.Controllers
                                         objRecepcionDato.StoreId = viNEstacion.GetValueOrDefault();
                                         objRecepcionDato.InventoryInNumber = iClaveUnica;//iNCompra;
                                         objRecepcionDato.TankIdi = iNTanque;
-                                        objRecepcionDato.ProductId = (from p in objContext.Products where p.ProductAdo == sNProducto select p).First().ProductId;
+                                        objRecepcionDato.ProductId = gProductoID;
                                         objRecepcionDato.Date = dtFecha;
                                         objRecepcionDato.StartVolume = dVolumen;
                                         objRecepcionDato.Volume = dVolumen;
@@ -9163,6 +9203,99 @@ namespace APIControlNet.Controllers
                                     }
                                     #endregion
                                 }
+
+                                lstProductoDatos.Clear();
+                                lstTanqueDatos.Clear();
+                                lstProveedores.Clear();
+                                break;
+                            #endregion
+
+                            #region Inventario.
+                            case TIPO_ARCHIVO_INVENTARIO:
+                                Inventory objInventarioDatos = null;
+                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+
+                                foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows)
+                                {
+                                    #region Asignacion de Valores.
+                                    Decimal dVolumen = 0;
+                                    Decimal.TryParse(drGeneral[INVENTARIO_GRL_CANTIDAD].ToString().Trim(), out dVolumen);
+
+                                    if (dVolumen == 0)
+                                        continue;
+
+                                    String sNProducto = drGeneral[INVENTARIO_GRL_NUMERO_PRODUCTO].ToString().Trim(),
+                                           sNTanque = drGeneral[INVENTARIO_GRL_NUMERO_TANQUE].ToString().Trim();
+                                    DateTime dtFecha, dtUpdate = DateTime.Now;
+
+
+                                    int iNTanque = lstTanqueDatos.First(t => t.TankIdiAdo.Equals(sNTanque)).TankIdi;
+
+                                    int iClaveUnica = 0;
+                                    int.TryParse(drGeneral[INVENTARIO_GRL_CLAVE_UNICA].ToString().Trim(), out iClaveUnica);
+
+                                    #region Fecha.
+                                    if (drGeneral[INVENTARIO_GRL_FECHA].GetType().Equals(typeof(Double)))
+                                    {
+                                        Double dFecha = 0;
+                                        Double.TryParse(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim(), out dFecha);
+                                        dtFecha = DateTime.FromOADate(dFecha);
+                                    }
+                                    else
+                                        DateTime.TryParse(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim(), out dtFecha);
+                                    #endregion
+
+                                    #region Hora.
+                                    String sHora = drGeneral[INVENTARIO_GRL_HORA].ToString().Trim();
+                                    int iHora = 0, iMinuto = 0, iSegundos = 0;
+
+                                    if (!String.IsNullOrEmpty(sHora))
+                                    {
+                                        iHora = Convert.ToInt32(sHora.Substring(0, sHora.Length - 4));
+                                        iMinuto = Convert.ToInt32(sHora.Substring(sHora.Length - 4, 2));
+                                        iSegundos = Convert.ToInt32(sHora.Substring(sHora.Length - 2, 2));
+                                    }
+                                    #endregion
+
+                                    dtFecha = new DateTime(year: dtFecha.Year, month: dtFecha.Month, day: dtFecha.Day, 
+                                                           hour: iHora, minute: iMinuto, second: iSegundos);
+                                    #endregion
+
+                                    objInventarioDatos = new Inventory();
+                                    if ((from i in objContext.Inventories where i.StoreId == viNEstacion.GetValueOrDefault() && i.TankIdi == iNTanque && i.Date == dtFecha && i.InventoryNumber == iClaveUnica select i).Count() <= 0)
+                                    {
+                                        objInventarioDatos.StoreId = viNEstacion;
+                                        objInventarioDatos.InventoryId = Guid.NewGuid();
+                                        objInventarioDatos.InventoryNumber = iClaveUnica;
+                                        objInventarioDatos.TankIdi = iNTanque;
+                                        objInventarioDatos.ProductId = lstProductoDatos.First(p => p.ProductAdo.Equals(sNProducto)).ProductId;
+                                        objInventarioDatos.ProductCodeVeeder = 0;
+                                        objInventarioDatos.Volume = dVolumen;
+                                        objInventarioDatos.VolumeTc = 0;
+                                        objInventarioDatos.VolumeWater = 0;
+                                        objInventarioDatos.Temperature = 0;
+                                        objInventarioDatos.Height = 0;
+                                        objInventarioDatos.HeightWater = 0;
+                                        objInventarioDatos.ToFill = 0;
+                                        objInventarioDatos.StatusRx = 0;
+                                        objInventarioDatos.IsFromShift = 0;
+                                        objInventarioDatos.Pressure = 0;
+
+                                        objInventarioDatos.Date = dtFecha;
+                                        objInventarioDatos.Updated = dtUpdate;
+                                        objInventarioDatos.Active = true;
+                                        objInventarioDatos.Locked = false;
+                                        objInventarioDatos.Deleted = false;
+
+                                        objContext.Inventories.Add(objInventarioDatos);
+                                        objContext.SaveChanges();
+                                        iCantRegisSave++;
+                                    }
+
+                                }
+
+                                lstProductoDatos.Clear();
+                                lstTanqueDatos.Clear();
                                 break;
                             #endregion
                         }
@@ -9173,13 +9306,19 @@ namespace APIControlNet.Controllers
                     #region Estacion Default.
                     default:
                         if (!dsArchivo.Tables.Contains(HOJA_GENERAL))
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "No se encontro la hoja '" + HOJA_GENERAL + "' en el documento de Excel.", null));
+                        {
+                            objTiempo.Stop();
+                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Error, "No se encontro la hoja '" + HOJA_GENERAL + "' en el documento de Excel.", objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"), null));
+                        }
 
                         // Validamos el Archivo Excel que contenga los datos correctos.
                         List<stValidacionRecepEntXls> lstValidaciones = this.ValidacionArchivoRecepEntXls(viNEstacion: viNEstacion, viTipoArchivo: viTipoArchivo, viArchivo: dsArchivo);
 
                         if (lstValidaciones.Count > 0)
-                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Validacion, "", lstValidaciones));
+                        {
+                            objTiempo.Stop();
+                            return BadRequest(this.GenerarRespuesta(eTipoRespuesta.Validacion, "", objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"), lstValidaciones));
+                        }
 
                         #region Lectura y Llenado de Estructuras.
                         DataTable dtCfdi = new DataTable(),
@@ -9826,11 +9965,14 @@ namespace APIControlNet.Controllers
                         break;
                         #endregion
                 }
-
-
             }
 
-            return Ok(this.GenerarRespuesta(eTipoRespuesta.Correcto, "Registros Guardados: " + iCantRegisSave, null));
+            objTiempo.Stop();
+
+            return Ok(this.GenerarRespuesta(viTipo: eTipoRespuesta.Correcto, 
+                                            viMensaje: "Registros Guardados: " + iCantRegisSave, 
+                                            viTiempo: objTiempo.Elapsed.ToString("hh\\:mm\\:ss\\.fff"),
+                                            viValidaciones: null));
         }
 
         private List<stValidacionRecepEntXls> ValidacionArchivoRecepEntXls(Guid? viNEstacion, String viTipoArchivo, DataSet viArchivo)
@@ -10164,14 +10306,18 @@ namespace APIControlNet.Controllers
             String sMnsOut = String.Empty;
             List<stValidacionRecepEntXls> lstValidaciones = new List<stValidacionRecepEntXls>();
             List<String> lstMensajes = new List<String>();
+            List<Product> lstProductoDatos = null;
+            List<Tank> lstTanqueDatos = null;
 
             #region Constantes.
             const String TIPO_ARCHIVO_RECEPCION = "RECEPCION";
             const String TIPO_ARCHIVO_ENTREGA = "ENTREGA";
+            const String TIPO_ARCHIVO_INVENTARIO = "INVENTARIO";
 
             #region Hojas.
             const int ENTREGA_HOJA_GENERAL = 0;
             const int RECEPCION_HOJA_GENERAL = 0;
+            const int INVENTARIO_HOJA_GENERAL = 0;
             #endregion
 
             #region Columnas.
@@ -10196,16 +10342,30 @@ namespace APIControlNet.Controllers
             const int RECEPCION_GRL_CLAVE_UNICA = 11;
             //const int RECEPCION_GRL_NUMERO_PROVEEDOR_TRANS = 12;
             #endregion
+
+            #region Inventarios.
+            const int INVENTARIO_GRL_NUMERO_ESTACION = 0;
+            const int INVENTARIO_GRL_FECHA = 2;
+            const int INVENTARIO_GRL_NUMERO_TANQUE = 3;
+            const int INVENTARIO_GRL_NUMERO_PRODUCTO = 4;
+            const int INVENTARIO_GRL_CANTIDAD = 5;
+            const int INVENTARIO_GRL_HORA = 6;
+            const int INVENTARIO_GRL_CLAVE_UNICA = 7;
+            #endregion
+            #endregion
             #endregion
 
-            #endregion
-
-            //DataTable dtFactura = new DataTable(),
-            //          dtPedimento = new DataTable(),
-            //          dtTransporte = new DataTable();
             try
             {
                 int iNFila = 1;
+
+                lstProductoDatos = (from p in objContext.Products
+                                    join ps in objContext.ProductStores on new { p1 = viNEstacion.GetValueOrDefault(), p2 = p.ProductId } equals new { p1 = ps.StoreId, p2 = ps.ProductId }
+                                    where p.IsFuel == true
+                                    select p).ToList();
+
+                if(lstProductoDatos == null || lstProductoDatos.Count <= 0)
+                    lstMensajes.Add("La Estación no tiene productos registrados");
 
                 switch (viTipoArchivo)
                 {
@@ -10238,16 +10398,6 @@ namespace APIControlNet.Controllers
                             if (String.IsNullOrEmpty(sNEstacion))
                                 lstMensajes.Add("No se encontro el Número de Estación");
 
-                            //if ((from s in objContext.Stores where s.CompanyId == viNCompania && s.StoreAdo == sNEstacion select s).Count() <= 0)
-                            //    lstMensajes.Add("No se encontro información de la Estación '" + sNEstacion + "'");
-                            //else
-                            //{
-                            //    Guid gNEstacion = ((from s in objContext.Stores where s.CompanyId == viNCompania && s.StoreAdo == sNEstacion select s).FirstOrDefault()).StoreId;
-
-                            //    if(viNEstacion != gNEstacion)
-                            //        lstMensajes.Add("(La Estación '" + sNEstacion + "' no corresponde con la Estación que se inicio session actualmente.");
-                            //}
-
                             if(!viNEstacionADO.Equals(sNEstacion.Trim()))
                                 lstMensajes.Add("(La Estación '" + sNEstacion + "' no corresponde con la Estación que se inicio session actualmente.");
                             #endregion
@@ -10255,9 +10405,6 @@ namespace APIControlNet.Controllers
                             #region Numero Manguera.
                             if (String.IsNullOrEmpty(sNManguera))
                                 lstMensajes.Add("No se encontro el Número de Manguera");
-
-                            //if ((from m in objContext.Hoses where m.StoreId == viNEstacion && m.HoseAdo == sNManguera select m).Count() <= 0)
-                            //    lstMensajes.Add("No se encontro información de la Manguera '" + sNManguera + "'");
 
                             if(!lstMangueras.Exists(m => m.HoseAdo.Equals(sNManguera)))
                                 lstMensajes.Add("No se encontro información de la Manguera '" + sNManguera + "'");
@@ -10283,11 +10430,11 @@ namespace APIControlNet.Controllers
                             if (String.IsNullOrEmpty(sNProducto))
                                 lstMensajes.Add("No se encontro el Número de Producto");
 
-                            if ((from p in objContext.Products where p.ProductAdo == sNProducto select p).Count() <= 0)
+                            if (!lstProductoDatos.Exists(p => p.ProductAdo.Equals(sNProducto)))
                                 lstMensajes.Add("No se encontro información del Producto '" + sNProducto + "'");
                             else
                             {
-                                sUnidadMedidad = ((from p in objContext.Products where p.ProductAdo == sNProducto select p).First()).JsonClaveUnidadMedidaId;
+                                sUnidadMedidad = lstProductoDatos.First(p => p.ProductAdo.Equals(sNProducto)).JsonClaveUnidadMedidaId;
 
                                 if (String.IsNullOrEmpty(sUnidadMedidad))
                                     lstMensajes.Add("(General) No se encontro la Unidad de Medida del Producto '" + sNProducto + "'");
@@ -10312,12 +10459,15 @@ namespace APIControlNet.Controllers
                                 });
                             iNFila++;
                         }
+
+                        lstMangueras.Clear();
+                        lstProductoDatos.Clear();
                         break;
                     #endregion
 
                     #region Recepciones.
                     case TIPO_ARCHIVO_RECEPCION:
-                        List<Tank> lstTanques = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
                         List<SupplierFuel> lstProveedores = (from p in objContext.SupplierFuels where p.StoreId == viNEstacion select p).ToList();
 
                         foreach (DataRow drGeneral in viArchivo.Tables[RECEPCION_HOJA_GENERAL].Rows)
@@ -10368,10 +10518,7 @@ namespace APIControlNet.Controllers
                             if (String.IsNullOrEmpty(sNTanque))
                                 lstMensajes.Add("No se encontro el Número de Tanque");
 
-                            //if ((from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo == sNTanque select t).Count() <= 0)
-                            //    lstMensajes.Add("No se encontro información del Tanque '" + sNTanque + "'");
-
-                            if(!lstTanques.Exists(t => t.TankIdiAdo.Equals(sNTanque)))
+                            if(!lstTanqueDatos.Exists(t => t.TankIdiAdo.Equals(sNTanque)))
                                 lstMensajes.Add("No se encontro información del Tanque '" + sNTanque + "'");
                             #endregion
 
@@ -10395,11 +10542,11 @@ namespace APIControlNet.Controllers
                             if (String.IsNullOrEmpty(sNProducto))
                                 lstMensajes.Add("No se encontro el Número de Producto");
 
-                            if ((from p in objContext.Products where p.ProductAdo == sNProducto select p).Count() <= 0)
+                            if (!lstProductoDatos.Exists(p => p.ProductAdo.Equals(sNProducto)))
                                 lstMensajes.Add("No se encontro información del Producto '" + sNProducto + "'");
                             else
                             {
-                                sUnidadMedidad = ((from p in objContext.Products where p.ProductAdo == sNProducto select p).First()).JsonClaveUnidadMedidaId;
+                                sUnidadMedidad = lstProductoDatos.First(p => p.ProductAdo.Equals(sNProducto)).JsonClaveUnidadMedidaId;
 
                                 if (String.IsNullOrEmpty(sUnidadMedidad))
                                     lstMensajes.Add("No se encontro la Unidad de Medida del Producto '" + sNProducto + "'");
@@ -10409,9 +10556,6 @@ namespace APIControlNet.Controllers
                             #region Proveedor de Combustible.
                             if (iNProveedorComb <= 0)
                                 lstMensajes.Add("No se encontro el Número de Proveedor de Combustible");
-
-                            //if ((from p in objContext.SupplierFuels where p.StoreId == viNEstacion && p.SupplierFuelIdiAdo == iNProveedorComb select p).Count() <= 0)
-                            //        lstMensajes.Add("No se encontro información del Proveedor de Combustible '" + iNProveedorComb + "'");
 
                             if(!lstProveedores.Exists(p => p.SupplierFuelIdiAdo.Equals(iNProveedorComb)))
                                 lstMensajes.Add("No se encontro información del Proveedor de Combustible '" + iNProveedorComb + "'");
@@ -10435,6 +10579,99 @@ namespace APIControlNet.Controllers
                                 });
                             iNFila++;
                         }
+
+                        lstTanqueDatos.Clear();
+                        lstProductoDatos.Clear();
+                        lstProveedores.Clear();
+                        break;
+                    #endregion
+
+                    #region Inventarios.
+                    case TIPO_ARCHIVO_INVENTARIO:
+                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+
+                        if(lstTanqueDatos.Count() <= 0)
+                            lstMensajes.Add("La Estación no tiene tanques registrados.");
+
+                        foreach (DataRow drGeneral in viArchivo.Tables[INVENTARIO_HOJA_GENERAL].Rows)
+                        {
+                            String sMnsFila = "Fila No." + iNFila.ToString() + ": ";
+                            String sNEstacion = drGeneral[INVENTARIO_GRL_NUMERO_ESTACION].ToString().Trim(),
+                                   sNProducto = drGeneral[INVENTARIO_GRL_NUMERO_PRODUCTO].ToString().Trim(),
+                                   sNTanque = drGeneral[INVENTARIO_GRL_NUMERO_TANQUE].ToString().Trim(),
+                                   sUnidadMedidad = String.Empty;
+                            decimal dVolumen = 0;
+                            Decimal.TryParse(drGeneral[INVENTARIO_GRL_CANTIDAD].ToString().Trim(), out dVolumen);
+
+                            if (dVolumen == 0)
+                                continue;
+
+                            int iClaveUnica = 0;
+                            int.TryParse(drGeneral[INVENTARIO_GRL_CLAVE_UNICA].ToString().Trim(), out iClaveUnica);
+
+                            #region Validacion: General.
+                            #region Estacion.
+                            if (String.IsNullOrEmpty(sNEstacion))
+                                lstMensajes.Add("No se encontro el Número de Estación");
+
+                            if (!viNEstacionADO.Equals(sNEstacion.Trim()))
+                                lstMensajes.Add("(La Estación '" + sNEstacion + "' no corresponde con la Estación que se inicio session actualmente.");
+                            #endregion
+
+                            #region Numero Tanque.
+                            if (String.IsNullOrEmpty(sNTanque))
+                                lstMensajes.Add("No se encontro el Número de Tanque");
+
+                            if (!lstTanqueDatos.Exists(t => t.TankIdiAdo.Equals(sNTanque)))
+                                lstMensajes.Add("No se encontro información del Tanque '" + sNTanque + "'");
+                            #endregion
+
+                            #region Fecha.
+                            if (String.IsNullOrEmpty(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim()))
+                                lstMensajes.Add("(General) No se encontro la Fecha.");
+
+                            DateTime dtFecha;
+                            if (drGeneral[INVENTARIO_GRL_FECHA].GetType().Equals(typeof(Double)))
+                            {
+                                Double dFecha = 0;
+                                if (!Double.TryParse(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim(), out dFecha))
+                                    lstMensajes.Add("Formato incorrecto de Fecha '" + drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim() + "'.");
+                            }
+                            else
+                                if (!DateTime.TryParse(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim(), out dtFecha))
+                                    lstMensajes.Add("Formato incorrecto de Fecha '" + drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim() + "'.");
+                            #endregion
+
+                            #region Producto (Unidad de Medida).
+                            if (String.IsNullOrEmpty(sNProducto))
+                                lstMensajes.Add("No se encontro el Número de Producto");
+
+                            if (!lstProductoDatos.Exists(p => p.ProductAdo == sNProducto))
+                                lstMensajes.Add("No se encontro información del Producto '" + sNProducto + "'");
+                            else
+                            {
+                                sUnidadMedidad = lstProductoDatos.First(p => p.ProductAdo == sNProducto).JsonClaveUnidadMedidaId;
+
+                                if (String.IsNullOrEmpty(sUnidadMedidad))
+                                    lstMensajes.Add("No se encontro la Unidad de Medida del Producto '" + sNProducto + "'");
+                            }
+                            #endregion
+
+                            if (iClaveUnica <= 0)
+                                lstMensajes.Add("No se encontro la Clave Unica.");
+                            #endregion
+
+                            if (lstMensajes.Count > 0)
+                                lstValidaciones.Add(new stValidacionRecepEntXls
+                                {
+                                    NumeroFila = iNFila,
+                                    Mensaje = lstMensajes
+                                });
+                            iNFila++;
+                        }
+
+                        lstProductoDatos.Clear();
+                        lstTanqueDatos.Clear();
                         break;
                         #endregion
                 }
@@ -10446,11 +10683,12 @@ namespace APIControlNet.Controllers
             return lstValidaciones;
         }
 
-        private stRespuestaOut GenerarRespuesta(eTipoRespuesta viTipo, String viMensaje, List<stValidacionRecepEntXls> viValidaciones)
+        private stRespuestaOut GenerarRespuesta(eTipoRespuesta viTipo, String viMensaje, String viTiempo, List<stValidacionRecepEntXls> viValidaciones)
         {
             stRespuestaOut objRespuestaDato = new stRespuestaOut();
             objRespuestaDato.TipoRespuesta = viTipo;
             objRespuestaDato.Mensaje = viMensaje;
+            objRespuestaDato.Tiempo = viTiempo;
             objRespuestaDato.Validaciones = viValidaciones;
 
             return objRespuestaDato;
