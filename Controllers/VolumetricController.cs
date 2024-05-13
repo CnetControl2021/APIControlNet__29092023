@@ -23,7 +23,7 @@ using System.Diagnostics;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-05-11 23:51
+    // $@m&: 2024-05-13 10:48
     // =========================
 
     [Route("api/[controller]")]
@@ -34,6 +34,7 @@ namespace APIControlNet.Controllers
         private readonly CnetCoreContext objContext;
         private readonly IMapper objMapper;
         private readonly ServicioBinnacle objServicioBinnacle;
+        private const String VERSION_VOLUMETRIC = "v2405131048";
 
         #region CVol: JSON.
         public VolumetricController(CnetCoreContext viContext, IMapper viMapper, ServicioBinnacle viServicioBinnacle)
@@ -5624,13 +5625,23 @@ namespace APIControlNet.Controllers
                                 CVolJSonDTO.stControlExistenciaDato objExistMesDato = new CVolJSonDTO.stControlExistenciaDato();
 
                                 #region Consulta: Existencia del Producto.
+                                //var vQExistProd = (from t in objContext.Tanks
+                                //                   where t.StoreId == viNEstacion && t.ProductId == vProd.ProductoID
+                                //                   select (from i in objContext.InventoryIns
+                                //                           orderby i.StartDate descending
+                                //                           where i.StoreId == t.StoreId &&
+                                //                                 i.TankIdi == t.TankIdi &&
+                                //                                 i.StartDate >= dtPerDateIni && i.StartDate <= dtPerDateEnd.AddMinutes(7) &&
+                                //                                 i.ProductId == t.ProductId
+                                //                           select i.Volume ?? 0).FirstOrDefault());
+
                                 var vQExistProd = (from t in objContext.Tanks
                                                    where t.StoreId == viNEstacion && t.ProductId == vProd.ProductoID
-                                                   select (from i in objContext.InventoryIns
-                                                           orderby i.StartDate descending
+                                                   select (from i in objContext.Inventories
+                                                           orderby i.Date descending
                                                            where i.StoreId == t.StoreId &&
                                                                  i.TankIdi == t.TankIdi &&
-                                                                 i.StartDate >= dtPerDateIni && i.StartDate <= dtPerDateEnd.AddMinutes(7) &&
+                                                                 i.Date >= dtPerDateIni && i.Date <= dtPerDateEnd.AddMinutes(7) &&
                                                                  i.ProductId == t.ProductId
                                                            select i.Volume ?? 0).FirstOrDefault());
                                 #endregion
@@ -9083,7 +9094,7 @@ namespace APIControlNet.Controllers
                             #region Recepciones.
                             case TIPO_ARCHIVO_RECEPCION:
                                 InventoryIn objRecepcionDato = null;
-                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo != null select t).ToList();
                                 List<SupplierFuel> lstProveedores = (from p in objContext.SupplierFuels where p.StoreId == viNEstacion select p).ToList();
 
                                 foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows) {
@@ -9213,7 +9224,7 @@ namespace APIControlNet.Controllers
                             #region Inventario.
                             case TIPO_ARCHIVO_INVENTARIO:
                                 Inventory objInventarioDatos = null;
-                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                                lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo != null select t).ToList();
 
                                 foreach (DataRow drGeneral in dsArchivo.Tables[0].Rows)
                                 {
@@ -9246,19 +9257,19 @@ namespace APIControlNet.Controllers
                                     #endregion
 
                                     #region Hora.
-                                    String sHora = drGeneral[INVENTARIO_GRL_HORA].ToString().Trim();
-                                    int iHora = 0, iMinuto = 0, iSegundos = 0;
+                                    //String sHora = drGeneral[INVENTARIO_GRL_HORA].ToString().Trim();
+                                    //int iHora = 0, iMinuto = 0, iSegundos = 0;
 
-                                    if (!String.IsNullOrEmpty(sHora))
-                                    {
-                                        iHora = Convert.ToInt32(sHora.Substring(0, sHora.Length - 4));
-                                        iMinuto = Convert.ToInt32(sHora.Substring(sHora.Length - 4, 2));
-                                        iSegundos = Convert.ToInt32(sHora.Substring(sHora.Length - 2, 2));
-                                    }
+                                    //if (!String.IsNullOrEmpty(sHora))
+                                    //{
+                                    //    iHora = Convert.ToInt32(sHora.Substring(0, sHora.Length - 4));
+                                    //    iMinuto = Convert.ToInt32(sHora.Substring(sHora.Length - 4, 2));
+                                    //    iSegundos = Convert.ToInt32(sHora.Substring(sHora.Length - 2, 2));
+                                    //}
                                     #endregion
 
-                                    dtFecha = new DateTime(year: dtFecha.Year, month: dtFecha.Month, day: dtFecha.Day, 
-                                                           hour: iHora, minute: iMinuto, second: iSegundos);
+                                    //dtFecha = new DateTime(year: dtFecha.Year, month: dtFecha.Month, day: dtFecha.Day, 
+                                    //                       hour: iHora, minute: iMinuto, second: iSegundos);
                                     #endregion
 
                                     objInventarioDatos = new Inventory();
@@ -10467,7 +10478,7 @@ namespace APIControlNet.Controllers
 
                     #region Recepciones.
                     case TIPO_ARCHIVO_RECEPCION:
-                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo != null select t).ToList();
                         List<SupplierFuel> lstProveedores = (from p in objContext.SupplierFuels where p.StoreId == viNEstacion select p).ToList();
 
                         foreach (DataRow drGeneral in viArchivo.Tables[RECEPCION_HOJA_GENERAL].Rows)
@@ -10588,7 +10599,7 @@ namespace APIControlNet.Controllers
 
                     #region Inventarios.
                     case TIPO_ARCHIVO_INVENTARIO:
-                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion select t).ToList();
+                        lstTanqueDatos = (from t in objContext.Tanks where t.StoreId == viNEstacion && t.TankIdiAdo != null select t).ToList();
 
                         if(lstTanqueDatos.Count() <= 0)
                             lstMensajes.Add("La Estación no tiene tanques registrados.");
@@ -10615,7 +10626,7 @@ namespace APIControlNet.Controllers
                                 lstMensajes.Add("No se encontro el Número de Estación");
 
                             if (!viNEstacionADO.Equals(sNEstacion.Trim()))
-                                lstMensajes.Add("(La Estación '" + sNEstacion + "' no corresponde con la Estación que se inicio session actualmente.");
+                                lstMensajes.Add("La Estación '" + sNEstacion + "' no corresponde con la Estación que se inicio session actualmente.");
                             #endregion
 
                             #region Numero Tanque.
@@ -10628,7 +10639,7 @@ namespace APIControlNet.Controllers
 
                             #region Fecha.
                             if (String.IsNullOrEmpty(drGeneral[INVENTARIO_GRL_FECHA].ToString().Trim()))
-                                lstMensajes.Add("(General) No se encontro la Fecha.");
+                                lstMensajes.Add("No se encontro la Fecha.");
 
                             DateTime dtFecha;
                             if (drGeneral[INVENTARIO_GRL_FECHA].GetType().Equals(typeof(Double)))
@@ -11123,5 +11134,12 @@ namespace APIControlNet.Controllers
             return Ok("Registros Guardados: " + iCantRegisSave);
         }
         #endregion
+
+        [AllowAnonymous]
+        [HttpPost("Version")]
+        public IActionResult VersionVolumetric()
+        {
+            return Ok("Version: " + VERSION_VOLUMETRIC);
+        }
     }
 }

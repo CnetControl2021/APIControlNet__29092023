@@ -243,6 +243,7 @@ namespace APIControlNet.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
             modelBuilder.Entity<AuthorizationSet>(entity =>
@@ -8374,7 +8375,7 @@ namespace APIControlNet.Models
                     .HasColumnName("discount");
 
                 entity.Property(e => e.EndQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 2)")
                     .HasColumnName("end_quantity")
                     .HasDefaultValueSql("((0))");
 
@@ -8426,7 +8427,7 @@ namespace APIControlNet.Models
                 entity.Property(e => e.SaleSuborderIdi).HasColumnName("sale_suborder_idi");
 
                 entity.Property(e => e.StartQuantity)
-                    .HasColumnType("decimal(11, 4)")
+                    .HasColumnType("decimal(11, 2)")
                     .HasColumnName("start_quantity")
                     .HasDefaultValueSql("((0))");
 
