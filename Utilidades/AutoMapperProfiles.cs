@@ -9,6 +9,9 @@ namespace APIControlNet.Utilidades
     {
         public AutoMapperProfiles()
         {
+            CreateMap<DataTestDTO, Datatest>();
+            CreateMap<Datatest, DataTestDTO>();
+
             CreateMap<PortResponseDTO, PortResponse>();
             CreateMap<PortResponse, PortResponseDTO>();
 

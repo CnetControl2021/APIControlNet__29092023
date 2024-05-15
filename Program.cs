@@ -1,3 +1,4 @@
+using APIControlNet;
 using APIControlNet.DTOs.Seeding;
 using APIControlNet.Models;
 using APIControlNet.Services;
@@ -27,6 +28,11 @@ builder.Services.AddControllers();
 /////Agrege conexion de appjson, nueva manera en net 6
 builder.Services.AddDbContext<CnetCoreContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
+
+//Miguel V
+global_api.default_connection = builder.Configuration.GetConnectionString("defaultConnection");
+global_api.data_base_type = builder.Configuration.GetConnectionString("data_base_type");
+
 
 /////Modifique para ignorar referencias de cliclos, cuando traes data relacionada y NewtonsoftJson
 builder.Services.AddControllers().AddJsonOptions(x =>

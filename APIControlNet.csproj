@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="EPPlus" Version="7.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.2" />
@@ -35,6 +36,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Class_Sql">
+      <HintPath>Class_Sql.dll</HintPath>
+    </Reference>
     <Reference Include="Excel">
       <HintPath>..\..\..\Desktop\ControlNet Web VS2019\packages\ExcelDataReader.2.1.2.3\lib\net20\Excel.dll</HintPath>
     </Reference>
