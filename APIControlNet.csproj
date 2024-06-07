@@ -36,9 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Class_Sql">
-      <HintPath>Class_Sql.dll</HintPath>
-    </Reference>
     <Reference Include="Excel">
       <HintPath>..\..\..\Desktop\ControlNet Web VS2019\packages\ExcelDataReader.2.1.2.3\lib\net20\Excel.dll</HintPath>
     </Reference>
