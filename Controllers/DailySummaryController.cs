@@ -50,7 +50,7 @@ namespace APIControlNet.Controllers
 
         [HttpGet]
         [Route("sinPag")]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<DailySummaryDTO>>> Get5(Guid storeId, DateTime dateIni, DateTime dateFin)
         {
              var list = await (from ds in context.DailySummaries

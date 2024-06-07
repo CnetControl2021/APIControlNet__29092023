@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OfficeOpenXml;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection.Emit;
@@ -18,6 +19,8 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 //var MyAllowSpecificOrigins = "_myAllowSpecificOrigins"; //para cors
+
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 // Add services to the container.
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(); 

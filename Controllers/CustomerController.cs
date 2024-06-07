@@ -147,7 +147,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet]
-        //[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse>> GetClientes(int skip, int take, string searchTerm = "")
         {
             try
@@ -171,8 +171,7 @@ namespace APIControlNet.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
-            }
-            
+            }      
         }
 
         //[HttpGet]

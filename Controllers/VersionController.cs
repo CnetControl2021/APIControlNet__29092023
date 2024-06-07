@@ -50,43 +50,45 @@ namespace APIControlNet.Controllers
             return mapper.Map<List<VersionDTO>>(version);
         }
 
+
         [HttpGet("routeHashFDll")]
         [AllowAnonymous]
         public async Task<IActionResult> Get5(string hashFDll)
         {
-
-            //var hashsb2 = hashdb.Hash512;
-
             var db1 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.0");
-            if (db1 is null)
+            Console.WriteLine("db1.VersionId: " + db1?.VersionId);
+            if (db1 is null )
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"1.0"}, {"1.0"}, {"Control Volumetrico"}, {"ControlNet"}, {"Version inicial"}, {"2023-05-01"}, {"2023-05-01"}, {true}, {false}, {false})");
             }
+            
             var db2 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.1");
-            if (db2 is null)
+            Console.WriteLine("db2.VersionId: " + db2?.VersionId);
+            if (db2.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"1.1"}, {"1.1"}, {"Control Volumetrico"}, {"ControlNet"}, {"Mejoras en reportes"}, {"2023-05-12"}, {"2023-05-01"}, {true}, {false}, {false})");
             }
+
             var db3 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.0");
-            if (db3 is null)
+            if (db3.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.0"}, {"2.0"}, {"Control Volumetrico"}, {"ControlNet"}, {"Cambios en campos de medicion TC"}, {"2023-06-12"}, {"2023-06-12"}, {true}, {false}, {false})");
             }
             var db4 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.1");
-            if (db4 is null)
+            if (db4.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.1"}, {"2.1"}, {"Control Volumetrico"}, {"ControlNet"}, {"Adicion de pagina para revisar version he historial"}, {"2023-06-20"}, {"2023-06-20"}, {true}, {false}, {false})");
             }
             var db5 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.2");
-            if (db5 is null)
+            if (db5.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
@@ -135,17 +137,18 @@ namespace APIControlNet.Controllers
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.5"}, {"2.5"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se cambio la captura de datos de configuracion inicial. Datos adicionales en la respuesta de la bitacora"}, 
-                {"c8ac30f27e01a0398a560778a4baecf45ca435fa4d4a6913ae53f591ec8b99a82e77e4dc305bd8337c55987a8412d5b487526900629e208dfac079fe1e4c27ff"},
+                {"29ffe703c6d0eae4ba7e05162f4555bba10037c97ef894eb1a50b99879e19c5facbd9114f4b8100c1c91808daf0340fe00b0c04363fabf72b3f64a8fc97f82f0"},
                 {"2024-05-03"}, {"2024-05-03"}, {true}, {false}, {false})");
             }
             else
             {
                 var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.5");
                 db.Updated = DateTime.Now;
-                db.Hash512 = "b517fb4be11a3ed279743fd3882c8c97e74319e421842482070d722fd81976d02b04d29f6f8ef9102f72562d82642f56d2d2e059f11484df885033bb69cd3017";
+                db.Hash512 = "29ffe703c6d0eae4ba7e05162f4555bba10037c97ef894eb1a50b99879e19c5facbd9114f4b8100c1c91808daf0340fe00b0c04363fabf72b3f64a8fc97f82f0";
                 context.Update(db);
                 context.SaveChanges();
             }
+
 
             var hashdb = await context.Versions.FirstOrDefaultAsync(x => x.Hash512 == hashFDll);
 

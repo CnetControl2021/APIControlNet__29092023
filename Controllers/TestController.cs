@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.Data;
+using System.Globalization;
 
 namespace APIControlNet.Controllers
 {
@@ -36,7 +37,7 @@ namespace APIControlNet.Controllers
 
         private const int batchSize = 1000;  // Define el tamaño del lote
 
-        [HttpPost("dataTest")]
+        [HttpPost("importar")]
         [AllowAnonymous]
         public async Task<IActionResult> Importar(IFormFile archivoExcel)
         {
@@ -61,20 +62,24 @@ namespace APIControlNet.Controllers
                             //Idx = int.Parse(worksheet.Cells[row, 1].Value?.ToString().Trim() ?? "0"),
                             //DatatestId = Guid.TryParse(worksheet.Cells[row, 2].Value?.ToString().Trim(), out Guid resultGuid) ? resultGuid : null,
                             DatatestId = Guid.NewGuid(),
-                            DatatestNumber = int.TryParse(worksheet.Cells[row, 3].Value?.ToString().Trim(), out int resultNumber) ? resultNumber : null,
-                            Name = worksheet.Cells[row, 4].Value?.ToString().Trim(),
-                            Descripcion = worksheet.Cells[row, 5].Value?.ToString().Trim(),
-                            Date = DateTime.TryParse(worksheet.Cells[row, 6].Value?.ToString().Trim(), out DateTime resultDate) ? resultDate : null,
-                            Updated = DateTime.TryParse(worksheet.Cells[row, 7].Value?.ToString().Trim(), out DateTime resultUpdated) ? resultUpdated : null,
-                            Active = bool.TryParse(worksheet.Cells[row, 8].Value?.ToString().Trim(), out bool resultActive) ? resultActive : null,
-                            Locked = bool.TryParse(worksheet.Cells[row, 9].Value?.ToString().Trim(), out bool resultLocked) ? resultLocked : null,
-                            Deleted = bool.TryParse(worksheet.Cells[row, 10].Value?.ToString().Trim(), out bool resultDeleted) ? resultDeleted : null,
+                            DatatestNumber = int.TryParse(worksheet.Cells[row, 1].Value?.ToString().Trim(), out int resultNumber) ? resultNumber : null,
+                            Name = worksheet.Cells[row, 2].Value?.ToString().Trim(),
+                            Descripcion = worksheet.Cells[row, 3].Value?.ToString().Trim(),
+                            // Intenta convertir el valor de la sexta columna (Date) en un DateTime. Si la conversión es exitosa, asigna el valor, de lo contrario, asigna null.
+                            //Date = DateTime.TryParse(worksheet.Cells[row, 4].Value?.ToString().Trim(), out DateTime resultDate) ? resultDate : null,
+                            // Extrae y convierte la fecha de la celda a DateTime, asumiendo el formato D/M/YYYY
+                            Date = worksheet.Cells[row, 4].Value is double oleDate1 ? DateTime.FromOADate(oleDate1) : (worksheet.Cells[row, 4].Value is DateTime dt1 ? dt1 : (DateTime?)null),
+                            // Extrae y convierte la fecha y hora de la celda a DateTime, asumiendo el formato YYYY-MM-DD HH:MM:SS
+                            Updated = worksheet.Cells[row, 5].Value is double oleDate2 ? DateTime.FromOADate(oleDate2) : (worksheet.Cells[row, 5].Value is DateTime dt2 ? dt2 : (DateTime?)null),
+                            Active = bool.TryParse(worksheet.Cells[row, 6].Value?.ToString().Trim(), out bool resultActive) ? resultActive : null,
+                            Locked = bool.TryParse(worksheet.Cells[row, 7].Value?.ToString().Trim(), out bool resultLocked) ? resultLocked : null,
+                            Deleted = bool.TryParse(worksheet.Cells[row, 8].Value?.ToString().Trim(), out bool resultDeleted) ? resultDeleted : null,
                         });
 
                         // Guardar en lotes cada 1000 registros
                         if (dataTests.Count >= batchSize)
                         {
-                            context.Datatests.AddRange((IEnumerable<Datatest>)dataTests);
+                            context.Datatests.AddRange(dataTests);
                             await context.SaveChangesAsync();
                             dataTests.Clear(); // Limpiar la lista para el siguiente lote
                         }
@@ -83,7 +88,7 @@ namespace APIControlNet.Controllers
                     // Guardar los últimos registros si quedan algunos
                     if (dataTests.Count > 0)
                     {
-                        context.Datatests.AddRange((IEnumerable<Datatest>)dataTests);
+                        context.Datatests.AddRange(dataTests);
                         await context.SaveChangesAsync();
                     }
                 }
@@ -91,5 +96,6 @@ namespace APIControlNet.Controllers
 
             return Ok();
         }
+
     }
 }

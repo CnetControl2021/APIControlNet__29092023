@@ -233,7 +233,7 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet("{id:int}", Name = "obtenerStore")]
-        ////[AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<StoreDTO>> Get5(int id)
         {
             var Store = await context.Stores.FirstOrDefaultAsync(x => x.StoreIdx == id);

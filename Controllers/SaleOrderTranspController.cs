@@ -96,8 +96,9 @@ namespace APIControlNet.Controllers
             return Ok(listSO);
         }
 
+
         [HttpGet("wrapper")]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<ActionResult<SoSsubDTO>> Get(Guid idGuid)
         {
             var so = await context.SaleOrders.FirstOrDefaultAsync(c => c.SaleOrderId == idGuid);
