@@ -19,7 +19,9 @@ using AutoMapper;
 using APIControlNet.DTOs;
 using System.Security.AccessControl;
 using System.Diagnostics;
+using Class_Api;
 using Class_Sql;
+using static Class_Api.report;
 
 namespace APIControlNet.Controllers
 {
@@ -38,6 +40,8 @@ namespace APIControlNet.Controllers
         private const String VERSION_VOLUMETRIC = "v2405131048";
 
         private readonly IConfiguration _configuration;
+
+
 
 
 
@@ -8760,6 +8764,59 @@ namespace APIControlNet.Controllers
             public String Tiempo { set; get; }
             public List<stValidacionRecepEntXls> Validaciones { set; get; }
         }
+
+        [HttpGet("get_inventory_analysis/{store_id}/{start_date}/{end_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Help_SqlGral.cl_api_json>> get_inventory_analysis(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
+        {
+
+
+            report rep = new report();
+            //rep.config = global_api.config;
+
+            Help_SqlGral.sql_config = Help_SqlGral.sql_config;
+
+            Help_SqlGral.cl_api_json json_report = rep.get_inventory_analysis(store_id, start_date, end_date, type_inventory);//  get_report_result( store_id, report_id.ToString(), report_input_object, false);
+
+
+            return Ok(json_report);
+        }
+
+
+
+        [HttpGet("get_start_inventory/{store_id}/{start_date}/{end_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<cl_inventory_product_head>> get_start_inventory(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
+        {
+
+
+            string RetStr = "NONE";
+
+            report rep = new report();
+
+            cl_inventory_product_head response = rep.get_start_inventory(ref RetStr, store_id, start_date, enum_start_inventory.day);
+
+
+            return response;
+        }
+
+
+        [HttpGet("get_end_inventory/{store_id}/{start_date}/{end_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<cl_inventory_product_head>> get_end_inventory(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
+        {
+
+
+            string RetStr = "NONE";
+
+            report rep = new report();
+
+            cl_inventory_product_head response = rep.get_end_inventory(ref RetStr, store_id, start_date, enum_end_inventory.day);
+
+
+            return response;
+        }
+
 
         /// <summary>
         /// Lectura de Archivo de Excel para guardar Recepciones y Entregas.

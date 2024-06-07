@@ -34,7 +34,10 @@ builder.Services.AddDbContext<CnetCoreContext>(options =>
 
 //Miguel V
 global_api.default_connection = builder.Configuration.GetConnectionString("defaultConnection");
+
 global_api.data_base_type = builder.Configuration.GetConnectionString("data_base_type");
+
+Class_Sql.initial.load_sql_connection_from_appsettings();
 
 
 /////Modifique para ignorar referencias de cliclos, cuando traes data relacionada y NewtonsoftJson

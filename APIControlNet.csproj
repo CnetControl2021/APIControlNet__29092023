@@ -33,14 +33,30 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Class_Api">
+      <HintPath>00_ApiCnet\Class_Api.dll</HintPath>
+    </Reference>
+    <Reference Include="Class_global">
+      <HintPath>00_ApiCnet\Class_global.dll</HintPath>
+    </Reference>
+    <Reference Include="Class_Sql">
+      <HintPath>00_ApiCnet\Class_Sql.dll</HintPath>
+    </Reference>
     <Reference Include="Excel">
       <HintPath>..\..\..\Desktop\ControlNet Web VS2019\packages\ExcelDataReader.2.1.2.3\lib\net20\Excel.dll</HintPath>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SqlClient">
+      <HintPath>00_ApiCnet\System.Data.SqlClient.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Ports">
+      <HintPath>00_ApiCnet\System.IO.Ports.dll</HintPath>
     </Reference>
   </ItemGroup>
 
