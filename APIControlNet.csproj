@@ -40,8 +40,17 @@
     <Reference Include="Class_Api">
       <HintPath>00_ApiCnet\Class_Api.dll</HintPath>
     </Reference>
+    <Reference Include="Class_BaseDatos">
+      <HintPath>00_ApiCnet\Class_BaseDatos.dll</HintPath>
+    </Reference>
     <Reference Include="Class_global">
       <HintPath>00_ApiCnet\Class_global.dll</HintPath>
+    </Reference>
+    <Reference Include="Class_global_pos">
+      <HintPath>00_ApiCnet\Class_global_pos.dll</HintPath>
+    </Reference>
+    <Reference Include="Class_interfase">
+      <HintPath>00_ApiCnet\Class_interfase.dll</HintPath>
     </Reference>
     <Reference Include="Class_Sql">
       <HintPath>00_ApiCnet\Class_Sql.dll</HintPath>
@@ -73,6 +82,15 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="query_help.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="query_updated.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 

@@ -67,7 +67,7 @@ namespace APIControlNet.Controllers
         {
             var usuarioId = obtenerUsuarioId();
             var ipUser = obtenetIP();
-            var name = pointSaleDTOs.LastOrDefault().Name;
+            var name = pointSaleDTOs.LastOrDefault()?.Name;
             var storeId2 = storeId;
             var tabla = "PointSales";
 
@@ -75,20 +75,34 @@ namespace APIControlNet.Controllers
             {
                 return BadRequest("Sin datos");
             }
+
             foreach (var dto in pointSaleDTOs)
             {
+                // Buscar una entidad existente por storeId y PointSaleIdi
                 var existingEntity = await context.PointSales
-                    .FindAsync(dto.PointSaleIdx);
+                    .FirstOrDefaultAsync(ps => ps.StoreId == storeId && ps.PointSaleIdi == dto.PointSaleIdi);
 
                 if (existingEntity != null)
                 {
-                    context.Entry(existingEntity).CurrentValues.SetValues(dto);
+                    // Si existe, actualizar las propiedades individuales sin modificar la clave primaria
+                    existingEntity.PortIdi = dto.PortIdi;
+                    existingEntity.Name = dto.Name;
+                    existingEntity.Type = dto.Type;
+                    existingEntity.Subtype = dto.Subtype;
+                    existingEntity.Address = dto.Address;
+                    existingEntity.PrinterBaudRate = dto.PrinterBaudRate;
+                    existingEntity.PrinterBrandId = dto.PrinterBrandId;
+                    existingEntity.PrinterIdi = dto.PrinterIdi;
+                    existingEntity.TypeAuthorization = dto.TypeAuthorization;
+                    existingEntity.PointSaleUnique = dto.PointSaleUnique;
+                    existingEntity.InvoiceSerieId = dto.InvoiceSerieId;
+                    existingEntity.IsEnabledPrintToPrinterIdi = dto.IsEnabledPrintToPrinterIdi;
                     existingEntity.Updated = DateTime.Now;
-                    context.PointSales.Update(existingEntity);
                     await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
-                else if (!dto.PointSaleIdx.HasValue || dto.PointSaleIdx == 0)
+                else
                 {
+                    // Si no existe, crear una nueva entidad
                     var newEntity = new PointSale
                     {
                         StoreId = storeId,
@@ -113,9 +127,67 @@ namespace APIControlNet.Controllers
                     await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
                 }
             }
+
             await context.SaveChangesAsync();
             return Ok();
         }
+
+
+
+        //[HttpPost]
+        //public async Task<IActionResult> Post(Guid storeId, List<PointSaleDTO> pointSaleDTOs)
+        //{
+        //    var usuarioId = obtenerUsuarioId();
+        //    var ipUser = obtenetIP();
+        //    var name = pointSaleDTOs.LastOrDefault().Name;
+        //    var storeId2 = storeId;
+        //    var tabla = "PointSales";
+
+        //    if (pointSaleDTOs == null || !pointSaleDTOs.Any())
+        //    {
+        //        return BadRequest("Sin datos");
+        //    }
+        //    foreach (var dto in pointSaleDTOs)
+        //    {
+        //        var existingEntity = await context.PointSales
+        //            .FindAsync(dto.PointSaleIdx);
+
+        //        if (existingEntity != null)
+        //        {
+        //            context.Entry(existingEntity).CurrentValues.SetValues(dto);
+        //            existingEntity.Updated = DateTime.Now;
+        //            context.PointSales.Update(existingEntity);
+        //            await servicioBinnacle.EditBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
+        //        }
+        //        else if (!dto.PointSaleIdx.HasValue || dto.PointSaleIdx == 0)
+        //        {
+        //            var newEntity = new PointSale
+        //            {
+        //                StoreId = storeId,
+        //                PointSaleIdi = dto.PointSaleIdi,
+        //                PortIdi = dto.PortIdi,
+        //                Name = dto.Name,
+        //                Type = dto.Type,
+        //                Subtype = dto.Subtype,
+        //                Address = dto.Address,
+        //                PrinterBaudRate = dto.PrinterBaudRate,
+        //                PrinterBrandId = dto.PrinterBrandId,
+        //                PrinterIdi = dto.PrinterIdi,
+        //                TypeAuthorization = dto.TypeAuthorization,
+        //                PointSaleUnique = dto.PointSaleUnique,
+        //                InvoiceSerieId = dto.InvoiceSerieId,
+        //                IsEnabledPrintToPrinterIdi = dto.IsEnabledPrintToPrinterIdi,
+        //                Active = true,
+        //                Locked = false,
+        //                Deleted = false
+        //            };
+        //            context.PointSales.Add(newEntity);
+        //            await servicioBinnacle.AddBinnacle2(usuarioId, ipUser, name, storeId2, tabla);
+        //        }
+        //    }
+        //    await context.SaveChangesAsync();
+        //    return Ok();
+        //}
 
         [HttpGet("notPage")]
         public async Task<IEnumerable<PointSaleDTO>> Get3([FromQuery] Guid storeId)

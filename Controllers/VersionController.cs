@@ -31,20 +31,10 @@ namespace APIControlNet.Controllers
 
 
         [HttpGet]
-        [AllowAnonymous]
-        public async Task<IEnumerable<VersionDTO>> Get(Guid storeId, [FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
+        public async Task<IEnumerable<VersionDTO>> Get()
         {
             var queryable = context.Versions.Where(x => x.Active == true && x.Deleted == false && x.SystemId == 3).AsQueryable();
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                queryable = queryable.Where(x => x.Description.ToLower().Contains(nombre));
-            }
-            //if (storeId != Guid.Empty)
-            //{
-            //    queryable = queryable.Where(x => x.StoreId == storeId);
-            //}
-            await HttpContext.InsertarParametrosPaginacionEnRespuesta(queryable, paginacionDTO.CantidadAMostrar);
-            var version = await queryable.Paginar(paginacionDTO)
+            var version = await queryable
                 .AsNoTracking()
                 .ToListAsync();
             return mapper.Map<List<VersionDTO>>(version);
@@ -66,7 +56,7 @@ namespace APIControlNet.Controllers
             
             var db2 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "1.1");
             Console.WriteLine("db2.VersionId: " + db2?.VersionId);
-            if (db2.VersionId is null)
+            if (db2 is null || db2.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
@@ -74,21 +64,21 @@ namespace APIControlNet.Controllers
             }
 
             var db3 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.0");
-            if (db3.VersionId is null)
+            if (db3 is null || db3.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.0"}, {"2.0"}, {"Control Volumetrico"}, {"ControlNet"}, {"Cambios en campos de medicion TC"}, {"2023-06-12"}, {"2023-06-12"}, {true}, {false}, {false})");
             }
             var db4 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.1");
-            if (db4.VersionId is null)
+            if (db4 is null || db4.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.1"}, {"2.1"}, {"Control Volumetrico"}, {"ControlNet"}, {"Adicion de pagina para revisar version he historial"}, {"2023-06-20"}, {"2023-06-20"}, {true}, {false}, {false})");
             }
             var db5 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.2");
-            if (db5.VersionId is null)
+            if (db5 is null || db5.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
@@ -99,7 +89,7 @@ namespace APIControlNet.Controllers
             }
             var db6 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.3");
 
-            if (db6 is null)
+            if (db6 is null || db6.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
@@ -111,7 +101,7 @@ namespace APIControlNet.Controllers
 
             var db7 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.4");
 
-            if (db7 is null)
+            if (db7 is null || db7.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
@@ -131,20 +121,20 @@ namespace APIControlNet.Controllers
 
             var db8 = await context.Versions.FirstOrDefaultAsync(y => y.VersionId == "2.5");
 
-            if (db8 is null)
+            if (db8 is null || db8.VersionId is null)
             {
                 await context.Database.ExecuteSqlInterpolatedAsync
                 ($@"INSERT INTO version (system_id, version_id, revision_id, user_name, user_name_check, description, hash_512, version_date, updated, active, locked, deleted) 
                 VALUES({"3"}, {"2.5"}, {"2.5"}, {"Control Volumetrico"}, {"ControlNet"}, 
                 {"Se cambio la captura de datos de configuracion inicial. Datos adicionales en la respuesta de la bitacora"}, 
-                {"29ffe703c6d0eae4ba7e05162f4555bba10037c97ef894eb1a50b99879e19c5facbd9114f4b8100c1c91808daf0340fe00b0c04363fabf72b3f64a8fc97f82f0"},
+                {"6bb120214fcd5b8160917bc30bf2a0bb1684b4fd453134d85490a0ee5dbbfe83d5ba3ee0657810d52f1ffd8e0854255809058de7fbd3cf1a56d71fb262d5efc0"},
                 {"2024-05-03"}, {"2024-05-03"}, {true}, {false}, {false})");
             }
             else
             {
                 var db = await context.Versions.FirstOrDefaultAsync(x => x.VersionId == "2.5");
                 db.Updated = DateTime.Now;
-                db.Hash512 = "29ffe703c6d0eae4ba7e05162f4555bba10037c97ef894eb1a50b99879e19c5facbd9114f4b8100c1c91808daf0340fe00b0c04363fabf72b3f64a8fc97f82f0";
+                db.Hash512 = "6bb120214fcd5b8160917bc30bf2a0bb1684b4fd453134d85490a0ee5dbbfe83d5ba3ee0657810d52f1ffd8e0854255809058de7fbd3cf1a56d71fb262d5efc0";
                 context.Update(db);
                 context.SaveChanges();
             }

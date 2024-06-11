@@ -60,6 +60,7 @@ namespace APIControlNet.Controllers
                                   CpuAddress = pr.CpuAddress,
                                   CpuNumberLoop = pr.CpuNumberLoop,
                                   CommPercentage = pr.CommPercentage,
+                                  Response = pr.Response,
                                   Updated = pr.Updated,
                                   Active = pr.Active,
                                   Response2 = pr.Response2,

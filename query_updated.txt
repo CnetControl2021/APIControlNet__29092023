@@ -1,0 +1,71 @@
+﻿
+
+
+GO
+alter table store add Carrier bit
+GO
+alter table store add short_name bit
+GO
+alter table product_store add color varchar(20)
+GO
+alter table product_store add factor_tc	decimal(12, 10)	
+GO
+alter table product_store add product_density_grams_per_cm3	int
+GO
+alter table product add app_name varchar(30)
+GO
+alter table product add color varchar(20)
+GO
+alter table product add json_clave_unidad_medida_id	varchar(10)
+GO
+alter table version add hash_512 varchar(200)
+GO
+alter table Invoice alter column invoice_id uniqueidentifier null
+GO
+alter table Tank add response_inventory_in varchar(2000) 
+GO
+ALTER TABLE Tank
+ALTER COLUMN capacity_total decimal(10, 2)	
+GO
+ALTER TABLE Tank
+ALTER COLUMN capacity_operational decimal(10, 2)	
+GO
+ALTER TABLE Tank
+ALTER COLUMN capacity_minimum_operating decimal(10, 2)	
+GO
+ALTER TABLE Tank
+ALTER COLUMN capacity_useful decimal(10, 2)	
+GO
+ALTER TABLE Tank
+ALTER COLUMN fondage decimal(10, 2)	
+GO
+alter table customer add customer_permission varchar(20) null
+GO
+alter table dispensary add default_hose_idi int null
+GO
+alter table tank add capacity_gastalon decimal(9, 3) null
+GO
+alter table dispensary add default_hose_idi int null
+GO
+alter table dispensary add unique_id varchar(80) null
+GO
+alter table json_tipo_sistema_medicion alter column active int null
+GO
+alter table json_tipo_sistema_medicion alter column locked int null
+GO
+alter table json_tipo_sistema_medicion alter column deleted int null
+Go
+alter table store add store_ado varchar(20) null
+Go
+alter table product add product_ado varchar(10) null
+Go
+alter table hose add hose_ado varchar(10) null
+Go
+alter table tank add tank_idi_ado varchar(10) null
+GO
+------------TERMINA  TERMINA TERMINA TERMINA  TERMINA TERMINA TERMINA  TERMINA TERMINA TERMINA  TERMINA TERMINA
+GO
+/****end data ****/
+
+
+

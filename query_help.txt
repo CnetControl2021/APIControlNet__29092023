@@ -1,0 +1,31 @@
+﻿GO
+insert into help (help_idi,system_name,sub_name,name,version_id,user_name,
+description,configuration,response,
+date,updated,active,locked,deleted)
+values(1,'api_command','volumetric','thread_generate_volumetric_sat_day', '106','Miguel Vargas',
+'metodo que ejecuta tarea asincrona para generar volumetricos SAT diarios',
+'volumetric(enable_generated)=1,setting(field:enabled_generate_volumetric_sat_day)=1,setting(field:url_local_api_cnet)=url api_cnet,setting(field:volumetric_path)=path para guardar archivos',
+'volumetric(response)=respuesta,binnacle_service(generated_volumetric_day)=respuesta,setting(field:start_date_volumetric_sat_day)=respuesta',
+'2024-06-04 10:38',GETDATE(),1,0,0)
+GO
+insert into help (help_idi,system_name,sub_name,name,version_id,user_name,
+description,configuration,response,
+date,updated,active,locked,deleted)
+values(2,'api_command','volumetric','thread_generate_volumetric_sat_month', '106','Miguel Vargas',
+'metodo que ejecuta tarea asincrona para generar volumetricos SAT mensuales',
+'volumetric(enable_generated)=1,setting(field:enabled_generate_volumetric_sat_month)=1,setting(field:url_local_api_cnet)=url api_cnet,setting(field:volumetric_path)=path para guardar archivos',
+'volumetric(response)=respuesta,binnacle_service(generated_volumetric_month)=respuesta,setting(field:start_date_volumetric_sat_month)=respuesta',
+'2024-06-04 10:38',GETDATE(),1,0,0)
+GO
+insert into help (help_idi,system_name,sub_name,name,version_id,user_name,
+description,configuration,response,
+date,updated,active,locked,deleted)
+values(3,'sql','query','geography','0','Miguel Vargas',
+'formato correcto para actualizar campo geography',
+'update netgroup set gps_location= geography::STGeomFromText(''POINT(-122.34720 47.65100)'', 4326) where netgroup_idx=1234',
+'',
+'2024-06-04 10:38',GETDATE(),1,0,0)
+GO
+
+
+

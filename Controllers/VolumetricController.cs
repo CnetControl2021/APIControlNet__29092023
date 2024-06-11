@@ -22,6 +22,9 @@ using System.Diagnostics;
 using Class_Api;
 using Class_Sql;
 using static Class_Api.report;
+using Class_BaseDatos;
+using Class_global_pos;
+using Class_interfase;
 
 namespace APIControlNet.Controllers
 {
@@ -8765,12 +8768,46 @@ namespace APIControlNet.Controllers
             public List<stValidacionRecepEntXls> Validaciones { set; get; }
         }
 
+        [HttpGet("run_query_store/{store_id}/")]
+        [AllowAnonymous]
+        public async Task<IActionResult> cnetcore_run_query(Guid store_id)
+        {
+
+            string RetStr = "NONE", connection = "", message = "";
+            help_cnetcore_pos_functions hcnetcore = new help_cnetcore_pos_functions();
+
+            //hcnetcore.config = global_api.config;
+            Help_SqlGral HSql = new Help_SqlGral();
+            try
+            {
+
+                RetStr = HSql.fpConectaBD(false, ref connection); ;
+
+                if (RetStr == "OK")
+                {
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_report.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_insert.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
+                    RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
+                }
+            }
+            catch (Exception ex)
+            {
+                RetStr = "Error|" + System.Reflection.MethodBase.GetCurrentMethod().Name + "|" + ex.Message + "," + ex.InnerException;
+            }
+
+
+            HSql.fpCloseBD(RetStr);
+
+
+            return Ok(RetStr);
+        }
+
         [HttpGet("get_inventory_analysis/{store_id}/{start_date}/{end_date}/{type_inventory}")]
         [AllowAnonymous]
         public async Task<ActionResult<Help_SqlGral.cl_api_json>> get_inventory_analysis(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
         {
-
-
             report rep = new report();
             //rep.config = global_api.config;
 
@@ -8781,7 +8818,6 @@ namespace APIControlNet.Controllers
 
             return Ok(json_report);
         }
-
 
 
         [HttpGet("get_start_inventory/{store_id}/{start_date}/{end_date}/{type_inventory}")]
