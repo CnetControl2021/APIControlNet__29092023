@@ -174,6 +174,7 @@ namespace APIControlNet.Controllers
             }      
         }
 
+
         //[HttpGet]
         //[AllowAnonymous]
         //public async Task<ActionResult<CustomerDTO>> Get2([FromQuery] PaginacionDTO paginacionDTO, [FromQuery] string nombre)
