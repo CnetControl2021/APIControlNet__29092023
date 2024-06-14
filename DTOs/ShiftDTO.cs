@@ -22,6 +22,7 @@ namespace APIControlNet.DTOs
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public decimal? ProductTax { set; get; }
+        public string ProductTypeName { get; set; }
 
         // ==> Combustibles
         public decimal? JarQuantity { set; get; }

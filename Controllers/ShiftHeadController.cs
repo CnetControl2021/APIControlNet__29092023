@@ -12,6 +12,8 @@ using APIControlNet.Models;
 using APIControlNet.Services;
 using AutoMapper;
 using APIControlNet.DTOs;
+using APIControlNet.Utilidades;
+using Microsoft.EntityFrameworkCore;
 
 namespace APIControlNet.Controllers
 {
@@ -76,7 +78,7 @@ namespace APIControlNet.Controllers
                                    orderby ch.ShiftDate, ch.ShiftDay
                                    where c.StoreId == viStoreId
                                          && pc.IslandIdi == viIslandId
-                                         //&& c.ShiftHeadId == viShiftHead
+                                   //&& c.ShiftHeadId == viShiftHead
                                    group c by new { ch.ShiftHeadId, ch.ShiftNumber, ch.ShiftDate, ch.ShiftDay, c.EmployeeId, e.EmployeeNumber, e.Name } into CorteDatos
                                    select new
                                    {
@@ -112,7 +114,8 @@ namespace APIControlNet.Controllers
                                     orderby c.HoseIdi
                                     where c.StoreId == viStoreId &&
                                           c.ShiftHeadId == gShiftHeadId
-                                    select new {
+                                    select new
+                                    {
                                         c.ShiftId,
                                         c.HoseIdi,
                                         p.ProductId,
@@ -160,7 +163,8 @@ namespace APIControlNet.Controllers
                 Decimal dCantidad = vFuel.TotalQuantity.GetValueOrDefault() - (vFuel.JarQuantity.GetValueOrDefault() + vFuel.ConsignmentQuantity.GetValueOrDefault()),
                         dImporte = vFuel.TotalAmount.GetValueOrDefault() - (vFuel.JarAmount.GetValueOrDefault() + vFuel.ConsignmentAmount.GetValueOrDefault());
 
-                lstCorteCombustibles.Add(new ShiftDTO {
+                lstCorteCombustibles.Add(new ShiftDTO
+                {
                     StoreId = viStoreId,
                     ShiftHeadId = gShiftHeadId,
                     ShiftId = vFuel.ShiftId,
@@ -188,11 +192,13 @@ namespace APIControlNet.Controllers
             #region Consulta: Productos.
             var vQCorteProductDatos = (from p in objContext.ProductStores
                                        join pd in objContext.Products on p.ProductId equals pd.ProductId
+                                       join pt in objContext.ProductCategories on pd.ProductCategoryId equals pt.ProductCategoryId
                                        orderby pd.Name
                                        where p.StoreId == viStoreId && pd.IsFuel == false
                                        select new
                                        {
                                            p.ProductId,
+                                           TypeName = pt.Name,
                                            pd.ProductCode,
                                            ProductName = pd.Name,
                                            p.Price,
@@ -237,6 +243,7 @@ namespace APIControlNet.Controllers
                     ProductId = vProd.ProductId,
                     ProductCode = vProd.ProductCode,
                     ProductName = vProd.ProductName,
+                    ProductTypeName = vProd.TypeName,
                     Price = vProd.Price,
                     ProductTax = vProd.ProductTax,
                     StartQuantity = 0,
@@ -256,12 +263,13 @@ namespace APIControlNet.Controllers
             #region Consulta: Clientes diferentes a Efectivo.
             var vQCorteClientes = (from c in objContext.Shifts
                                    join v in objContext.SaleOrders on new { p1 = viStoreId, p2 = c.ShiftId } equals new { p1 = v.StoreId, p2 = v.ShiftId }
-                                   join cd in objContext.Customers on  v.CustomerId equals cd.CustomerId
+                                   join cd in objContext.Customers on v.CustomerId equals cd.CustomerId
                                    where c.StoreId == viStoreId &&
                                          c.ShiftHeadId == gShiftHeadId &&
                                          cd.CustomerTypeId != 1 &&
                                          cd.SatConsignmentSale != "Y"
-                                   select new { 
+                                   select new
+                                   {
                                        Status = "A",
                                        ShiftPaymentTypeIdi = 2,
                                        ShiftPaymentTypeDescription = (from tp in objContext.ShiftPaymentTypes
@@ -278,7 +286,8 @@ namespace APIControlNet.Controllers
             List<ShiftPaymentDetailDTO> lstClientes = new List<ShiftPaymentDetailDTO>();
             foreach (var vCliente in vQCorteClientes)
             {
-                lstClientes.Add(new ShiftPaymentDetailDTO {
+                lstClientes.Add(new ShiftPaymentDetailDTO
+                {
                     ShiftPaymentTypeIdi = 2,
                     ShiftPaymentTypeDescription = vCliente.ShiftPaymentTypeDescription,
                     ShiftPaymentNumberReference = vCliente.SaleOrderNumber.GetValueOrDefault(),
@@ -299,7 +308,8 @@ namespace APIControlNet.Controllers
                                           d.ShiftHeadId == gShiftHeadId &&
                                           d.IslandIdi == viIslandId &&
                                           d.EmployeeId == gEmployeeId
-                                    select new {
+                                    select new
+                                    {
                                         d.ShiftDepositNumber,
                                         d.Amount
                                     });
@@ -310,7 +320,8 @@ namespace APIControlNet.Controllers
 
             foreach (var vDeposito in vQCorteDepositos)
             {
-                lstDepositos.Add(new ShiftDepositDTO {
+                lstDepositos.Add(new ShiftDepositDTO
+                {
                     StoreId = viStoreId,
                     ShiftHeadId = gShiftHeadId,
                     IslandIdi = viIslandId,
@@ -327,18 +338,20 @@ namespace APIControlNet.Controllers
             #region Corte: Gastos.
             #region Consulta: Corte Gastos.
             var vQCorteGastos = (from g in objContext.Spents
-                                where g.StoreId == viStoreId
-                                select new { 
-                                    g.SpentId,
-                                    g.Description
-                                });
+                                 where g.StoreId == viStoreId
+                                 select new
+                                 {
+                                     g.SpentId,
+                                     g.Description
+                                 });
             #endregion
 
             #region Llenado: Corte Gastos.
             List<ShiftPaymentDetailDTO> lstGastos = new List<ShiftPaymentDetailDTO>();
 
-            foreach(var vGasto in vQCorteGastos)
-                lstGastos.Add(new ShiftPaymentDetailDTO {
+            foreach (var vGasto in vQCorteGastos)
+                lstGastos.Add(new ShiftPaymentDetailDTO
+                {
                     ShiftPaymentTypeIdi = 7,
                     ShiftPaymentNumberReference = vGasto.SpentId,
                     Description = vGasto.Description,
@@ -357,14 +370,15 @@ namespace APIControlNet.Controllers
                                 //join fp in objContext.FormaPagoCnetcores on mp.SatFormaPagoId equals fp.FormaPagoCnetcoreId
                                 where c.StoreId == viStoreId &&
                                       c.ShiftHeadId == gShiftHeadId
-                                      //&& fp.is_voucher = 1
+                                //&& fp.is_voucher = 1
                                 //  group new { eh, ed, p } by p.JsonClaveUnidadMedidaId into g
                                 group new { v } by mp.SatFormaPagoId into ValeDato
-                                select new {
+                                select new
+                                {
                                     ValeDato.Key,
                                     // fp.is_own_card,
                                     Cantidad = ValeDato.Count(),
-                                    Importe = (ValeDato.Sum( e => e.v.Amount) ?? 0)
+                                    Importe = (ValeDato.Sum(e => e.v.Amount) ?? 0)
                                 });
             #endregion
 
@@ -389,19 +403,19 @@ namespace APIControlNet.Controllers
             #region Corte: Tarjetas.
             #region Consulta: Corte Tarjeta.
             var vQCorteTarjetas = (from c in objContext.Shifts
-                                join v in objContext.SaleOrders on c.ShiftId equals v.ShiftId
-                                join mp in objContext.SaleOrderPayments on v.SaleOrderId equals mp.SaleOrderId
-                                //join fp in objContext.FormaPagoCnetcores on mp.SatFormaPagoId equals fp.FormaPagoCnetcoreId
-                                where c.StoreId == viStoreId &&
-                                      c.ShiftHeadId == gShiftHeadId
-                                     //&& fp.is_voucher = 0
-                                     && (mp.SatFormaPagoId == "04" || mp.SatFormaPagoId == "28")
-                                group new { v } by mp.SatFormaPagoId into TarjetaDato
-                                select new
-                                {
-                                    TarjetaDato.Key,
-                                    Importe = (TarjetaDato.Sum(e => e.v.Amount) ?? 0)
-                                });
+                                   join v in objContext.SaleOrders on c.ShiftId equals v.ShiftId
+                                   join mp in objContext.SaleOrderPayments on v.SaleOrderId equals mp.SaleOrderId
+                                   //join fp in objContext.FormaPagoCnetcores on mp.SatFormaPagoId equals fp.FormaPagoCnetcoreId
+                                   where c.StoreId == viStoreId &&
+                                         c.ShiftHeadId == gShiftHeadId
+                                        //&& fp.is_voucher = 0
+                                        && (mp.SatFormaPagoId == "04" || mp.SatFormaPagoId == "28")
+                                   group new { v } by mp.SatFormaPagoId into TarjetaDato
+                                   select new
+                                   {
+                                       TarjetaDato.Key,
+                                       Importe = (TarjetaDato.Sum(e => e.v.Amount) ?? 0)
+                                   });
             #endregion
 
             #region Llenado: Corte Tarjetas.
@@ -429,7 +443,21 @@ namespace APIControlNet.Controllers
         }
 
 
+        [HttpGet("EstacionCortes")]
+        //[AllowAnonymous]
+        public async Task<IEnumerable<ShiftHeadDTO>> ListaEstacionCortes(Guid viStoreId, DateTime viDStart, DateTime viDEnd, int viShiftNumber, [FromQuery] PaginacionDTO viPaginacionDTO)
+        {
+            var vQCortes = objContext.ShiftHeads.Where(c => c.StoreId.Equals(viStoreId) &&
+                                                            c.ShiftDate >= viDStart &&
+                                                            c.ShiftDate <= viDEnd).AsQueryable().OrderByDescending(c => c.ShiftDate);
+            if (viShiftNumber > 0)
+                vQCortes = objContext.ShiftHeads.Where(c => c.StoreId.Equals(viStoreId) && c.ShiftNumber.Equals(viShiftNumber)).OrderByDescending(c => c.ShiftDate);
 
+            await HttpContext.InsertarParametrosPaginacionEnRespuesta(vQCortes, viPaginacionDTO.CantidadAMostrar);
+            var vListaCortes = await vQCortes.Paginar(viPaginacionDTO).AsNoTracking().ToListAsync();
+
+            return objMapper.Map<List<ShiftHeadDTO>>(vListaCortes);
+        }
 
 
         [AllowAnonymous]

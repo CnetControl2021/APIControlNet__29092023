@@ -29,7 +29,7 @@ using Class_interfase;
 namespace APIControlNet.Controllers
 {
     // =======  VERSION  =======
-    // $@m&: 2024-05-13 10:48
+    // $@m&: 2024-06-13 16:19
     // =========================
 
     [Route("api/[controller]")]
@@ -40,13 +40,9 @@ namespace APIControlNet.Controllers
         private readonly CnetCoreContext objContext;
         private readonly IMapper objMapper;
         private readonly ServicioBinnacle objServicioBinnacle;
-        private const String VERSION_VOLUMETRIC = "v2405131048";
+        private const String VERSION_VOLUMETRIC = "v2406131619";
 
         private readonly IConfiguration _configuration;
-
-
-
-
 
         [HttpGet("revision_106")]
         [AllowAnonymous]
@@ -55,8 +51,6 @@ namespace APIControlNet.Controllers
             return Ok("OK");
 
         }
-
-
 
         #region CVol: JSON.
         public VolumetricController(CnetCoreContext viContext, IMapper viMapper, ServicioBinnacle viServicioBinnacle)
@@ -72,7 +66,11 @@ namespace APIControlNet.Controllers
         {
             CVolJSonDTO objCVolDatos = new CVolJSonDTO();
             Dictionary<Guid, DailySummary> dictDailySummary = null;
-            Dictionary<Guid, MonthlySummary> dictMonthlySummary = null;
+            Dictionary<Guid, MonthlySummary> dictMonthlySummary = null;;
+            List<report.cl_inventory_tank> lstEstTanInvInicial = null,
+                                           lstEstTanInvFinal = null;
+            List<report.cl_inventory_product> lstEstInvInicialMes = null,
+                                              lstEstInvFinalMes = null;
 
             #region Inicializacion de Valores.
             String sNomClaveInstalacion = "", sClaveTipoReporte = "";
@@ -105,6 +103,14 @@ namespace APIControlNet.Controllers
                     objCVolDatos.FechaYHoraCorte = dtPerDateEnd.ToString("yyyy-MM-dd") + "T" +
                                                    dtPerDateEnd.ToString("HH:mm:ss") + "-" +
                                                    iDiferenciaHora.ToString("00") + ":00";
+
+                    // Inventarios Iniciales.
+                    report.cl_inventory_product_head objEstInvTanquesInicial = ObtenerEstTanquesInvInicial(viStoreId: viNEstacion.GetValueOrDefault(), viDate: dtPerDateIni, viTypeInventory: enum_type_inventory.day);
+                    lstEstTanInvInicial = (List<report.cl_inventory_tank>)objEstInvTanquesInicial.inventory_tank.ToList();
+
+                    // Inventarios Finales.
+                    report.cl_inventory_product_head objEstInvTanquesFinales = ObtenerEstTanquesInvFinal(viStoreId: viNEstacion.GetValueOrDefault(), viDate: dtPerDateIni, viTypeInventory: enum_type_inventory.day);
+                    lstEstTanInvFinal = (List<report.cl_inventory_tank>)objEstInvTanquesFinales.inventory_tank.ToList();
                     break;
                 #endregion
 
@@ -121,6 +127,14 @@ namespace APIControlNet.Controllers
                     objCVolDatos.FechaYHoraReporteMes = dtPerDateEnd.ToString("yyyy-MM-dd") + "T" +
                                                         dtPerDateEnd.ToString("HH:mm:ss") + "-" +
                                                         iDiferenciaHora.ToString("00") + ":00";
+
+                    // Inventarios Iniciales.
+                    report.cl_inventory_product_head objEstInvInicialMes = ObtenerEstTanquesInvInicial(viStoreId: viNEstacion.GetValueOrDefault(), viDate: dtPerDateIni, viTypeInventory: enum_type_inventory.month);
+                    lstEstInvInicialMes = (List<report.cl_inventory_product>)objEstInvInicialMes.inventory_product.ToList();
+
+                    // Inventarios Finales.
+                    report.cl_inventory_product_head objEstInvFinalesMes = ObtenerEstTanquesInvFinal(viStoreId: viNEstacion.GetValueOrDefault(), viDate: dtPerDateIni, viTypeInventory: enum_type_inventory.month);
+                    lstEstInvFinalMes = (List<report.cl_inventory_product>)objEstInvFinalesMes.inventory_product.ToList();
                     break;
                     #endregion
             }
@@ -645,24 +659,24 @@ namespace APIControlNet.Controllers
                                                      TipoMedAlmacenamiento = (t.SatTypeMediumStorage ?? ""),
                                                      DescripMedicion = (t.SatDescriptionMeasurement ?? ""),
                                                      PorcentIncertMed = (t.SatPercentageUncertaintyMeasurement ?? 0),
-                                                     VolumenExistenciasAnterior = (from ia in objContext.Inventories
-                                                                                   where ia.StoreId == viNEstacion &&
-                                                                                         ia.TankIdi == t.TankIdi &&
-                                                                                         ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd.AddMinutes(7)
-                                                                                   orderby ia.Date
-                                                                                   select (from ian in objContext.Inventories
-                                                                                           where ian.StoreId == t.StoreId &&
-                                                                                                 ian.TankIdi == t.TankIdi &&
-                                                                                                 ian.Date < ia.Date
-                                                                                           orderby ian.Date descending
-                                                                                           select ian.Volume ?? 0).FirstOrDefault()).FirstOrDefault(),
-                                                     VolumenFinal = (from vf in objContext.Inventories
-                                                                     orderby vf.Date descending
-                                                                     where vf.Date >= dtPerDateIni && vf.Date <= dtPerDateEnd.AddMinutes(7) &&
-                                                                           vf.StoreId == t.StoreId &&
-                                                                           vf.TankIdi == t.TankIdi &&
-                                                                           vf.ProductId == vProd.ProductoID
-                                                                     select vf.Volume ?? 0).FirstOrDefault(),
+                                                     //VolumenExistenciasAnterior = (from ia in objContext.Inventories
+                                                     //                              where ia.StoreId == viNEstacion &&
+                                                     //                                    ia.TankIdi == t.TankIdi &&
+                                                     //                                    ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd.AddMinutes(7)
+                                                     //                              orderby ia.Date
+                                                     //                              select (from ian in objContext.Inventories
+                                                     //                                      where ian.StoreId == t.StoreId &&
+                                                     //                                            ian.TankIdi == t.TankIdi &&
+                                                     //                                            ian.Date < ia.Date
+                                                     //                                      orderby ian.Date descending
+                                                     //                                      select ian.Volume ?? 0).FirstOrDefault()).FirstOrDefault(),
+                                                     //VolumenFinal = (from vf in objContext.Inventories
+                                                     //                orderby vf.Date descending
+                                                     //                where vf.Date >= dtPerDateIni && vf.Date <= dtPerDateEnd.AddMinutes(7) &&
+                                                     //                      vf.StoreId == t.StoreId &&
+                                                     //                      vf.TankIdi == t.TankIdi &&
+                                                     //                      vf.ProductId == vProd.ProductoID
+                                                     //                select vf.Volume ?? 0).FirstOrDefault(),
                                                      //VolumenAcumOpsRecepcion = (from vr in objContext.InventoryIns
                                                      //                           where vr.StoreId == t.StoreId &&
                                                      //                                 vr.StartDate >= dtPerDateIni && vr.StartDate <= dtPerDateEnd &&
@@ -689,6 +703,9 @@ namespace APIControlNet.Controllers
                                         #region Tanque: Asignamos Valores.
                                         int? iNTanque = vTanqDatos.NumeroTanque,
                                              iTanqueIncertidumbre = vTanqDatos.PorcentIncertMed;
+                                        Decimal dVolumenExistenciasAnterior = Convert.ToDecimal(lstEstTanInvInicial.Find(t => t.product_id.Equals(vProd.ProductoID) && t.tank_idi.Equals(iNTanque)).volume),
+                                                dVolumenFinal = Convert.ToDecimal(lstEstTanInvFinal.Find(t => t.product_id.Equals(vProd.ProductoID) && t.tank_idi.Equals(iNTanque)).volume);
+
                                         Decimal iCapTotal = vTanqDatos.CapTotal.GetValueOrDefault(),
                                                 iCapOperativa = vTanqDatos.CapOperativa.GetValueOrDefault(),
                                                 iCapUtil = vTanqDatos.CapUtil.GetValueOrDefault(),
@@ -702,8 +719,8 @@ namespace APIControlNet.Controllers
                                                sTanqueTipoMedicion = vTanqDatos.TipoMedicion,
                                                sTanqueDescMedicion = vTanqDatos.DescripMedicion,
                                                sTanqueTipoMedAlmacenamiento = vTanqDatos.TipoMedAlmacenamiento;
-                                        Decimal dVolumenExistenciasAnterior = vTanqDatos.VolumenExistenciasAnterior,
-                                                dVolumenFinal = vTanqDatos.VolumenFinal,
+                                        Decimal //dVolumenExistenciasAnterior = vTanqDatos.VolumenExistenciasAnterior,
+                                                //dVolumenFinal = vTanqDatos.VolumenFinal,
                                                 dVolRecepciones = Convert.ToDecimal(vTanqDatos.VolumenAcumOpsRecepcion),
                                                 dVolEntrega = dVolumenExistenciasAnterior + (dVolRecepciones - dVolumenFinal),
                                                 dVolExistencia = dVolumenExistenciasAnterior + (dVolRecepciones - dVolEntrega);
@@ -5588,39 +5605,47 @@ namespace APIControlNet.Controllers
 
                         #region Tipo: Reporte Mensual.
                         case CVolJSonDTO.eTipoReporte.Mes:
+                            Decimal vQVolIniProd = 0, 
+                                    vQVolFinProd = 0;
+
                             #region Resumen Mensual. (Monthly_Summary)
                             // Agregamos el registro para generar el resumen en la tabla "Monthly_Summary"
-                            if (!dictMonthlySummary.ContainsKey(vProd.ProductoID))
-                            {
+                            if (!dictMonthlySummary.ContainsKey(vProd.ProductoID)) {
                                 #region Obtenemos el Volumen Inicial.
                                 #region Consulta: Volumen Inicial.
-                                var vQVolIniProd = (from ia in objContext.Inventories
-                                                    where ia.StoreId == viNEstacion &&
-                                                          ia.ProductId == vProd.ProductoID &&
-                                                          ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd
-                                                    orderby ia.Date
-                                                    select (from ian in objContext.Inventories
-                                                            where ian.StoreId == ia.StoreId &&
-                                                                  ian.ProductId == ia.ProductId &&
-                                                                  ian.Date >= ia.Date.Value.AddSeconds(-ia.Date.Value.Second) &&
-                                                                  ian.Date <= ia.Date.Value.AddSeconds(-ia.Date.Value.Second).AddSeconds(59)
-                                                            select ian.Volume ?? 0).Sum()).FirstOrDefault();
+                                //var vQVolIniProd = (from ia in objContext.Inventories
+                                //                    where ia.StoreId == viNEstacion &&
+                                //                          ia.ProductId == vProd.ProductoID &&
+                                //                          ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd
+                                //                    orderby ia.Date
+                                //                    select (from ian in objContext.Inventories
+                                //                            where ian.StoreId == ia.StoreId &&
+                                //                                  ian.ProductId == ia.ProductId &&
+                                //                                  ian.Date >= ia.Date.Value.AddSeconds(-ia.Date.Value.Second) &&
+                                //                                  ian.Date <= ia.Date.Value.AddSeconds(-ia.Date.Value.Second).AddSeconds(59)
+                                //                            select ian.Volume ?? 0).Sum()).FirstOrDefault();
+
+                                if(lstEstInvInicialMes.Exists(p => p.product_id.Equals(vProd.ProductoID)))
+                                    vQVolIniProd = Convert.ToDecimal(lstEstInvInicialMes.Find(p => p.product_id.Equals(vProd.ProductoID)).quantity);
                                 #endregion
                                 #endregion
 
                                 #region Obtenemos el Volumen Final.
                                 #region Consulta: Volumen Final.
-                                var vQVolFinProd = (from ia in objContext.Inventories
-                                                    where ia.StoreId == viNEstacion &&
-                                                          ia.ProductId == vProd.ProductoID &&
-                                                          ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd.AddMinutes(7)
-                                                    orderby ia.Date descending
-                                                    select (from ian in objContext.Inventories
-                                                            where ian.StoreId == ia.StoreId &&
-                                                                  ian.ProductId == ia.ProductId &&
-                                                                  ian.Date >= ia.Date.Value.AddSeconds(-ia.Date.Value.Second) &&
-                                                                  ian.Date <= ia.Date.Value.AddSeconds(-ia.Date.Value.Second).AddSeconds(59)
-                                                            select ian.Volume ?? 0).Sum()).FirstOrDefault();
+                                //var vQVolFinProd = (from ia in objContext.Inventories
+                                //                    where ia.StoreId == viNEstacion &&
+                                //                          ia.ProductId == vProd.ProductoID &&
+                                //                          ia.Date >= dtPerDateIni && ia.Date <= dtPerDateEnd.AddMinutes(7)
+                                //                    orderby ia.Date descending
+                                //                    select (from ian in objContext.Inventories
+                                //                            where ian.StoreId == ia.StoreId &&
+                                //                                  ian.ProductId == ia.ProductId &&
+                                //                                  ian.Date >= ia.Date.Value.AddSeconds(-ia.Date.Value.Second) &&
+                                //                                  ian.Date <= ia.Date.Value.AddSeconds(-ia.Date.Value.Second).AddSeconds(59)
+                                //                            select ian.Volume ?? 0).Sum()).FirstOrDefault();
+
+                                if(lstEstInvFinalMes.Exists(p => p.product_id.Equals(vProd.ProductoID)))
+                                    vQVolFinProd = Convert.ToDecimal(lstEstInvFinalMes.Find(p => p.product_id.Equals(vProd.ProductoID)).quantity);
                                 #endregion
                                 #endregion
 
@@ -5646,42 +5671,49 @@ namespace APIControlNet.Controllers
                                 #region Existencias.
                                 CVolJSonDTO.stControlExistenciaDato objExistMesDato = new CVolJSonDTO.stControlExistenciaDato();
 
-                                #region Consulta: Existencia del Producto.
+                                #region Antes se calculaba la existencia.
+                                //#region Consulta: Existencia del Producto.
+                                ////var vQExistProd = (from t in objContext.Tanks
+                                ////                   where t.StoreId == viNEstacion && t.ProductId == vProd.ProductoID
+                                ////                   select (from i in objContext.InventoryIns
+                                ////                           orderby i.StartDate descending
+                                ////                           where i.StoreId == t.StoreId &&
+                                ////                                 i.TankIdi == t.TankIdi &&
+                                ////                                 i.StartDate >= dtPerDateIni && i.StartDate <= dtPerDateEnd.AddMinutes(7) &&
+                                ////                                 i.ProductId == t.ProductId
+                                ////                           select i.Volume ?? 0).FirstOrDefault());
+
                                 //var vQExistProd = (from t in objContext.Tanks
                                 //                   where t.StoreId == viNEstacion && t.ProductId == vProd.ProductoID
-                                //                   select (from i in objContext.InventoryIns
-                                //                           orderby i.StartDate descending
+                                //                   select (from i in objContext.Inventories
+                                //                           orderby i.Date descending
                                 //                           where i.StoreId == t.StoreId &&
                                 //                                 i.TankIdi == t.TankIdi &&
-                                //                                 i.StartDate >= dtPerDateIni && i.StartDate <= dtPerDateEnd.AddMinutes(7) &&
+                                //                                 i.Date >= dtPerDateIni && i.Date <= dtPerDateEnd.AddMinutes(7) &&
                                 //                                 i.ProductId == t.ProductId
                                 //                           select i.Volume ?? 0).FirstOrDefault());
+                                //#endregion
 
-                                var vQExistProd = (from t in objContext.Tanks
-                                                   where t.StoreId == viNEstacion && t.ProductId == vProd.ProductoID
-                                                   select (from i in objContext.Inventories
-                                                           orderby i.Date descending
-                                                           where i.StoreId == t.StoreId &&
-                                                                 i.TankIdi == t.TankIdi &&
-                                                                 i.Date >= dtPerDateIni && i.Date <= dtPerDateEnd.AddMinutes(7) &&
-                                                                 i.ProductId == t.ProductId
-                                                           select i.Volume ?? 0).FirstOrDefault());
+                                //#region Lectura: Existencia Datos.
+                                //if (vQExistProd != null)
+                                //{
+                                //    Decimal dExistenciaDia = 0;
+
+                                //    foreach (var vExistDatos in vQExistProd)
+                                //        dExistenciaDia += (Decimal)vExistDatos;
+
+                                //    objExistMesDato.VolumenExistenciasMes = Math.Round(dExistenciaDia, 3);
+                                //    objExistMesDato.FechaYHoraEstaMedicionMes = dtPerDateEnd.ToString("yyyy-MM-dd") + "T" +
+                                //                                                dtPerDateEnd.ToString("HH:mm:ss") + "-" +
+                                //                                                iDiferenciaHora.ToString("00") + ":00";
+                                //}
+                                //#endregion
                                 #endregion
 
-                                #region Lectura: Existencia Datos.
-                                if (vQExistProd != null)
-                                {
-                                    Decimal dExistenciaDia = 0;
-
-                                    foreach (var vExistDatos in vQExistProd)
-                                        dExistenciaDia += (Decimal)vExistDatos;
-
-                                    objExistMesDato.VolumenExistenciasMes = Math.Round(dExistenciaDia, 3);
-                                    objExistMesDato.FechaYHoraEstaMedicionMes = dtPerDateEnd.ToString("yyyy-MM-dd") + "T" +
-                                                                                dtPerDateEnd.ToString("HH:mm:ss") + "-" +
-                                                                                iDiferenciaHora.ToString("00") + ":00";
-                                }
-                                #endregion
+                                objExistMesDato.VolumenExistenciasMes = Math.Round(vQVolFinProd, 3);
+                                objExistMesDato.FechaYHoraEstaMedicionMes = dtPerDateEnd.ToString("yyyy-MM-dd") + "T" +
+                                                                            dtPerDateEnd.ToString("HH:mm:ss") + "-" +
+                                                                            iDiferenciaHora.ToString("00") + ":00";
 
                                 objRepVolMenDato.ControlDeExistencias = objExistMesDato;
                                 #endregion
@@ -8745,6 +8777,33 @@ namespace APIControlNet.Controllers
             }
             return isValid;
         }
+
+        /// <summary>
+        /// Obtiene el intentario inicial de los tanques de la estación.
+        /// </summary>
+        /// <param name="viStoreId">GUID de la Estación</param>
+        /// <param name="viDate">Fecha Inicial (0000-00-00).</param>
+        /// <param name="viTypeInventory">Tipo de Inventario.</param>
+        /// <returns></returns>
+        private static report.cl_inventory_product_head ObtenerEstTanquesInvInicial(Guid viStoreId, DateTime viDate, enum_type_inventory viTypeInventory)
+        {
+            report objReport = new report();
+            string sRetStr = "OK";
+
+            report.cl_inventory_product_head objReportOut = objReport.get_start_inventory(ref sRetStr, viStoreId, viDate, viTypeInventory);
+
+            return objReportOut;
+        }
+
+        private static report.cl_inventory_product_head ObtenerEstTanquesInvFinal(Guid viStoreId, DateTime viDate, enum_type_inventory viTypeInventory)
+        {
+            report objReport = new report();
+            string sRetStr = "OK";
+
+            report.cl_inventory_product_head objReportOut = objReport.get_end_inventory(ref sRetStr, viStoreId, viDate, viTypeInventory);
+
+            return objReportOut;
+        }
         #endregion
 
         #region Carga Masiva: Excel.
@@ -8767,92 +8826,6 @@ namespace APIControlNet.Controllers
             public String Tiempo { set; get; }
             public List<stValidacionRecepEntXls> Validaciones { set; get; }
         }
-
-        [HttpGet("run_query_store/{store_id}/")]
-        [AllowAnonymous]
-        public async Task<IActionResult> cnetcore_run_query(Guid store_id)
-        {
-
-            string RetStr = "NONE", connection = "", message = "";
-            help_cnetcore_pos_functions hcnetcore = new help_cnetcore_pos_functions();
-
-            //hcnetcore.config = global_api.config;
-            Help_SqlGral HSql = new Help_SqlGral();
-            try
-            {
-
-                RetStr = HSql.fpConectaBD(false, ref connection); ;
-
-                if (RetStr == "OK")
-                {
-                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query.txt", store_id);
-                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_report.txt", store_id);
-                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_insert.txt", store_id);
-                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
-                    RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
-                }
-            }
-            catch (Exception ex)
-            {
-                RetStr = "Error|" + System.Reflection.MethodBase.GetCurrentMethod().Name + "|" + ex.Message + "," + ex.InnerException;
-            }
-
-
-            HSql.fpCloseBD(RetStr);
-
-
-            return Ok(RetStr);
-        }
-
-        [HttpGet("get_inventory_analysis/{store_id}/{start_date}/{end_date}/{type_inventory}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<Help_SqlGral.cl_api_json>> get_inventory_analysis(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
-        {
-            report rep = new report();
-            //rep.config = global_api.config;
-
-            Help_SqlGral.sql_config = Help_SqlGral.sql_config;
-
-            Help_SqlGral.cl_api_json json_report = rep.get_inventory_analysis(store_id, start_date, end_date, type_inventory);//  get_report_result( store_id, report_id.ToString(), report_input_object, false);
-
-
-            return Ok(json_report);
-        }
-
-
-        [HttpGet("get_start_inventory/{store_id}/{start_date}/{end_date}/{type_inventory}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<cl_inventory_product_head>> get_start_inventory(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
-        {
-
-
-            string RetStr = "NONE";
-
-            report rep = new report();
-
-            cl_inventory_product_head response = rep.get_start_inventory(ref RetStr, store_id, start_date, enum_start_inventory.day);
-
-
-            return response;
-        }
-
-
-        [HttpGet("get_end_inventory/{store_id}/{start_date}/{end_date}/{type_inventory}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<cl_inventory_product_head>> get_end_inventory(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
-        {
-
-
-            string RetStr = "NONE";
-
-            report rep = new report();
-
-            cl_inventory_product_head response = rep.get_end_inventory(ref RetStr, store_id, start_date, enum_end_inventory.day);
-
-
-            return response;
-        }
-
 
         /// <summary>
         /// Lectura de Archivo de Excel para guardar Recepciones y Entregas.
@@ -11468,6 +11441,90 @@ namespace APIControlNet.Controllers
             }
 
             return Ok("Registros Guardados: " + iCantRegisSave);
+        }
+        #endregion
+
+        #region Inventarios Finales.
+        [HttpGet("run_query_store/{store_id}/")]
+        [AllowAnonymous]
+        public async Task<IActionResult> cnetcore_run_query(Guid store_id)
+        {
+
+            string RetStr = "NONE", connection = "", message = "";
+            help_cnetcore_pos_functions hcnetcore = new help_cnetcore_pos_functions();
+
+            //hcnetcore.config = global_api.config;
+            Help_SqlGral HSql = new Help_SqlGral();
+            try
+            {
+
+                RetStr = HSql.fpConectaBD(false, ref connection); ;
+
+                if (RetStr == "OK")
+                {
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_report.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_insert.txt", store_id);
+                    //RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
+                    RetStr = Help_BaseDatos_Gral.query_execute_hsql(ref HSql, ref message, "query_help.txt", store_id);
+                }
+            }
+            catch (Exception ex)
+            {
+                RetStr = "Error|" + System.Reflection.MethodBase.GetCurrentMethod().Name + "|" + ex.Message + "," + ex.InnerException;
+            }
+
+
+            HSql.fpCloseBD(RetStr);
+
+
+            return Ok(RetStr);
+        }
+
+        [HttpGet("get_inventory_analysis/{store_id}/{start_date}/{end_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Help_SqlGral.cl_api_json>> get_inventory_analysis(Guid store_id, DateTime start_date, DateTime end_date, report.enum_type_inventory type_inventory)
+        {
+            report rep = new report();
+            //rep.config = global_api.config;
+
+            Help_SqlGral.sql_config = Help_SqlGral.sql_config;
+
+            Help_SqlGral.cl_api_json json_report = rep.get_inventory_analysis(store_id, start_date, end_date, type_inventory);//  get_report_result( store_id, report_id.ToString(), report_input_object, false);
+
+
+            return Ok(json_report);
+        }
+
+
+        [HttpGet("get_start_inventory/{store_id}/{start_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<report.cl_inventory_product_head>> get_start_inventory(Guid store_id, DateTime start_date, enum_type_inventory type_inventory)// report.enum_type_inventory type_inventory)
+        {
+
+            string RetStr = "OK";
+
+            report rep = new report();
+
+            report.cl_inventory_product_head response = rep.get_start_inventory(ref RetStr, store_id, start_date, type_inventory);//  get_report_result( store_id, report_id.ToString(), report_input_object, false);
+
+            return response;
+        }
+
+
+        [HttpGet("get_end_inventory/{store_id}/{end_date}/{type_inventory}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<report.cl_inventory_product_head>> get_end_inventory(Guid store_id, DateTime end_date, enum_type_inventory type_inventory) // report.enum_type_inventory type_inventory)
+        {
+
+            string RetStr = "OK";
+
+            report rep = new report();
+
+            report.cl_inventory_product_head response = rep.get_end_inventory(ref RetStr, store_id, end_date, type_inventory);//  get_report_result( store_id, report_id.ToString(), report_input_object, false);
+
+
+            return response;
         }
         #endregion
 
