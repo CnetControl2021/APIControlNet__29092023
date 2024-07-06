@@ -45,6 +45,7 @@ namespace APIControlNet.Controllers
                                 where so.Active == true
                                 join ss in context.SaleSuborders on so.SaleOrderId equals ss.SaleOrderId
                                 join products in context.Products on ss.ProductId equals products.ProductId
+                                join veh in context.Vehicles on so.VehicleId equals veh.VehicleId
                                 where so.Name.ToLower().Equals(nombre)
                                 && so.StoreId == storeId
                                 && products.IsFuel == true
@@ -59,7 +60,9 @@ namespace APIControlNet.Controllers
                                     QuantityTC = ss.QuantityTc,  // litros con temperatura compenmsada a 20 grados.
                                     Price = ss.Price, // precio unitariio
                                     Amount = so.Amount,
-                                    Date = ss.Date
+                                    Date = ss.Date,
+                                    VehicleId = so.VehicleId,
+                                    VehicleName = veh.Name
                                 }).AsNoTracking().ToListAsync();
             }
             else
@@ -68,6 +71,7 @@ namespace APIControlNet.Controllers
                                 where so.Active == true
                                 join ss in context.SaleSuborders on so.SaleOrderId equals ss.SaleOrderId
                                 join products in context.Products on ss.ProductId equals products.ProductId
+                                join veh in context.Vehicles on so.VehicleId equals veh.VehicleId
                                 where ss.Date >= (dateIni) && ss.Date <= dateFin
                                 && so.StoreId == storeId
                                 && products.IsFuel == true
@@ -83,7 +87,9 @@ namespace APIControlNet.Controllers
                                     QuantityTC = ss.QuantityTc,
                                     Price = ss.Price,
                                     Amount = so.Amount,
-                                    Date = ss.Date
+                                    Date = ss.Date,
+                                    VehicleId= so.VehicleId,
+                                    VehicleName = veh.Name
                                 }).AsNoTracking().ToListAsync();
             }
             return Ok(listSO);

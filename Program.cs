@@ -115,7 +115,6 @@ c.AddSecurityRequirement(new OpenApiSecurityRequirement
     });
 });
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

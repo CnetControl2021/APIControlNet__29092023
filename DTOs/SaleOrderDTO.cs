@@ -23,6 +23,7 @@ namespace APIControlNet.DTOs
         public Guid? ShiftId { get; set; }
         public Guid? CustomerId { get; set; }
         public Guid? VehicleId { get; set; }
+        public string? VehicleName { get; set; } //Agrege
         public string CardEmployeeId { get; set; }
         public decimal? Amount { get; set; }
         public string Status { get; set; }

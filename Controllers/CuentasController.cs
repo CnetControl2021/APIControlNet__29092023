@@ -225,6 +225,7 @@ namespace APIControlNet.Controllers
             }
         }
 
+
         [HttpGet("support")]
         [AllowAnonymous]
         public async Task<IActionResult> Get2(Guid storeId)
